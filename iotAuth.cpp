@@ -1,5 +1,4 @@
 #include "iotAuth.h"
-#include <iostream>
 
 void iotAuth::encryptAES(int bits, int cipher_size, byte *key, byte plain[], unsigned long long int my_iv, byte cipher[])
 {

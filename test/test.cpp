@@ -1,4 +1,4 @@
-#include "iotAuth.h"
+#include "../iotAuth.h"
 #include <iostream>
 
 iotAuth iotAuth;
