@@ -20,6 +20,20 @@ int StringHandler::getDHIvClient(char buffer[])
     return std::stoi(getData(buffer, 3));
 }
 
+int StringHandler::getClientPublicKey(char buffer[])
+{
+    return std::stoi(getData(buffer, 0));
+}
+
+int StringHandler::getRSAExchangeIv(char buffer[])
+{
+    return std::stoi(getData(buffer, 1));
+}
+
+/*********************************************
+TERMINAR O GET FDR RSA CLIENT !!!!!
+**********************************************/
+
 /* Pega todos os caracteres entre o separador (#) da posição indicada por parâmetro
 e o separador da posição + 1. */
 std::string StringHandler::getData(char buffer[], int position)
