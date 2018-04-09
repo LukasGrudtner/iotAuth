@@ -72,6 +72,12 @@ void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, i
 
 int main(int argc, char *argv[]){
 
+    /* Testes STRING HANDLER */
+    char buf[] = "123#456#789";
+    std::cout << "DH Client Key: " << StringHandler.getDHClientKey(buf) << std::endl;
+    std::cout << "Client Base: " << StringHandler.getClientBase(buf) << std::endl;
+
+
     struct sockaddr_in cliente, servidor;
     int meuSocket,enviei=0;
     socklen_t tam_cliente;
