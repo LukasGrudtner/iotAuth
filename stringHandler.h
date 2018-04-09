@@ -6,6 +6,7 @@
 class StringHandler
 {
     public:
+
         int getDHClientKey(char buffer[]);
         int getClientBase(char buffer[]);
         int getClientModulus(char buffer[]);
@@ -14,4 +15,5 @@ class StringHandler
         int getRSAExchangeIv(char buffer[]);
         int getClientRSAFdr(char buffer[]);
     private:
+        std::string getData(char buffer[], int position);
 };

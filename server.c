@@ -73,10 +73,12 @@ void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, i
 int main(int argc, char *argv[]){
 
     /* Testes STRING HANDLER */
-    char buf[] = "123#456#789";
+    char buf[] = "123#456#789#101112";
     std::cout << "DH Client Key: " << StringHandler.getDHClientKey(buf) << std::endl;
     std::cout << "Client Base: " << StringHandler.getClientBase(buf) << std::endl;
-
+    std::cout << "Client Modulus: " << StringHandler.getClientModulus(buf) << std::endl;
+    std::cout << "DH IV: " << StringHandler.getDHIvClient(buf) << std::endl;
+    /* Testes STRING HANDLER */
 
     struct sockaddr_in cliente, servidor;
     int meuSocket,enviei=0;
