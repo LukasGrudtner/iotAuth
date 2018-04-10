@@ -13,7 +13,6 @@
 #include "settings.h"
 #include "stringHandler.h"
 
-KeyManager KeyManager;
 StringHandler StringHandler;
 
 bool CHANGED_KEYS = false;
@@ -21,6 +20,7 @@ bool CLIENT_HELLO = false;
 bool CLIENT_DONE = false;
 bool RECEIVED_RSA_KEY = false;
 bool RECEIVED_DH_KEY = false;
+KeyManager* keyManager;
 
 void processClientHello(char buffer[], int socket, struct sockaddr* client, int size)
 {
@@ -64,30 +64,47 @@ void processClientDone(char buffer[], int socket, struct sockaddr* client, int s
     printf("***********************************\n");
 }
 
-void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, int size)
+void processRSAKeyExchange(char buffer[])
 {
     printf("******RSA KEY CLIENT RECEIVED******");
-    // std::string clientPublicKey = StringHandler.getClientPublicKey;
+    char buf2[] = "029#029#+123";
+    // FDR fdr = StringHandler.getRSAClientFdr(buffer);
+    std::cout << StringHandler.getRSAClientFdr(buffer).getOperator() << std::endl;
+
+    // keyManager->setClientPublicKey(StringHandler.getClientPublicKey(buffer));
+    // keyManager->setIV(StringHandler.getRSAExchangeIv(buffer));
+    // keyManager->setFDR(&fdr);
+
+
+
+    std::cout << "Client RSA Public Key: " << keyManager->getClientPublicKey() << std::endl;
+    std::cout << "IV: " << keyManager->getIV() << std::endl;
+    // std::cout << "FDR: IV (" << keyManager->getIV() << ") " << keyManager->getFDR()->getOperator()
+    //           << " " << keyManager->getFDR()->getOperand() << std::endl;
 }
 
 int main(int argc, char *argv[]){
 
     /* Testes STRING HANDLER */
-    char buf[] = "123#456#789#101112";
-    std::cout << "DH Client Key: " << StringHandler.getDHClientKey(buf) << std::endl;
-    std::cout << "Client Base: " << StringHandler.getClientBase(buf) << std::endl;
-    std::cout << "Client Modulus: " << StringHandler.getClientModulus(buf) << std::endl;
-    std::cout << "DH IV: " << StringHandler.getDHIvClient(buf) << std::endl;
+    // char buf[] = "123#456#789#101112";
+    // std::cout << "DH Client Key: " << StringHandler.getDHClientKey(buf) << std::endl;
+    // std::cout << "Client Base: " << StringHandler.getClientBase(buf) << std::endl;
+    // std::cout << "Client Modulus: " << StringHandler.getClientModulus(buf) << std::endl;
+    // std::cout << "DH IV: " << StringHandler.getDHIvClient(buf) << std::endl;
     /* Testes STRING HANDLER */
+
 
     /* Testes FDR */
     char buf2[] = "029#029#+123";
+    processRSAKeyExchange(buf2);
     // FDR* fdr = new FDR('+', 5);
-    // std::cout << "FDR operator = " << fdr->getOperator() << std::endl;
-    // std::cout << "FDR operand = " << fdr->getOperand() << std::endl;
-    std::cout << "FDR operator = " << StringHandler.getRSAClientFdr(buf2).getOperator() << std::endl;
-    std::cout << "FDR operand = " << StringHandler.getRSAClientFdr(buf2).getOperand() << std::endl;
+    // // std::cout << "FDR operator = " << fdr->getOperator() << std::endl;
+    // // std::cout << "FDR operand = " << fdr->getOperand() << std::endl;
+    // std::cout << "FDR operator = " << StringHandler.getRSAClientFdr(buf2).getOperator() << std::endl;
+    // std::cout << "FDR operand = " << StringHandler.getRSAClientFdr(buf2).getOperand() << std::endl;
     /* Testes FDR */
+
+    keyManager = new KeyManager();
 
     struct sockaddr_in cliente, servidor;
     int meuSocket,enviei=0;

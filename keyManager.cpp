@@ -1,5 +1,10 @@
 #include "keyManager.h"
 
+KeyManager::KeyManager()
+{
+
+}
+
 int KeyManager::getKey()
 {
     int r = pow(base, exponent);
@@ -12,14 +17,24 @@ int KeyManager::getKey(int base)
     return r % modulus;
 }
 
-int KeyManager::getPublicKey()
+int KeyManager::getServerPublicKey()
 {
-    return publicKey;
+    return serverPublicKey;
 }
 
-int KeyManager::getPrivateKey()
+int KeyManager::getServerPrivateKey()
 {
-    return privateKey;
+    return serverPrivateKey;
+}
+
+int KeyManager::getClientPublicKey()
+{
+    return clientPublicKey;
+}
+
+void KeyManager::setClientPublicKey(int _clientPublicKey)
+{
+    clientPublicKey = _clientPublicKey;
 }
 
 void KeyManager::setSimpleKey(int _simpleKey)
@@ -40,4 +55,24 @@ void KeyManager::setBase(int _base)
 void KeyManager::setModulus(int _modulus)
 {
     modulus = _modulus;
+}
+
+int KeyManager::getIV()
+{
+    return iv;
+}
+
+FDR* KeyManager::getFDR()
+{
+    return fdr;
+}
+
+void KeyManager::setIV(int _iv)
+{
+    iv = _iv;
+}
+
+void KeyManager::setFDR(FDR* _fdr)
+{
+    fdr = _fdr;
 }

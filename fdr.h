@@ -1,3 +1,6 @@
+#ifndef FDR_H
+#define FDR_H
+
 #include "settings.h"
 
 class FDR
@@ -13,3 +16,5 @@ class FDR
         char _operator;
         int _operand;
 };
+
+#endif
