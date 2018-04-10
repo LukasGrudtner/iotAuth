@@ -2,6 +2,7 @@
 #include <string.h>
 #include <iostream>
 #include "settings.h"
+#include "fdr.h"
 
 class StringHandler
 {
@@ -13,7 +14,7 @@ class StringHandler
         int getDHIvClient(char buffer[]);
         int getClientPublicKey(char buffer[]);
         int getRSAExchangeIv(char buffer[]);
-        int getClientRSAFdr(char buffer[]);
+        FDR getRSAClientFdr(char buffer[]);
     private:
         std::string getData(char buffer[], int position);
 };

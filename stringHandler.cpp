@@ -73,3 +73,23 @@ std::string StringHandler::getData(char buffer[], int position)
     std::string data (buffer_aux);
     return data;
 }
+
+FDR StringHandler::getRSAClientFdr(char buffer[])
+{
+    char op;
+    int operand;
+
+    std::string fdr = getData(buffer, 2);
+    op = fdr[0];
+
+    char buffer_aux[fdr.length()];
+    int cont = 0;
+    for (int i = 1; i < fdr.length(); i++) {
+        buffer_aux[cont] = fdr[i];
+        cont++;
+    }
+
+    std::string data (buffer_aux);
+
+    return *(new FDR(op, std::stoi(data)));
+}

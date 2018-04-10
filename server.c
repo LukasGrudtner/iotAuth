@@ -12,7 +12,6 @@
 #include "keyManager.h"
 #include "settings.h"
 #include "stringHandler.h"
-#include "fdr.h"
 
 KeyManager KeyManager;
 StringHandler StringHandler;
@@ -82,9 +81,12 @@ int main(int argc, char *argv[]){
     /* Testes STRING HANDLER */
 
     /* Testes FDR */
-    FDR* fdr = new FDR('+', 5);
-    std::cout << "FDR operator = " << fdr->getOperator() << std::endl;
-    std::cout << "FDR operand = " << fdr->getOperand() << std::endl;
+    char buf2[] = "029#029#+123";
+    // FDR* fdr = new FDR('+', 5);
+    // std::cout << "FDR operator = " << fdr->getOperator() << std::endl;
+    // std::cout << "FDR operand = " << fdr->getOperand() << std::endl;
+    std::cout << "FDR operator = " << StringHandler.getRSAClientFdr(buf2).getOperator() << std::endl;
+    std::cout << "FDR operand = " << StringHandler.getRSAClientFdr(buf2).getOperand() << std::endl;
     /* Testes FDR */
 
     struct sockaddr_in cliente, servidor;
