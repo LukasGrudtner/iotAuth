@@ -101,7 +101,7 @@ void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, i
 
     std::cout << "Sended Message: " << sendBuffer << std::endl;
 
-    int sended = sendto(socket, sendBuffer, sendString.length(), 0, client, size);
+    int sended = sendto(socket, sendBuffer, strlen(sendBuffer), 0, client, size);
 
     if (sended >= 0) {
        printf("RSA KEY Client and Server Successful!\n");
@@ -117,6 +117,50 @@ void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, i
 
 }
 
+void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr* client, int size)
+{
+    /* Recebe chave Diffie-Hellman e IV. */
+    printf("*******RECEIVED DH CLIENT KEY******\n");
+    keyManager->setBase(StringHandler.getClientBase(buffer));
+    keyManager->setModulus(StringHandler.getClientModulus(buffer));
+    keyManager->setSessionKey(keyManager->getDiffieHellmanKey(StringHandler.getDHClientKey(buffer)));
+    int ivClient = StringHandler.getDHIvClient(buffer);
+
+    RECEIVED_DH_KEY = true;
+    std::cout << "Diffie-Hellman Key: " << StringHandler.getDHClientKey(buffer) << std::endl;
+    std::cout << "Base: " << StringHandler.getClientBase(buffer) << std::endl;
+    std::cout << "Modulus: " << StringHandler.getClientModulus(buffer) << std::endl;
+    std::cout << "IV Client: " << StringHandler.getDHIvClient(buffer) << std::endl;
+    std::cout << "Session Key: " << keyManager->getSessionKey() << std::endl;
+    std::cout << "***********************************\n" << std::endl;
+
+    /* Envia chave Diffie-Hellman e IV. */
+    printf("*********SEND DH SERVER KEY********\n");
+    std::string sendString;
+    std::string spacer (SPACER_S);
+    sendString = std::to_string(keyManager->getDiffieHellmanKey()) + spacer +
+                 std::to_string(handleIV(ivClient, keyManager->getFDR()));
+    char sendBuffer[sendString.length()];
+    strcpy(sendBuffer, sendString.c_str());
+
+    std::cout << "Sended Message: " << sendBuffer << std::endl;
+
+    int sended = sendto(socket, sendBuffer, strlen(sendBuffer), 0, client, size);
+
+    if (sended >= 0) {
+       printf("DH KEY Client and Server Successful!\n");
+    } else {
+        herror("sendto");
+        printf("DH KEY Client and Server failed!\n");
+    }
+
+    std::cout << "Diffie-Hellman Key: " << keyManager->getSessionKey() << std::endl;
+    std::cout << "***********************************\n" << std::endl;
+
+    std::cout << "*SYMMETRICAL SESSION CLIENT-SERVER*" << std::endl;
+    std::cout << "Session Key: " << keyManager->getSessionKey() << std::endl;
+    std::cout << "***********************************\n" << std::endl;
+}
 
 
 int main(int argc, char *argv[]){
@@ -148,6 +192,9 @@ int main(int argc, char *argv[]){
     // std::cout << "FDR operand = " << StringHandler.getRSAClientFdr(buf2).getOperand() << std::endl;
     /* Testes FDR */
 
+    // char buf3[] = "20#40#60#80";
+    // processDiffieHellmanKeyExchange(buf3);
+
 
 
     struct sockaddr_in cliente, servidor;
@@ -158,7 +205,7 @@ int main(int argc, char *argv[]){
 
     meuSocket=socket(PF_INET,SOCK_DGRAM,0);
     servidor.sin_family=AF_INET;
-    servidor.sin_port=htons(20000);
+    servidor.sin_port=htons(DEFAULT_PORT);
     servidor.sin_addr.s_addr=INADDR_ANY;
 
     memset(buffer, 0, sizeof(buffer));
@@ -171,22 +218,20 @@ int main(int argc, char *argv[]){
        recvfrom(meuSocket,buffer,556,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
        // printf("Recebi:%s de <endereço:%s> <porta:%d>\n",buffer,inet_ntoa(cliente.sin_addr),ntohs(cliente.sin_port));
 
+       /* HELLO */
        if (!CLIENT_HELLO) {
            processClientHello(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+         /* DONE */
        } else if (strcmp(buffer, DONE_MESSAGE) == 0) {
            processClientDone(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+           /* CLIENT_KEY_PUBLIC # IV # FDR */
        } else if (CLIENT_HELLO && !RECEIVED_RSA_KEY) {
            processRSAKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+           /* DH_KEY_CLIENT # BASE # MODULUS # CLIENT_IV */
+       } else if (CLIENT_HELLO && !RECEIVED_DH_KEY) {
+           processDiffieHellmanKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
        }
 
-       // printf("%s", buffer);
-       // int enviei=sendto(meuSocket,"ACK!",strlen("ACK!"),0,(struct sockaddr*)&cliente,sizeof(struct sockaddr_in));
-       // if (enviei>=0)
-       //    printf("Envio de ACK!\n");
-       // else{
-       //     herror("sendto");
-       //     printf("Envio de ACK falhou!\n");
-       // }
        memset(buffer, 0, sizeof(buffer));
     }
     close(meuSocket);

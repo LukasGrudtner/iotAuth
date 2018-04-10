@@ -5,14 +5,14 @@ class KeyManager
 {
     public:
         KeyManager();
-        int getKey();
-        int getKey(int base);
+        int getDiffieHellmanKey();
+        int getDiffieHellmanKey(int base);
         int getServerPublicKey();
         int getServerPrivateKey();
         int getClientPublicKey();
         void setClientPublicKey(int _clientPublicKey);
-        void setSimpleKey(int simpleKey);
-        int getSimpleKey();
+        void setSessionKey(int _sessionKey);
+        int getSessionKey();
         void setBase(int base);
         void setModulus(int modulus);
 
@@ -26,7 +26,7 @@ class KeyManager
         int base = 0;
         int modulus = 0;
 
-        int simpleKey;
+        int sessionKey;
         int serverPublicKey = 8736;
         int serverPrivateKey = 3782;
 

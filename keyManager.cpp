@@ -5,13 +5,13 @@ KeyManager::KeyManager()
     fdr = new FDR();
 }
 
-int KeyManager::getKey()
+int KeyManager::getDiffieHellmanKey()
 {
     int r = pow(base, exponent);
     return r % modulus;
 }
 
-int KeyManager::getKey(int base)
+int KeyManager::getDiffieHellmanKey(int base)
 {
     int r = pow(base, exponent);
     return r % modulus;
@@ -37,14 +37,14 @@ void KeyManager::setClientPublicKey(int _clientPublicKey)
     clientPublicKey = _clientPublicKey;
 }
 
-void KeyManager::setSimpleKey(int _simpleKey)
+void KeyManager::setSessionKey(int _sessionKey)
 {
-    simpleKey = _simpleKey;
+    sessionKey = _sessionKey;
 }
 
-int KeyManager::getSimpleKey()
+int KeyManager::getSessionKey()
 {
-    return simpleKey;
+    return sessionKey;
 }
 
 void KeyManager::setBase(int _base)
