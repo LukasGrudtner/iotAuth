@@ -12,6 +12,7 @@
 #include "keyManager.h"
 #include "settings.h"
 #include "stringHandler.h"
+#include "fdr.h"
 
 KeyManager KeyManager;
 StringHandler StringHandler;
@@ -79,6 +80,12 @@ int main(int argc, char *argv[]){
     std::cout << "Client Modulus: " << StringHandler.getClientModulus(buf) << std::endl;
     std::cout << "DH IV: " << StringHandler.getDHIvClient(buf) << std::endl;
     /* Testes STRING HANDLER */
+
+    /* Testes FDR */
+    FDR* fdr = new FDR('+', 5);
+    std::cout << "FDR operator = " << fdr->getOperator() << std::endl;
+    std::cout << "FDR operand = " << fdr->getOperand() << std::endl;
+    /* Testes FDR */
 
     struct sockaddr_in cliente, servidor;
     int meuSocket,enviei=0;
