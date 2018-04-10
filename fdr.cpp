@@ -1,5 +1,7 @@
 #include "fdr.h"
 
+FDR::FDR(){}
+
 FDR::FDR(char op, int operand)
 {
     _operator = op;

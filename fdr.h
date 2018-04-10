@@ -6,6 +6,7 @@
 class FDR
 {
     public:
+        FDR();
         FDR(char op, int operand);
         char getOperator();
         int getOperand();

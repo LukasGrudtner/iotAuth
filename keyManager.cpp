@@ -2,7 +2,7 @@
 
 KeyManager::KeyManager()
 {
-
+    fdr = new FDR();
 }
 
 int KeyManager::getKey()
@@ -62,14 +62,14 @@ int KeyManager::getIV()
     return iv;
 }
 
-FDR* KeyManager::getFDR()
-{
-    return fdr;
-}
-
 void KeyManager::setIV(int _iv)
 {
     iv = _iv;
+}
+
+FDR* KeyManager::getFDR()
+{
+    return fdr;
 }
 
 void KeyManager::setFDR(FDR* _fdr)

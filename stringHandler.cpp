@@ -74,7 +74,7 @@ std::string StringHandler::getData(char buffer[], int position)
     return data;
 }
 
-FDR StringHandler::getRSAClientFdr(char buffer[])
+FDR* StringHandler::getRSAClientFdr(char buffer[])
 {
     char op;
     int operand;
@@ -90,6 +90,7 @@ FDR StringHandler::getRSAClientFdr(char buffer[])
     }
 
     std::string data (buffer_aux);
+    FDR* f = new FDR(op, std::stoi(data));
 
-    return *(new FDR(op, std::stoi(data)));
+    return (f);
 }

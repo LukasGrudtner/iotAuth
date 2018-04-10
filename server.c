@@ -21,6 +21,7 @@ bool CLIENT_DONE = false;
 bool RECEIVED_RSA_KEY = false;
 bool RECEIVED_DH_KEY = false;
 KeyManager* keyManager;
+FDR* fdr;
 
 void processClientHello(char buffer[], int socket, struct sockaddr* client, int size)
 {
@@ -39,7 +40,7 @@ void processClientHello(char buffer[], int socket, struct sockaddr* client, int 
         }
     }
 
-    printf("***********************************\n");
+    printf("***********************************\n\n");
 }
 
 void processClientDone(char buffer[], int socket, struct sockaddr* client, int size)
@@ -64,26 +65,63 @@ void processClientDone(char buffer[], int socket, struct sockaddr* client, int s
     printf("***********************************\n");
 }
 
-void processRSAKeyExchange(char buffer[])
+int handleIV(int _iv, FDR* _fdr)
 {
-    printf("******RSA KEY CLIENT RECEIVED******");
-    char buf2[] = "029#029#+123";
-    // FDR fdr = StringHandler.getRSAClientFdr(buffer);
-    std::cout << StringHandler.getRSAClientFdr(buffer).getOperator() << std::endl;
+    int result = 0;
+    if (_fdr->getOperator() == '+')
+        result = _iv+_fdr->getOperand();
 
-    // keyManager->setClientPublicKey(StringHandler.getClientPublicKey(buffer));
-    // keyManager->setIV(StringHandler.getRSAExchangeIv(buffer));
-    // keyManager->setFDR(&fdr);
+    return result;
+}
 
-
+void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, int size)
+{
+    /* Recebe chave pública do cliente e o IV */
+    printf("******RSA KEY CLIENT RECEIVED******\n");
+    keyManager->setClientPublicKey(StringHandler.getClientPublicKey(buffer));
+    keyManager->setFDR(StringHandler.getRSAClientFdr(buffer));
+    keyManager->setIV(StringHandler.getRSAExchangeIv(buffer));
 
     std::cout << "Client RSA Public Key: " << keyManager->getClientPublicKey() << std::endl;
     std::cout << "IV: " << keyManager->getIV() << std::endl;
-    // std::cout << "FDR: IV (" << keyManager->getIV() << ") " << keyManager->getFDR()->getOperator()
-    //           << " " << keyManager->getFDR()->getOperand() << std::endl;
+    std::cout << "FDR: IV (" << keyManager->getIV() << ") " << keyManager->getFDR()->getOperator()
+              << " " << keyManager->getFDR()->getOperand() << std::endl;
+
+    RECEIVED_RSA_KEY = true;
+    printf("***********************************\n\n");
+
+    /* Envia a chave pública do server e o IV */
+    printf("*******SEND RSA SERVER KEY*********\n");
+    std::string sendString;
+    std::string spacer (SPACER_S);
+    sendString = std::to_string(keyManager->getServerPublicKey()) + spacer +
+                 std::to_string(handleIV(keyManager->getIV(), keyManager->getFDR()));
+    char sendBuffer[sendString.length()];
+    strcpy(sendBuffer, sendString.c_str());
+
+    std::cout << "Sended Message: " << sendBuffer << std::endl;
+
+    int sended = sendto(socket, sendBuffer, sendString.length(), 0, client, size);
+
+    if (sended >= 0) {
+       printf("RSA KEY Client and Server Successful!\n");
+    } else {
+        herror("sendto");
+        printf("RSA KEY Client and Server failed!\n");
+    }
+
+    std::cout << "Server RSA Public Key: " << keyManager->getServerPublicKey() << std::endl;
+    std::cout << "Handled IV: " << handleIV(keyManager->getIV(), keyManager->getFDR()) << std::endl;
+    std::cout << "***********************************\n" << std::endl;
+
+
 }
 
+
+
 int main(int argc, char *argv[]){
+
+    keyManager = new KeyManager();
 
     /* Testes STRING HANDLER */
     // char buf[] = "123#456#789#101112";
@@ -95,8 +133,14 @@ int main(int argc, char *argv[]){
 
 
     /* Testes FDR */
-    char buf2[] = "029#029#+123";
-    processRSAKeyExchange(buf2);
+    // char buf2[] = "029#029#+123";
+    // char a = StringHandler.getRSAClientFdr(buf2)->getOperator();
+    // int b = StringHandler.getRSAClientFdr(buf2)->getOperand();
+    // fdr = StringHandler.getRSAClientFdr(buf2);
+    // std::cout << "A: " << fdr->getOperand() << std::endl;
+    // fdr = StringHandler.getRSAClientFdr(buf2);
+    // keyManager->setClientPublicKey(123);
+    // processRSAKeyExchange(buf2);
     // FDR* fdr = new FDR('+', 5);
     // // std::cout << "FDR operator = " << fdr->getOperator() << std::endl;
     // // std::cout << "FDR operand = " << fdr->getOperand() << std::endl;
@@ -104,7 +148,7 @@ int main(int argc, char *argv[]){
     // std::cout << "FDR operand = " << StringHandler.getRSAClientFdr(buf2).getOperand() << std::endl;
     /* Testes FDR */
 
-    keyManager = new KeyManager();
+
 
     struct sockaddr_in cliente, servidor;
     int meuSocket,enviei=0;
@@ -129,8 +173,10 @@ int main(int argc, char *argv[]){
 
        if (!CLIENT_HELLO) {
            processClientHello(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
-       } else {
+       } else if (strcmp(buffer, DONE_MESSAGE) == 0) {
            processClientDone(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+       } else if (CLIENT_HELLO && !RECEIVED_RSA_KEY) {
+           processRSAKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
        }
 
        // printf("%s", buffer);
