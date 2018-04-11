@@ -12,6 +12,9 @@
 #include "keyManager.h"
 #include "settings.h"
 #include "stringHandler.h"
+#include "iotAuth.h"
+
+using namespace std;
 
 StringHandler StringHandler;
 
@@ -22,6 +25,7 @@ bool RECEIVED_RSA_KEY = false;
 bool RECEIVED_DH_KEY = false;
 KeyManager* keyManager;
 FDR* fdr;
+iotAuth iotAuth;
 
 void processClientHello(char buffer[], int socket, struct sockaddr* client, int size)
 {
@@ -162,6 +166,24 @@ void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr*
     std::cout << "***********************************\n" << std::endl;
 }
 
+std::string byteToHex(char data[], int len)
+{
+    std::stringstream ss;
+    ss<<std::hex;
+    for(int i = 0;i<len;++i)
+        ss<<(int)data[i];
+    return ss.str();
+}
+
+void CharToByte(char* chars, byte* bytes, unsigned int count){
+    for(unsigned int i = 0; i < count; i++)
+        bytes[i] = (byte)chars[i];
+}
+
+void ByteToChar(byte* bytes, char* chars, unsigned int count){
+    for(unsigned int i = 0; i < count; i++)
+         chars[i] = (char)bytes[i];
+}
 
 int main(int argc, char *argv[]){
 
@@ -195,7 +217,16 @@ int main(int argc, char *argv[]){
     // char buf3[] = "20#40#60#80";
     // processDiffieHellmanKeyExchange(buf3);
 
+    byte *key = (unsigned char*)"1234567891234567";
+    byte plain[] = "Segurança é muito importante para IoT!";
+    byte cipher[64];
+    byte plain2[64];
+    unsigned long long int iv = 11111111;
 
+    iotAuth.encryptAES(256, 64, key, plain, iv, cipher);
+    cout << "Cifrado: " << cipher << endl;
+    iotAuth.decryptAES(256, 64, key, plain, iv, cipher);
+    cout << "Decifrado: " << plain2 << endl;
 
     struct sockaddr_in cliente, servidor;
     int meuSocket,enviei=0;
@@ -230,6 +261,17 @@ int main(int argc, char *argv[]){
            /* DH_KEY_CLIENT # BASE # MODULUS # CLIENT_IV */
        } else if (CLIENT_HELLO && !RECEIVED_DH_KEY) {
            processDiffieHellmanKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+       } else {
+           std::cout << "Recebido: " << buffer << std::endl;
+           byte *key21 = (unsigned char*)"1234567891234567";
+            byte plain[64];
+            byte cipher[64];
+            CharToByte(buffer, cipher, 64);
+            unsigned long long int my_iv = 11111111;
+            iotAuth.decryptAES(256, 41, key21, plain, my_iv, cipher);
+            char plain2[64];
+            ByteToChar(plain, plain2, 64);
+            std::cout << "Decifrado: " << plain2 << std::endl;
        }
 
        memset(buffer, 0, sizeof(buffer));

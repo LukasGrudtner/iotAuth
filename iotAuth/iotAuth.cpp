@@ -28,17 +28,3 @@ void iotAuth::decryptAES(int bits, int cipher_size, byte *key, byte plain[], uns
     }
     aes.do_aes_decrypt(cipher, total, plain, key, bits, iv);
 }
-
-void iotAuth::teste()
-{
-    byte *key = (unsigned char*)"1234567891234567";
-    byte plain[] = "Segurança é muito importante para IoT!";
-    byte cipher[64];
-    byte plain2[64];
-    unsigned long long int iv = 11111111;
-
-    encryptAES(256, 64, key, plain, iv, cipher);
-    std::cout << "Cifrado: " << cipher << std::endl;
-    decryptAES(256, 64, key, plain, iv, cipher);
-    std::cout << "Decifrado: " << plain2 << std::endl;
-}

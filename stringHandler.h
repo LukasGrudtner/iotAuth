@@ -1,6 +1,7 @@
 #include <string>
 #include <string.h>
 #include <iostream>
+#include <sstream>
 #include "settings.h"
 #include "fdr.h"
 
@@ -15,6 +16,7 @@ class StringHandler
         int getClientPublicKey(char buffer[]);
         int getRSAExchangeIv(char buffer[]);
         FDR* getRSAClientFdr(char buffer[]);
+        // std::string byteToHex(char data[], int len);
     private:
         std::string getData(char buffer[], int position);
 };

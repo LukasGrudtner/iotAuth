@@ -1,18 +1,20 @@
-  #include <SPI.h>         // needed for Arduino versions later than 0018
+#include <SPI.h>         // needed for Arduino versions later than 0018
 #include <Ethernet.h>
 #include <EthernetUdp.h>         // UDP library from: bjoern@cs.stanford.edu 12/30/2008
 #include <math.h>
 #include <string.h>
+#include "AES.h"
 #include "./printf.h"
+#include "iotAuth.h"
 
 #define SEPARATOR "#"
 #define SEPARATOR_CHAR '#'
 
 #define HELLO_ACK '#'
-#define HELLO_MESSAGE "hello"
+#define HELLO_MESSAGE "HELLO"
 
 #define DONE_ACK '!'
-#define DONE_MESSAGE "done"
+#define DONE_MESSAGE "DONE"
 
 #define FDR "+1"
 
@@ -24,14 +26,13 @@
 #define BASE 23
 #define MODULUS 86
 
-#include "iotAuth.h"
 iotAuth iotAuth;
 
 // Enter a MAC address and IP address for your controller below.
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 // The IP address will be dependent on your local network:
 IPAddress ip(150, 162, 63, 156);
-IPAddress pc(150, 162, 63, 203);
+IPAddress pc(150, 162, 63, 202);
 
 int localPort = 8888;      // local port to listen on
 
@@ -69,7 +70,7 @@ void setup() {
   Serial.println("********INICIO TROCA DE CHAVES********\n");
 }
 
-void sendRSAKey() {
+void sendsRSAKey() {
   Serial.println("************SEND RSA CLIENT***********");  
   char sendData[32];
   char iv[8];
@@ -86,7 +87,6 @@ void sendRSAKey() {
   /* Realiza envio da chave. */
   Udp.beginPacket(pc, localPort);
   Udp.write(sendData);
-  Serial.println("ENVIANDO DADOS: RSA KEY");
   Udp.endPacket();
 
   Serial.print("RSA Public Key: ");
@@ -98,7 +98,7 @@ void sendRSAKey() {
   delay(3000);
 }
 
-void receiveRSAKey() {
+void receivesRSAKey() {
 	
   int packetSize = Udp.parsePacket();
 
@@ -140,7 +140,7 @@ void receiveRSAKey() {
       Serial.println("O iv recebido está incorreto.");
       done();
       sendClientDone();
-      receiveServerDone();
+      receivesServerDone();
     } 
     // clear the char arrays for the next receive packet and send
     memset(ReplyBuffer, 0, sizeof(ReplyBuffer));
@@ -150,7 +150,7 @@ void receiveRSAKey() {
   }
 }
 
-void sendDiffieHellmanKey() {
+void sendsDiffieHellmanKey() {
   /* Envio da primeira chave. */
   Serial.println("************SEND DH CLIENT************");  
   int aux = (int) pow(BASE, EXPONENT);
@@ -180,7 +180,6 @@ void sendDiffieHellmanKey() {
   /* Realiza envio da chave. */
   Udp.beginPacket(pc, localPort);
   Udp.write(sendData);
-  Serial.println("ENVIANDO DADOS: DH KEY");
   Udp.endPacket();
 
   Serial.print("Diffie-Hellman Key: ");
@@ -196,7 +195,7 @@ void sendDiffieHellmanKey() {
   delay(3000);
 }
 
-void receiveDiffieHellmanKey() {
+void receivesDiffieHellmanKey() {
   int packetSize = Udp.parsePacket();
   /* Recebeu chave. */
   if (packetSize) {
@@ -246,7 +245,7 @@ void receiveDiffieHellmanKey() {
       Serial.println("O iv recebido está incorreto.");
       done();
       sendClientDone();
-      receiveServerDone();
+      receivesServerDone();
     }
     // clear the char arrays for the next receive packet and send
     memset(ReplyBuffer, 0, sizeof(ReplyBuffer));
@@ -269,12 +268,11 @@ void sendClientHello(){
     Serial.println("Hello Client: Successful");
     Udp.beginPacket(pc, localPort);
     Udp.write(message);
-    Serial.println("ENVIANDO DADOS: HELLO CLIENT");
     Udp.endPacket();
     Serial.println("**************************************\n");
 }
 
-void receiveServerHello(){
+void receivesServerHello(){
     
     int packetSize = Udp.parsePacket();
 
@@ -308,12 +306,11 @@ void sendClientDone() {
   Serial.println("Done Client: Successful");
   Udp.beginPacket(pc, localPort);
   Udp.write(message);
-  Serial.println("ENVIANDO DADOS: CLIENT DONE");
   Udp.endPacket();
   Serial.println("**************************************\n");
 }
 
-void receiveServerDone() {
+void receivesServerDone() {
   int packetSize = Udp.parsePacket();
 
   if (packetSize) {
@@ -336,23 +333,23 @@ void loop() {
     sendClientHello();
     Serial.println("--------Esperando Hello Server--------\n");
     while(clientHello!=true){
-      receiveServerHello();
+      receivesServerHello();
     }
   }
 
   /* Realiza a troca de chaves RSA. */
   if (clientHello && !receivedRSAKey) {
-    sendRSAKey();
+    sendsRSAKey();
     while(!receivedRSAKey && !clientDone){
-      receiveRSAKey();
+      receivesRSAKey();
     }
   }
 
   /* Realiza a troca de chaves Diffie-Hellman sem criptografia. */
   if (receivedRSAKey && !receivedDiffieHellmanKey) {
-    sendDiffieHellmanKey();
+    sendsDiffieHellmanKey();
     while(!receivedDiffieHellmanKey && !clientDone){
-      receiveDiffieHellmanKey();
+      receivesDiffieHellmanKey();
     }
   }
   
@@ -365,18 +362,33 @@ void loop() {
       key[j] = simpleKey;
       iv[j] = j+1;
     }
+    
     const uint16_t data_len = 16;
     
-    byte *key21 = (unsigned char*)"1234567891234567";
-    byte plain1[] = "Segurança é muito importante para IoT!";
-    byte cipher[64];
-    unsigned long long int my_iv = iv;
-  
-    /* Encripta e envia os dados para o server */
-    iotAuth.encryptAES(256, 64, key21, plain1, my_iv, cipher);
+    char *key21 = (unsigned char*)"1234567891234567";
+    char plain1[] = "Segurança é muito importante para IoT!";
+//    unsigned long long int my_iv = iv;
+    unsigned long long int my_iv = 11111111;
+    char cipher[64];
+    memset(cipher, 0, sizeof(cipher));
+    
+        /* Encripta e envia os dados para o server */
+    iotAuth.encryptAES(256, 41, key21, plain1, my_iv, cipher);//
     Udp.beginPacket(pc, localPort);
-    Udp.write((char)cipher);
+    Udp.write(cipher);
     Udp.endPacket();
+
+    Serial.print("Enviado: ");
+    Serial.println(cipher);
+//    for (int i = 0; i < 64; i++) {
+//      Serial.print(cipher[i]);
+//    }
+//    Serial.println();
+
+    char plain2[64];
+    iotAuth.decryptAES(256, 41, key21, plain2, my_iv, cipher);
+    Serial.print("Decifrado: ");
+    Serial.println(plain2);
 
     delay(5000);
     Serial.println("**************************************\n");

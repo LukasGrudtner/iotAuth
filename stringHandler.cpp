@@ -94,3 +94,12 @@ FDR* StringHandler::getRSAClientFdr(char buffer[])
 
     return (f);
 }
+
+// std::string byteToHex(char data[], int len)
+// {
+//     std::stringstream ss;
+//     ss<<std::hex;
+//     for(int i = 0;i<len;++i)
+//         ss<<(int)data[i];
+//     return ss.str();
+// }
