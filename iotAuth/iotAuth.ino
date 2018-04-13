@@ -27,6 +27,7 @@
 #define MODULUS 86
 
 iotAuth iotAuth;
+unsigned long tempo_conexao;
 
 // Enter a MAC address and IP address for your controller below.
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
@@ -67,11 +68,11 @@ void setup() {
   Ethernet.begin(mac, ip);
   Udp.begin(localPort);
   Serial.begin(9600);
-  Serial.println("********INICIO TROCA DE CHAVES********\n");
+//  Serial.println("********INICIO TROCA DE CHAVES********\n");/
 }
 
 void sendsRSAKey() {
-  Serial.println("************SEND RSA CLIENT***********");  
+//  Serial.println("************SEND RSA CLIENT***********");  /
   char sendData[32];
   char iv[8];
 
@@ -88,22 +89,22 @@ void sendsRSAKey() {
   Udp.beginPacket(pc, localPort);
   Udp.write(sendData);
   Udp.endPacket();
+//
+//  Serial.print("RSA Public Key: ");
+//  Serial.println(PUBLIC_KEY_CLIENT);
+//  Serial.print("IV: ");
+//  Serial.println(IV);
+//  Serial.println("**************************************\n");
 
-  Serial.print("RSA Public Key: ");
-  Serial.println(PUBLIC_KEY_CLIENT);
-  Serial.print("IV: ");
-  Serial.println(IV);
-  Serial.println("**************************************\n");
-
-  delay(3000);
+//  delay(3000);/
 }
 
-void receivesRSAKey() {
+void receiveRSAKey() {
 	
   int packetSize = Udp.parsePacket();
 
   if (packetSize) {
-    Serial.println("*********RECEIVED RSA SERVER**********");  
+//    Serial.println("*********RECEIVED RSA SERVER**********"); / 
     Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
 
     /* Remove chave pública do Servidor do buffer. */
@@ -128,31 +129,31 @@ void receivesRSAKey() {
     receivedIv = atoi(receivedIvAux);
 
     
-    Serial.print("RSA Public Key: ");
-    Serial.println(publicKeyServer);
-    Serial.print("IV: ");
-    Serial.println(receivedIv);
+//    Serial.print("RSA Public Key: ");
+//    Serial.println(publicKeyServer);
+//    Serial.print("IV: ");
+//    Serial.println(receivedIv);
 
     if ((receivedIv-1) == IV){
       //Serial.println("O iv recebido está correto.");
       receivedRSAKey = true;
     }else{
-      Serial.println("O iv recebido está incorreto.");
+//      Serial.println("O iv recebido está incorreto.");/
       done();
       sendClientDone();
-      receivesServerDone();
+      receiveServerDone();
     } 
     // clear the char arrays for the next receive packet and send
     memset(ReplyBuffer, 0, sizeof(ReplyBuffer));
     memset(packetBuffer, 0, sizeof(packetBuffer));
-    delay(3000);
-    Serial.println("**************************************\n");
+//    delay(3000);
+//    Serial.println("**************************************\n");
   }
 }
 
-void sendsDiffieHellmanKey() {
+void sendDiffieHellmanKey() {
   /* Envio da primeira chave. */
-  Serial.println("************SEND DH CLIENT************");  
+//  Serial.println("************SEND DH CLIENT************");  /
   int aux = (int) pow(BASE, EXPONENT);
   int dhKey = aux % MODULUS;
   char base[10];
@@ -181,25 +182,25 @@ void sendsDiffieHellmanKey() {
   Udp.beginPacket(pc, localPort);
   Udp.write(sendData);
   Udp.endPacket();
+//
+//  Serial.print("Diffie-Hellman Key: ");
+//  Serial.println(dhKey);
+//  Serial.print("g: ");
+//  Serial.println(base);
+//  Serial.print("p: ");
+//  Serial.println(modulus);
+//  Serial.print("IV: ");
+//  Serial.println(iv);
+//  Serial.println("**************************************\n");
 
-  Serial.print("Diffie-Hellman Key: ");
-  Serial.println(dhKey);
-  Serial.print("g: ");
-  Serial.println(base);
-  Serial.print("p: ");
-  Serial.println(modulus);
-  Serial.print("IV: ");
-  Serial.println(iv);
-  Serial.println("**************************************\n");
-
-  delay(3000);
+//  delay(3000);
 }
 
-void receivesDiffieHellmanKey() {
+void receiveDiffieHellmanKey() {
   int packetSize = Udp.parsePacket();
   /* Recebeu chave. */
   if (packetSize) {
-    Serial.println("*********RECEIVED DH SERVER*********");
+//    Serial.println("*********RECEIVED DH SERVER*********");/
     Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
   
     /* Recupera chave do Servidor do buffer. */
@@ -216,9 +217,9 @@ void receivesDiffieHellmanKey() {
     value = atoi(valueBuf);
     int aux1 = (int) pow(value, a);
     simpleKeyServer = aux1 % p;
-    //simpleKeyServer = value;
-    Serial.print("Diffie-Hellman Key: ");
-    Serial.println(value);
+//    //simpleKeyServer = value;
+//    Serial.print("Diffie-Hellman Key: ");
+//    Serial.println(value);
 
     int aux = (int) pow(value, a);
     simpleKey = aux % p;
@@ -235,18 +236,23 @@ void receivesDiffieHellmanKey() {
     iv_recebidoDH = atoi(iv_recebido_stringDH);
 
     
-    Serial.print("IV: ");
-    Serial.println(iv_recebidoDH);
+//    Serial.print("IV: ");
+//    Serial.println(iv_recebidoDH);
     
     if ((iv_recebidoDH-1) == iv){
       //Serial.println("O iv recebido está correto.");
       receivedDiffieHellmanKey = true;
     }else{
-      Serial.println("O iv recebido está incorreto.");
+//      Serial.println("O iv recebido está incorreto.");/
       done();
       sendClientDone();
-      receivesServerDone();
+      receiveServerDone();
     }
+
+    Serial.print("Tempo para estabelecimento da conexão: ");
+    Serial.print(micros()-tempo_conexao);
+    Serial.println();
+    
     // clear the char arrays for the next receive packet and send
     memset(ReplyBuffer, 0, sizeof(ReplyBuffer));
     memset(packetBuffer, 0, sizeof(packetBuffer));
@@ -256,36 +262,37 @@ void receivesDiffieHellmanKey() {
     Serial.println("***SYMMETRICAL SESSION CLIENT-SERVER***");
     Serial.print("Session Key: ");
     Serial.println(simpleKeyServer);
-    delay(3000);
+//    delay(3000);/
     Serial.println("**************************************\n");
   }
 }
 
 void sendClientHello(){
+    tempo_conexao = micros ();
     char message[] = HELLO_MESSAGE;
-
-    Serial.println("************HELLO CLIENT**************");
-    Serial.println("Hello Client: Successful");
+//
+//    Serial.println("************HELLO CLIENT**************");
+//    Serial.println("Hello Client: Successful");
     Udp.beginPacket(pc, localPort);
     Udp.write(message);
     Udp.endPacket();
-    Serial.println("**************************************\n");
+//    Serial.println("**************************************\n");/
 }
 
-void receivesServerHello(){
+void receiveServerHello(){
     
     int packetSize = Udp.parsePacket();
 
     if (packetSize) {
-      Serial.println("************HELLO SERVER**************");
+//      Serial.println("************HELLO SERVER**************");/
       Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
       char recebido[32];
       if (packetBuffer[0] == HELLO_ACK){
-        Serial.println("Server Client: Successful");
+//        Serial.println("Server Client: Successful");/
         clientHello = true;
         clientDone = false;
       }
-      Serial.println("**************************************\n");
+//      Serial.println("**************************************\n");/
     }
         // clear the char arrays for the next receive packet and send
     memset(ReplyBuffer, 0, sizeof(ReplyBuffer));
@@ -302,25 +309,25 @@ void done() {
 
 void sendClientDone() {
   char message[] = DONE_MESSAGE;
-  Serial.println("**************DONE CLIENT****************");
-  Serial.println("Done Client: Successful");
+//  Serial.println("**************DONE CLIENT****************");
+//  Serial.println("Done Client: Successful");
   Udp.beginPacket(pc, localPort);
   Udp.write(message);
   Udp.endPacket();
-  Serial.println("**************************************\n");
+//  Serial.println("**************************************\n");/
 }
 
-void receivesServerDone() {
+void receiveServerDone() {
   int packetSize = Udp.parsePacket();
 
   if (packetSize) {
-    Serial.println("**************DONE SERVER****************");
+//    Serial.println("**************DONE SERVER****************");/
     Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
     if (packetBuffer[0] == DONE_ACK) {
-      Serial.println("Server Client: Successful");
+//      Serial.println("Server Client: Successful");/
       clientDone = true;
     }
-    Serial.println("**************************************\n");
+//    Serial.println("**************************************\n");/
   }
          // clear the char arrays for the next receive packet and send
     memset(ReplyBuffer, 0, sizeof(ReplyBuffer));
@@ -331,9 +338,9 @@ void loop() {
 
   if(!clientHello){
     sendClientHello();
-    Serial.println("--------Esperando Hello Server--------\n");
+//    Serial.println("--------Esperando Hello Server--------\n");/
     while(clientHello!=true){
-      receivesServerHello();
+      receiveServerHello();
     }
   }
 
@@ -341,15 +348,15 @@ void loop() {
   if (clientHello && !receivedRSAKey) {
     sendsRSAKey();
     while(!receivedRSAKey && !clientDone){
-      receivesRSAKey();
+      receiveRSAKey();
     }
   }
 
   /* Realiza a troca de chaves Diffie-Hellman sem criptografia. */
   if (receivedRSAKey && !receivedDiffieHellmanKey) {
-    sendsDiffieHellmanKey();
+    sendDiffieHellmanKey();
     while(!receivedDiffieHellmanKey && !clientDone){
-      receivesDiffieHellmanKey();
+      receiveDiffieHellmanKey();
     }
   }
   

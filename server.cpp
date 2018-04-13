@@ -81,7 +81,7 @@ int handleIV(int _iv, FDR* _fdr)
 void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, int size)
 {
     /* Recebe chave pública do cliente e o IV */
-    printf("******RSA KEY CLIENT RECEIVED******\n");
+    printf("******CLIENT RSA KEY RECEIVED******\n");
     keyManager->setClientPublicKey(StringHandler.getClientPublicKey(buffer));
     keyManager->setFDR(StringHandler.getRSAClientFdr(buffer));
     keyManager->setIV(StringHandler.getRSAExchangeIv(buffer));
@@ -95,7 +95,7 @@ void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, i
     printf("***********************************\n\n");
 
     /* Envia a chave pública do server e o IV */
-    printf("*******SEND RSA SERVER KEY*********\n");
+    printf("*******SEND SERVER RSA KEY*********\n");
     std::string sendString;
     std::string spacer (SPACER_S);
     sendString = std::to_string(keyManager->getServerPublicKey()) + spacer +
@@ -103,19 +103,19 @@ void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, i
     char sendBuffer[sendString.length()];
     strcpy(sendBuffer, sendString.c_str());
 
-    std::cout << "Sended Message: " << sendBuffer << std::endl;
+    std::cout << "Sent Message: " << sendBuffer << std::endl;
 
     int sended = sendto(socket, sendBuffer, strlen(sendBuffer), 0, client, size);
 
     if (sended >= 0) {
-       printf("RSA KEY Client and Server Successful!\n");
+       printf("Client and Server RSA KEY Successful!\n");
     } else {
         herror("sendto");
-        printf("RSA KEY Client and Server failed!\n");
+        printf("Client and Server RSA KEY failed!\n");
     }
 
     std::cout << "Server RSA Public Key: " << keyManager->getServerPublicKey() << std::endl;
-    std::cout << "Handled IV: " << handleIV(keyManager->getIV(), keyManager->getFDR()) << std::endl;
+    std::cout << "IV Obtained: " << handleIV(keyManager->getIV(), keyManager->getFDR()) << std::endl;
     std::cout << "***********************************\n" << std::endl;
 
 
@@ -124,7 +124,7 @@ void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, i
 void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr* client, int size)
 {
     /* Recebe chave Diffie-Hellman e IV. */
-    printf("*******RECEIVED DH CLIENT KEY******\n");
+    printf("*******CLIENT DH KEY RECEIVED******\n");
     keyManager->setBase(StringHandler.getClientBase(buffer));
     keyManager->setModulus(StringHandler.getClientModulus(buffer));
     keyManager->setSessionKey(keyManager->getDiffieHellmanKey(StringHandler.getDHClientKey(buffer)));
@@ -134,12 +134,12 @@ void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr*
     std::cout << "Diffie-Hellman Key: " << StringHandler.getDHClientKey(buffer) << std::endl;
     std::cout << "Base: " << StringHandler.getClientBase(buffer) << std::endl;
     std::cout << "Modulus: " << StringHandler.getClientModulus(buffer) << std::endl;
-    std::cout << "IV Client: " << StringHandler.getDHIvClient(buffer) << std::endl;
+    std::cout << "Client IV: " << StringHandler.getDHIvClient(buffer) << std::endl;
     std::cout << "Session Key: " << keyManager->getSessionKey() << std::endl;
     std::cout << "***********************************\n" << std::endl;
 
     /* Envia chave Diffie-Hellman e IV. */
-    printf("*********SEND DH SERVER KEY********\n");
+    printf("*********SEND SERVER DH KEY********\n");
     std::string sendString;
     std::string spacer (SPACER_S);
     sendString = std::to_string(keyManager->getDiffieHellmanKey()) + spacer +
@@ -147,15 +147,15 @@ void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr*
     char sendBuffer[sendString.length()];
     strcpy(sendBuffer, sendString.c_str());
 
-    std::cout << "Sended Message: " << sendBuffer << std::endl;
+    std::cout << "Sent Message: " << sendBuffer << std::endl;
 
     int sended = sendto(socket, sendBuffer, strlen(sendBuffer), 0, client, size);
 
     if (sended >= 0) {
-       printf("DH KEY Client and Server Successful!\n");
+       printf("Client and Server DH KEY Successful!\n");
     } else {
         herror("sendto");
-        printf("DH KEY Client and Server failed!\n");
+        printf("Client and Server DH KEY failed!\n");
     }
 
     std::cout << "Diffie-Hellman Key: " << keyManager->getSessionKey() << std::endl;
@@ -225,7 +225,7 @@ int main(int argc, char *argv[]){
 
     iotAuth.encryptAES(256, 64, key, plain, iv, cipher);
     cout << "Cifrado: " << cipher << endl;
-    iotAuth.decryptAES(256, 64, key, plain, iv, cipher);
+    iotAuth.decryptAES(256, 64, key, plain2, iv, cipher);
     cout << "Decifrado: " << plain2 << endl;
 
     struct sockaddr_in cliente, servidor;
