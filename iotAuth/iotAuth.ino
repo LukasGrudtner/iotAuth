@@ -32,7 +32,7 @@ unsigned long tempo_conexao;
 // Enter a MAC address and IP address for your controller below.
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 // The IP address will be dependent on your local network:
-IPAddress ip(150, 162, 63, 156);
+IPAddress ip(150, 162, 63, 205);
 IPAddress pc(150, 162, 63, 202);
 
 int localPort = 8888;      // local port to listen on
@@ -334,6 +334,32 @@ void receiveServerDone() {
     memset(packetBuffer, 0, sizeof(packetBuffer));
 }
 
+void CharToByte(char* chars, byte* bytes, unsigned int count){
+    for(unsigned int i = 0; i < count; i++)
+        bytes[i] = (byte)chars[i];
+}
+
+void ByteToChar(byte* bytes, char* chars, unsigned int count){
+    for(unsigned int i = 0; i < count; i++)
+         chars[i] = (char)bytes[i];
+}
+
+int byteArrayToHexString(uint8_t *byte_array, int byte_array_len,
+                         char *hexstr, int hexstr_len)
+{
+    int off = 0;
+    int i;
+
+    for (i = 0; i < byte_array_len; i ++) {
+        off += snprintf(hexstr + off, hexstr_len - off,
+                           "%02x", byte_array[i]);
+    }
+
+    hexstr[off] = '\0';
+
+    return off;
+}
+
 void loop() {
 
   if(!clientHello){
@@ -372,30 +398,43 @@ void loop() {
     
     const uint16_t data_len = 16;
     
-    char *key21 = (unsigned char*)"1234567891234567";
-    char plain1[] = "Segurança é muito importante para IoT!";
+    byte *key21 = (unsigned char*)"1234567891234567";
+    byte plain1[] = "Segurança é muito importante para IoT!";
 //    unsigned long long int my_iv = iv;
     unsigned long long int my_iv = 11111111;
-    char cipher[64];
+    byte cipher[42];
     memset(cipher, 0, sizeof(cipher));
+
+
+    /* Encripta e envia os dados para o server */
+    iotAuth.encryptAES(256, sizeof(cipher), key21, plain1, my_iv, cipher);
+    /* Byte para Hexa */
+    char hex[sizeof(cipher)*2];
+    byteArrayToHexString(cipher, sizeof(cipher), hex, sizeof(hex));
     
-        /* Encripta e envia os dados para o server */
-    iotAuth.encryptAES(256, 41, key21, plain1, my_iv, cipher);//
+    Serial.print("HEXA: ");
+    Serial.println(hex);
+
+//    char cipher_char[sizeof(cipher)];
+//    ByteToChar(cipher, cipher_char, sizeof(cipher));
+
     Udp.beginPacket(pc, localPort);
-    Udp.write(cipher);
+//    Udp.write(cipher, sizeof(cipher)); // envia em bytes/
+    Udp.write(hex); // envia em hexa//
     Udp.endPacket();
 
-    Serial.print("Enviado: ");
-    Serial.println(cipher);
-//    for (int i = 0; i < 64; i++) {
-//      Serial.print(cipher[i]);
-//    }
-//    Serial.println();
-
-    char plain2[64];
-    iotAuth.decryptAES(256, 41, key21, plain2, my_iv, cipher);
+    char plain2[sizeof(cipher)];
+    iotAuth.decryptAES(256, sizeof(cipher), key21, plain2, my_iv, cipher);
     Serial.print("Decifrado: ");
     Serial.println(plain2);
+//
+//    char teste[] = "0123456789012345678901234567890123456789012345678901234567890123";
+//    byte teste_byte[sizeof(teste)];
+//    CharToByte(teste, teste_byte, sizeof(teste));
+//    char teste_hexa[sizeof(teste)*2];
+//    byteArrayToHexString(teste, sizeof(teste), teste_hexa, sizeof(teste_hexa));
+//    Serial.print("Teste: ");
+//    Serial.println(teste_hexa);
 
     delay(5000);
     Serial.println("**************************************\n");

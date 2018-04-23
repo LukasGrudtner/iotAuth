@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sstream>
+#include <vector>
 #include "keyManager.h"
 #include "settings.h"
 #include "stringHandler.h"
@@ -175,7 +176,7 @@ std::string byteToHex(char data[], int len)
     return ss.str();
 }
 
-void CharToByte(char* chars, byte* bytes, unsigned int count){
+void CharToByte(unsigned char* chars, byte* bytes, unsigned int count){
     for(unsigned int i = 0; i < count; i++)
         bytes[i] = (byte)chars[i];
 }
@@ -183,6 +184,64 @@ void CharToByte(char* chars, byte* bytes, unsigned int count){
 void ByteToChar(byte* bytes, char* chars, unsigned int count){
     for(unsigned int i = 0; i < count; i++)
          chars[i] = (char)bytes[i];
+}
+
+unsigned char HexChar (char c)
+{
+    if ('0' <= c && c <= '9') return (unsigned char)(c - '0');
+    if ('A' <= c && c <= 'F') return (unsigned char)(c - 'A' + 10);
+    if ('a' <= c && c <= 'f') return (unsigned char)(c - 'a' + 10);
+    return 0xFF;
+}
+
+std::vector<unsigned char> hex_to_bytes(std::string const& hex)
+{
+    std::vector<unsigned char> bytes;
+    bytes.reserve(hex.size() / 2);
+    for (std::string::size_type i = 0, i_end = hex.size(); i < i_end; i += 2)
+    {
+        unsigned byte;
+        std::istringstream hex_byte(hex.substr(i, 2));
+        hex_byte >> std::hex >> byte;
+        bytes.push_back(static_cast<unsigned char>(byte));
+    }
+    return bytes;
+}
+
+int byteArrayToHexString(uint8_t *byte_array, int byte_array_len,
+                         char *hexstr, int hexstr_len)
+{
+    int off = 0;
+    int i;
+
+    for (i = 0; i < byte_array_len; i ++) {
+        off += snprintf(hexstr + off, hexstr_len - off,
+                           "%02x", byte_array[i]);
+    }
+
+    hexstr[off] = '\0';
+
+    return off;
+}
+
+int char2int(char input)
+{
+  if(input >= '0' && input <= '9')
+    return input - '0';
+  if(input >= 'A' && input <= 'F')
+    return input - 'A' + 10;
+  if(input >= 'a' && input <= 'f')
+    return input - 'a' + 10;
+  throw std::invalid_argument("Invalid input string");
+}
+
+void hex2bin(const char* src, char* target)
+{
+  while(*src && src[1])
+  {
+    *(target++) = char2int(*src)*16 + char2int(src[1]);
+    src += 2;
+  }
 }
 
 int main(int argc, char *argv[]){
@@ -217,16 +276,34 @@ int main(int argc, char *argv[]){
     // char buf3[] = "20#40#60#80";
     // processDiffieHellmanKeyExchange(buf3);
 
-    byte *key = (unsigned char*)"1234567891234567";
-    byte plain[] = "Segurança é muito importante para IoT!";
-    byte cipher[64];
-    byte plain2[64];
-    unsigned long long int iv = 11111111;
+    // byte *key = (unsigned char*)"1234567891234567";
+    // byte plain[] = "Segurança é muito importante para IoT!";
+    // byte cipher[64];
+    // byte plain2[64];
+    // unsigned long long int iv = 11111111;
+    //
+    // iotAuth.encryptAES(256, 64, key, plain, iv, cipher);
+    // cout << "Cifrado: " << cipher << endl;
+    // iotAuth.decryptAES(256, 64, key, plain2, iv, cipher);
+    // cout << "Decifrado: " << plain2 << endl;
 
-    iotAuth.encryptAES(256, 64, key, plain, iv, cipher);
-    cout << "Cifrado: " << cipher << endl;
-    iotAuth.decryptAES(256, 64, key, plain2, iv, cipher);
-    cout << "Decifrado: " << plain2 << endl;
+    // int i;
+    // for (i = 0; i < sizeof(plain); i++)
+    // {
+    //     if (i > 0) printf(":");
+    //     printf("%02X", plain[i]);
+    // }
+    // printf("\n");
+    //
+    // char hex[3];
+    // char texto[192];
+    // memset(texto, 0, sizeof(texto));
+    // unsigned char my_byte = plain[0];
+    //
+    // for (int i = 0; i < 64; i++) {
+    //     sprintf(hex,"%2.2x", plain[i]);
+    //     strcat(texto, hex);
+    // }
 
     struct sockaddr_in cliente, servidor;
     int meuSocket,enviei=0;
@@ -246,7 +323,7 @@ int main(int argc, char *argv[]){
     printf("*** Servidor de Mensagens ***\n");
     while(1){
        tam_cliente=sizeof(struct sockaddr_in);
-       recvfrom(meuSocket,buffer,556,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+       recvfrom(meuSocket, buffer, 556, MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
        // printf("Recebi:%s de <endereço:%s> <porta:%d>\n",buffer,inet_ntoa(cliente.sin_addr),ntohs(cliente.sin_port));
 
        /* HELLO */
@@ -262,16 +339,41 @@ int main(int argc, char *argv[]){
        } else if (CLIENT_HELLO && !RECEIVED_DH_KEY) {
            processDiffieHellmanKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
        } else {
-           std::cout << "Recebido: " << buffer << std::endl;
-           byte *key21 = (unsigned char*)"1234567891234567";
-            byte plain[64];
-            byte cipher[64];
-            CharToByte(buffer, cipher, 64);
-            unsigned long long int my_iv = 11111111;
-            iotAuth.decryptAES(256, 41, key21, plain, my_iv, cipher);
-            char plain2[64];
-            ByteToChar(plain, plain2, 64);
-            std::cout << "Decifrado: " << plain2 << std::endl;
+           // char received_hexa[sizeof(buffer)*2];
+           // byte received_byte[64];
+           // CharToByte((unsigned char*)buffer, received_byte, sizeof(buffer));
+           // byteArrayToHexString(received_byte, sizeof(received_byte), received_hexa, sizeof(received_hexa));
+           std::cout << "Recebido em Hexa: " << buffer << std::endl;
+
+           string received_hexa (buffer);
+           vector<unsigned char> bytes_vector = hex_to_bytes(received_hexa);
+           byte received_byte[42];
+           std::copy(bytes_vector.begin(), bytes_vector.end(), received_byte);
+
+
+           byte *key = (unsigned char*)"1234567891234567";
+           byte plain[42];
+           byte plain2[] = "Teste";
+           byte cipher2[42];
+           byte plain3[42];
+           unsigned long long int iv = 11111111;
+
+           iotAuth.encryptAES(256, 42, key, plain2, iv, cipher2);
+           iotAuth.decryptAES(256, 42, key, plain3, iv, cipher2);
+           cout << "Teste decrifrado: " << plain2 << endl;
+
+           iotAuth.decryptAES(256, 42, key, plain, iv, received_byte);
+           cout << "Decifrado: " << plain << endl;
+
+           char byteParaHex[128];
+           byteArrayToHexString(received_byte, sizeof(received_byte), byteParaHex, sizeof(byteParaHex));
+           cout << "De byte para hex: " << byteParaHex << endl;
+
+           // byteArrayToHexString(teste_byte, sizeof(teste_byte), cipherHexa, sizeof(cipherHexa));
+           // cout << "Cipher Hexa: " << cipherHexa << endl;
+           // // CharToByte(buffer, cipher, sizeof(cipher));
+           // iotAuth.decryptAES(256, 41, key, plain, iv, (byte*)received_byte);
+           // cout << "Decifrado " << plain << endl;
        }
 
        memset(buffer, 0, sizeof(buffer));
