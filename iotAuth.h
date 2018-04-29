@@ -1,7 +1,7 @@
 #ifndef IOT_AUTH_H
 #define IOT_AUTH_H
 
-#include "AES.h"
+#include "utils.h"
 #include <iostream>
 
 using namespace std;
@@ -11,13 +11,14 @@ class iotAuth
     protected:
 
     public:
+        void encrypt(byte plain[], int plain_size, char cipherHex[], int cipherHex_size);
+        void decrypt(byte plain[], int plain_size, char cipherHex[], int cipherHex_size);
+    private:
+        Utils utils;
+        AES aes;
 
         void encryptAES(int bits, int cipher_size, byte *key, byte plain[], unsigned long long int iv, byte cipher[]);
         void decryptAES(int bits, int cipher_size, byte *key, byte plain[], unsigned long long int iv, byte cipher[]);
-        void teste();
-    private:
-
-        AES aes;
 };
 
 #endif

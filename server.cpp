@@ -28,6 +28,8 @@ KeyManager* keyManager;
 FDR* fdr;
 iotAuth iotAuth;
 
+
+
 void processClientHello(char buffer[], int socket, struct sockaddr* client, int size)
 {
     printf("\n******HELLO CLIENT AND SERVER******\n");
@@ -244,8 +246,8 @@ void hex2bin(const char* src, char* target)
   }
 }
 
-int main(int argc, char *argv[]){
 
+int main(int argc, char *argv[]){
     keyManager = new KeyManager();
 
     /* Testes STRING HANDLER */
@@ -322,8 +324,17 @@ int main(int argc, char *argv[]){
 
     printf("*** Servidor de Mensagens ***\n");
     while(1){
+
        tam_cliente=sizeof(struct sockaddr_in);
-       recvfrom(meuSocket, buffer, 556, MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
+       recvfrom(meuSocket, buffer, 128, MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
+
+       cout << "Recebido: " << buffer << endl;
+
+       byte plain[64];
+       iotAuth.decrypt(plain, sizeof(plain), buffer, sizeof(buffer));
+       cout << "Decifrado em CHAR (Server): " << plain << endl;
+
+
        // printf("Recebi:%s de <endereço:%s> <porta:%d>\n",buffer,inet_ntoa(cliente.sin_addr),ntohs(cliente.sin_port));
 
        /* HELLO */
@@ -343,31 +354,7 @@ int main(int argc, char *argv[]){
            // byte received_byte[64];
            // CharToByte((unsigned char*)buffer, received_byte, sizeof(buffer));
            // byteArrayToHexString(received_byte, sizeof(received_byte), received_hexa, sizeof(received_hexa));
-           std::cout << "Recebido em Hexa: " << buffer << std::endl;
 
-           string received_hexa (buffer);
-           vector<unsigned char> bytes_vector = hex_to_bytes(received_hexa);
-           byte received_byte[42];
-           std::copy(bytes_vector.begin(), bytes_vector.end(), received_byte);
-
-
-           byte *key = (unsigned char*)"1234567891234567";
-           byte plain[42];
-           byte plain2[] = "Teste";
-           byte cipher2[42];
-           byte plain3[42];
-           unsigned long long int iv = 11111111;
-
-           iotAuth.encryptAES(256, 42, key, plain2, iv, cipher2);
-           iotAuth.decryptAES(256, 42, key, plain3, iv, cipher2);
-           cout << "Teste decrifrado: " << plain2 << endl;
-
-           iotAuth.decryptAES(256, 42, key, plain, iv, received_byte);
-           cout << "Decifrado: " << plain << endl;
-
-           char byteParaHex[128];
-           byteArrayToHexString(received_byte, sizeof(received_byte), byteParaHex, sizeof(byteParaHex));
-           cout << "De byte para hex: " << byteParaHex << endl;
 
            // byteArrayToHexString(teste_byte, sizeof(teste_byte), cipherHexa, sizeof(cipherHexa));
            // cout << "Cipher Hexa: " << cipherHexa << endl;

@@ -29,16 +29,39 @@ void iotAuth::decryptAES(int bits, int cipher_size, byte *key, byte plain[], uns
     aes.do_aes_decrypt(cipher, total, plain, key, bits, iv);
 }
 
-void iotAuth::teste()
+void iotAuth::encrypt(byte plain[], int plain_size, char cipherHex[], int cipherHex_size)
 {
     byte *key = (unsigned char*)"1234567891234567";
-    byte plain[] = "Segurança é muito importante para IoT!";
-    byte cipher[64];
-    byte plain2[64];
     unsigned long long int iv = 11111111;
+    byte cipher[64];
+
+    memset(cipher, 0, sizeof(cipher));
+    memset(cipherHex, 0, cipherHex_size);
 
     encryptAES(256, 64, key, plain, iv, cipher);
-    std::cout << "Cifrado: " << cipher << std::endl;
+    utils.ByteArrayToHexString(cipher, sizeof(cipher), cipherHex, cipherHex_size);
+    cout << "Cifrado em HEXA (iotAuth): " << cipherHex << endl;
+
+    /* Testando método HexStringToByteArray */
+    // byte cipher2[64];
+    // utils.HexStringToByteArray(cipherHex, cipherHex_size, cipher2, sizeof(cipher2));
+    // byte plain2[64];
+    // decryptAES(256, 64, key, plain2, iv, cipher2);
+    // cout << "Decifrado em CHAR (iotAuth): " << plain2 << endl;
+}
+
+void iotAuth::decrypt(byte plain[], int plain_size, char cipherHex[], int cipherHex_size)
+{
+    byte *key = (unsigned char*)"1234567891234567";
+    unsigned long long int iv = 11111111;
+
+    byte cipher[64];
+
+    memset(cipher, 0, sizeof(cipher));
+    memset(plain, 0, plain_size);
+
+    utils.HexStringToByteArray(cipherHex, cipherHex_size, cipher, sizeof(cipher));
+
     decryptAES(256, 64, key, plain, iv, cipher);
-    std::cout << "Decifrado: " << plain2 << std::endl;
+    cout << "Decifrado em CHAR (iotAuth): " << plain << endl;
 }
