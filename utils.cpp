@@ -1,5 +1,8 @@
 #include "utils.h"
 
+/*  ByteArrayToHexString()
+    Converte um array de bytes em um array de chars em hexadecimal.
+*/
 int Utils::ByteArrayToHexString(uint8_t *byte_array, int byte_array_len, char *hexstr, int hexstr_len)
 {
     int off = 0;
@@ -15,6 +18,9 @@ int Utils::ByteArrayToHexString(uint8_t *byte_array, int byte_array_len, char *h
     return off;
 }
 
+/*  HexStringToByteArray()
+    Converte um array de chars em hexadecimal em um array de bytes.
+*/
 void Utils::HexStringToByteArray(char *hexstr, int hexstr_len, uint8_t *byte_array, int byte_array_len)
 {
     string received_hexa (hexstr);
@@ -22,6 +28,10 @@ void Utils::HexStringToByteArray(char *hexstr, int hexstr_len, uint8_t *byte_arr
     std::copy(bytes_vector.begin(), bytes_vector.end(), byte_array);
 }
 
+/*  hex_to_bytes()
+    Função interna utilizada na conversão de um string de hexadecimais para
+    um array de bytes.
+*/
 std::vector<unsigned char> Utils::hex_to_bytes(std::string const& hex)
 {
     std::vector<unsigned char> bytes;
@@ -36,12 +46,18 @@ std::vector<unsigned char> Utils::hex_to_bytes(std::string const& hex)
     return bytes;
 }
 
+/*  CharToByte()
+    Realiza a conversão de chars para bytes.
+*/
 void Utils::CharToByte(unsigned char* chars, byte* bytes, unsigned int count)
 {
     for(unsigned int i = 0; i < count; i++)
         bytes[i] = (byte)chars[i];
 }
 
+/*  ByteToChar()
+    Realiza a conversão de bytes para chars.
+*/
 void Utils::ByteToChar(byte* bytes, char* chars, unsigned int count)
 {
     for(unsigned int i = 0; i < count; i++)

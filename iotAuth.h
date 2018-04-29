@@ -11,9 +11,12 @@ class iotAuth
     protected:
 
     public:
+
         void encrypt(byte plain[], int plain_size, char cipherHex[], int cipherHex_size);
         void decrypt(byte plain[], int plain_size, char cipherHex[], int cipherHex_size);
+
     private:
+        
         Utils utils;
         AES aes;
 

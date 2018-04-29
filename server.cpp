@@ -28,8 +28,6 @@ KeyManager* keyManager;
 FDR* fdr;
 iotAuth iotAuth;
 
-
-
 void processClientHello(char buffer[], int socket, struct sockaddr* client, int size)
 {
     printf("\n******HELLO CLIENT AND SERVER******\n");
@@ -169,143 +167,8 @@ void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr*
     std::cout << "***********************************\n" << std::endl;
 }
 
-std::string byteToHex(char data[], int len)
-{
-    std::stringstream ss;
-    ss<<std::hex;
-    for(int i = 0;i<len;++i)
-        ss<<(int)data[i];
-    return ss.str();
-}
-
-void CharToByte(unsigned char* chars, byte* bytes, unsigned int count){
-    for(unsigned int i = 0; i < count; i++)
-        bytes[i] = (byte)chars[i];
-}
-
-void ByteToChar(byte* bytes, char* chars, unsigned int count){
-    for(unsigned int i = 0; i < count; i++)
-         chars[i] = (char)bytes[i];
-}
-
-unsigned char HexChar (char c)
-{
-    if ('0' <= c && c <= '9') return (unsigned char)(c - '0');
-    if ('A' <= c && c <= 'F') return (unsigned char)(c - 'A' + 10);
-    if ('a' <= c && c <= 'f') return (unsigned char)(c - 'a' + 10);
-    return 0xFF;
-}
-
-std::vector<unsigned char> hex_to_bytes(std::string const& hex)
-{
-    std::vector<unsigned char> bytes;
-    bytes.reserve(hex.size() / 2);
-    for (std::string::size_type i = 0, i_end = hex.size(); i < i_end; i += 2)
-    {
-        unsigned byte;
-        std::istringstream hex_byte(hex.substr(i, 2));
-        hex_byte >> std::hex >> byte;
-        bytes.push_back(static_cast<unsigned char>(byte));
-    }
-    return bytes;
-}
-
-int byteArrayToHexString(uint8_t *byte_array, int byte_array_len,
-                         char *hexstr, int hexstr_len)
-{
-    int off = 0;
-    int i;
-
-    for (i = 0; i < byte_array_len; i ++) {
-        off += snprintf(hexstr + off, hexstr_len - off,
-                           "%02x", byte_array[i]);
-    }
-
-    hexstr[off] = '\0';
-
-    return off;
-}
-
-int char2int(char input)
-{
-  if(input >= '0' && input <= '9')
-    return input - '0';
-  if(input >= 'A' && input <= 'F')
-    return input - 'A' + 10;
-  if(input >= 'a' && input <= 'f')
-    return input - 'a' + 10;
-  throw std::invalid_argument("Invalid input string");
-}
-
-void hex2bin(const char* src, char* target)
-{
-  while(*src && src[1])
-  {
-    *(target++) = char2int(*src)*16 + char2int(src[1]);
-    src += 2;
-  }
-}
-
-
 int main(int argc, char *argv[]){
     keyManager = new KeyManager();
-
-    /* Testes STRING HANDLER */
-    // char buf[] = "123#456#789#101112";
-    // std::cout << "DH Client Key: " << StringHandler.getDHClientKey(buf) << std::endl;
-    // std::cout << "Client Base: " << StringHandler.getClientBase(buf) << std::endl;
-    // std::cout << "Client Modulus: " << StringHandler.getClientModulus(buf) << std::endl;
-    // std::cout << "DH IV: " << StringHandler.getDHIvClient(buf) << std::endl;
-    /* Testes STRING HANDLER */
-
-
-    /* Testes FDR */
-    // char buf2[] = "029#029#+123";
-    // char a = StringHandler.getRSAClientFdr(buf2)->getOperator();
-    // int b = StringHandler.getRSAClientFdr(buf2)->getOperand();
-    // fdr = StringHandler.getRSAClientFdr(buf2);
-    // std::cout << "A: " << fdr->getOperand() << std::endl;
-    // fdr = StringHandler.getRSAClientFdr(buf2);
-    // keyManager->setClientPublicKey(123);
-    // processRSAKeyExchange(buf2);
-    // FDR* fdr = new FDR('+', 5);
-    // // std::cout << "FDR operator = " << fdr->getOperator() << std::endl;
-    // // std::cout << "FDR operand = " << fdr->getOperand() << std::endl;
-    // std::cout << "FDR operator = " << StringHandler.getRSAClientFdr(buf2).getOperator() << std::endl;
-    // std::cout << "FDR operand = " << StringHandler.getRSAClientFdr(buf2).getOperand() << std::endl;
-    /* Testes FDR */
-
-    // char buf3[] = "20#40#60#80";
-    // processDiffieHellmanKeyExchange(buf3);
-
-    // byte *key = (unsigned char*)"1234567891234567";
-    // byte plain[] = "Segurança é muito importante para IoT!";
-    // byte cipher[64];
-    // byte plain2[64];
-    // unsigned long long int iv = 11111111;
-    //
-    // iotAuth.encryptAES(256, 64, key, plain, iv, cipher);
-    // cout << "Cifrado: " << cipher << endl;
-    // iotAuth.decryptAES(256, 64, key, plain2, iv, cipher);
-    // cout << "Decifrado: " << plain2 << endl;
-
-    // int i;
-    // for (i = 0; i < sizeof(plain); i++)
-    // {
-    //     if (i > 0) printf(":");
-    //     printf("%02X", plain[i]);
-    // }
-    // printf("\n");
-    //
-    // char hex[3];
-    // char texto[192];
-    // memset(texto, 0, sizeof(texto));
-    // unsigned char my_byte = plain[0];
-    //
-    // for (int i = 0; i < 64; i++) {
-    //     sprintf(hex,"%2.2x", plain[i]);
-    //     strcat(texto, hex);
-    // }
 
     struct sockaddr_in cliente, servidor;
     int meuSocket,enviei=0;
@@ -328,11 +191,11 @@ int main(int argc, char *argv[]){
        tam_cliente=sizeof(struct sockaddr_in);
        recvfrom(meuSocket, buffer, 128, MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
 
-       cout << "Recebido: " << buffer << endl;
-
-       byte plain[64];
-       iotAuth.decrypt(plain, sizeof(plain), buffer, sizeof(buffer));
-       cout << "Decifrado em CHAR (Server): " << plain << endl;
+       // cout << "Recebido: " << buffer << endl;
+       //
+       // byte plain[64];
+       // iotAuth.decrypt(plain, sizeof(plain), buffer, sizeof(buffer));
+       // cout << "Decifrado em CHAR (Server): " << plain << endl;
 
 
        // printf("Recebi:%s de <endereço:%s> <porta:%d>\n",buffer,inet_ntoa(cliente.sin_addr),ntohs(cliente.sin_port));

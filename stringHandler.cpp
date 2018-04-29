@@ -1,41 +1,62 @@
 #include "stringHandler.h"
 
+/*  getDHClientKey()
+    Retorna a chave Diffie-Hellman contida no buffer recebido por parâmetro.
+*/
 int StringHandler::getDHClientKey(char buffer[])
 {
     return std::stoi(getData(buffer, 0));
 }
 
+/*  getClientBase()
+    Retorna o atributo 'base', utilizado no cálculo da chave Diffie-Hellman,
+    e que está contido no buffer recebido por parâmetro.
+*/
 int StringHandler::getClientBase(char buffer[])
 {
     return std::stoi(getData(buffer, 1));
 }
 
+/*  getClientModulus()
+    Retorna o atributo 'módulo', utilizado no cálculo da chave Diffie-Hellman,
+    e que está contido no buffer recebido por parâmetro.
+*/
 int StringHandler::getClientModulus(char buffer[])
 {
     return std::stoi(getData(buffer, 2));
 }
 
+/*  getDHIvClient()
+    Retorna o atributo 'IV', utilizado no cálculo da chave Diffie-Hellman,
+    e que está contida no buffer recebido por parâmetro.
+*/
 int StringHandler::getDHIvClient(char buffer[])
 {
     return std::stoi(getData(buffer, 3));
 }
 
+/*  getClientPublicKey()
+    Retorna a chave pública do cliente contida no buffer recebido por parâmetro.
+*/
 int StringHandler::getClientPublicKey(char buffer[])
 {
     return std::stoi(getData(buffer, 0));
 }
 
+/*  getRSAExchangeIv()
+    Retorna o atributo 'IV' utilizado na troca de chaves RSA, e que está
+    contida no buffer recebido por parâmetro.
+*/
 int StringHandler::getRSAExchangeIv(char buffer[])
 {
     return std::stoi(getData(buffer, 1));
 }
 
-/*********************************************
-TERMINAR O GET FDR RSA CLIENT !!!!!
-**********************************************/
-
-/* Pega todos os caracteres entre o separador (#) da posição indicada por parâmetro
-e o separador da posição + 1. */
+/*  getData()
+    Parâmetros: buffer, position
+    Pega todos os caracteres entre o separador (#) da posição indicada por
+    parâmetro e o separador da posição seguinte.
+*/
 std::string StringHandler::getData(char buffer[], int position)
 {
     char buffer_aux[strlen(buffer)];
@@ -74,6 +95,10 @@ std::string StringHandler::getData(char buffer[], int position)
     return data;
 }
 
+/*  getRSAClientFdr()
+    Recebe um buffer de chars como parâmetro, e extrai dele o objeto FDR,
+    retornado-o.
+*/
 FDR* StringHandler::getRSAClientFdr(char buffer[])
 {
     char op;
@@ -94,12 +119,3 @@ FDR* StringHandler::getRSAClientFdr(char buffer[])
 
     return (f);
 }
-
-// std::string byteToHex(char data[], int len)
-// {
-//     std::stringstream ss;
-//     ss<<std::hex;
-//     for(int i = 0;i<len;++i)
-//         ss<<(int)data[i];
-//     return ss.str();
-// }

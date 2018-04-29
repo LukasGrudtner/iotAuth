@@ -72,20 +72,15 @@ int main(int argc, char *argv[]){
        printf("Escreva uma mensagem:\n");
        fgets(envia,556,stdin);
 
-       byte plain[556];
-       utils.CharToByte((unsigned char*)envia, plain, sizeof(envia));
-       char cipherHex[128];
+       // byte plain[556];
+       // utils.CharToByte((unsigned char*)envia, plain, sizeof(envia));
+       // char cipherHex[128];
+       //
+       // iotAuth.encrypt(plain, sizeof(plain), cipherHex, sizeof(cipherHex));
+       // cout << "Decifrado em HEXA (Client): " << cipherHex << endl;
 
-       iotAuth.encrypt(plain, sizeof(plain), cipherHex, sizeof(cipherHex));
-       cout << "Decifrado em HEXA (Client): " << cipherHex << endl;
-
-       // byte plain2[64];
-       // iotAuth.decrypt(plain2, sizeof(plain2), cipherHex, sizeof(cipherHex));
-       // cout << "Decifrado em CHAR (Client): " << plain2 << endl;
-
-       // iotAuth.decrypt(plain2, sizeof(plain2), cipher, sizeof(cipher));
-
-       sendto(meuSocket,cipherHex,strlen(cipherHex),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+       // sendto(meuSocket,cipherHex,strlen(cipherHex),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+       sendto(meuSocket,envia,strlen(envia),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
        tam_cliente=sizeof(struct sockaddr_in);
        recvfrom(meuSocket,recebe,556,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
        printf("Recebi:%s",recebe);
