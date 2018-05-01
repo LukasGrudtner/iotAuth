@@ -16,7 +16,8 @@ class StringHandler
         int getClientBase(char buffer[]);
         int getClientModulus(char buffer[]);
         int getDHIvClient(char buffer[]);
-        int getClientPublicKey(char buffer[]);
+        PublicRSAKey getClientPublicKey(char buffer[]);
+        int getRSAExchangeAnswerFdr(char buffer[]);
         int getRSAExchangeIv(char buffer[]);
         FDR* getRSAClientFdr(char buffer[]);
         // std::string byteToHex(char data[], int len);

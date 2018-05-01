@@ -38,18 +38,24 @@ int StringHandler::getDHIvClient(char buffer[])
 /*  getClientPublicKey()
     Retorna a chave pública do cliente contida no buffer recebido por parâmetro.
 */
-int StringHandler::getClientPublicKey(char buffer[])
+PublicRSAKey StringHandler::getClientPublicKey(char buffer[])
 {
-    return std::stoi(getData(buffer, 0));
+    PublicRSAKey publicKey = {std::stoi(getData(buffer, 0)), std::stoi(getData(buffer, 1))};
+    return publicKey;
 }
 
 /*  getRSAExchangeIv()
     Retorna o atributo 'IV' utilizado na troca de chaves RSA, e que está
     contida no buffer recebido por parâmetro.
 */
+int StringHandler::getRSAExchangeAnswerFdr(char buffer[])
+{
+    return std::stoi(getData(buffer, 2));
+}
+
 int StringHandler::getRSAExchangeIv(char buffer[])
 {
-    return std::stoi(getData(buffer, 1));
+    return std::stoi(getData(buffer, 3));
 }
 
 /*  getData()
@@ -104,7 +110,7 @@ FDR* StringHandler::getRSAClientFdr(char buffer[])
     char op;
     int operand;
 
-    std::string fdr = getData(buffer, 2);
+    std::string fdr = getData(buffer, 4);
     op = fdr[0];
 
     char buffer_aux[fdr.length()];

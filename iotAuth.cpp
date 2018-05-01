@@ -39,6 +39,8 @@ void iotAuth::decryptAES(int bits, int cipher_size, byte *key, byte plain[], uns
     aes.do_aes_decrypt(cipher, total, plain, key, bits, iv);
 }
 
+
+
 /*  encrypt()
     Função utilizada na comunicação entre cliente e servidor, onde é realizada
     a cifragem do texto plano (plain, em bytes), e o resultado é armazenado
@@ -58,6 +60,42 @@ void iotAuth::encryptHEX(byte plain[], int plain_size, char cipherHex[], int cip
     cout << "Cifrado em HEXA (iotAuth): " << cipherHex << endl;
 }
 
+void iotAuth::encryptDHPackage(DHPackage DHPackageStruct, int package_size, char cipherHex[], int cipherHex_size)
+{
+    byte *key = (unsigned char*)"1234567891234567";
+    unsigned long long int iv = 11111111;
+    byte cipher[64];
+
+    memset(cipher, 0, sizeof(cipher));
+    memset(cipherHex, 0, cipherHex_size);
+
+    byte byteArray[sizeof(DHPackageStruct)];
+    utils.ObjectToBytes(DHPackageStruct, byteArray, sizeof(byteArray));
+
+    encryptAES(256, 64, key, byteArray, iv, cipher);
+    utils.ByteArrayToHexString(cipher, sizeof(cipher), cipherHex, cipherHex_size);
+    cout << "Cifrado em HEXA (iotAuth): " << cipherHex << endl;
+}
+
+void iotAuth::decryptDHPackage(DHPackage DHPackageStruct, int package_size, char cipherHex[], int cipherHex_size)
+{
+    byte *key = (unsigned char*)"1234567891234567";
+    unsigned long long int iv = 11111111;
+
+    byte plain[cipherHex_size/2];
+    byte cipher[64];
+
+    memset(cipher, 0, sizeof(cipher));
+    memset(plain, 0, sizeof(plain));
+
+    utils.HexStringToByteArray(cipherHex, cipherHex_size, cipher, sizeof(cipher));
+
+    decryptAES(256, 64, key, plain, iv, cipher);
+
+    utils.BytesToObject(plain, DHPackageStruct, sizeof(plain));
+    cout << "DH Decifrado: g = " << DHPackageStruct.g << ", p = " << DHPackageStruct.p << ", iv = " << DHPackageStruct.iv << ", Fiv = " << DHPackageStruct.Fiv << endl;
+}
+
 /*  decrypt()
     Função utilizada na comunicação entre cliente e servidor, onde é realizada
     a decifragem do texto cifrado (cipher, em hexadecimal) e o resultado é
@@ -68,7 +106,7 @@ void iotAuth::decryptHEX(byte plain[], int plain_size, char cipherHex[], int cip
     byte *key = (unsigned char*)"1234567891234567";
     unsigned long long int iv = 11111111;
 
-    byte cipher[64];
+    byte cipher[cipherHex_size/2];
 
     memset(cipher, 0, sizeof(cipher));
     memset(plain, 0, plain_size);
@@ -122,5 +160,47 @@ string iotAuth::hash(string message)
 {
     string output = sha512(message);
 
+    return output;
+}
+
+int* iotAuth::encryptRSAPublicKey(char plain[], PublicRSAKey publicKey, int size)
+{
+    int* mensagemC;
+    mensagemC = rsa.codifica(plain, publicKey.d, publicKey.n, size);
+
+    string encrypted = "";
+    for (int i = 0; i < size; i++)
+        encrypted += to_string(mensagemC[i]);
+
+    return mensagemC;
+}
+
+int* iotAuth::encryptRSAPrivateKey(char plain[], PrivateRSAKey privateKey, int size)
+{
+    int* mensagemC;
+    mensagemC = rsa.codifica(plain, privateKey.e, privateKey.n, size);
+
+    string encrypted = "";
+    for (int i = 0; i < size; i++)
+        encrypted += to_string(mensagemC[i]);
+
+    return mensagemC;
+}
+
+string iotAuth::decryptRSAPublicKey(int cipher[], PublicRSAKey publicKey, int size)
+{
+    char* plain;
+    plain = rsa.decodifica(cipher, publicKey.d, publicKey.n, size);
+
+    string output (plain);
+    return output;
+}
+
+string iotAuth::decryptRSAPrivateKey(int cipher[], PrivateRSAKey privateKey, int size)
+{
+    char* plain;
+    plain = rsa.decodifica(cipher, privateKey.e, privateKey.n, size);
+
+    string output (plain);
     return output;
 }

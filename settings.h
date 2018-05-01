@@ -9,6 +9,8 @@
 #define HELLO_ACK "#"
 #define DONE_ACK "!"
 
+#define FDRb "+7"
+
 typedef unsigned char byte;
 
 typedef struct private_rsa_key

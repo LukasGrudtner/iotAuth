@@ -27,6 +27,7 @@ bool RECEIVED_DH_KEY = false;
 KeyManager* keyManager;
 FDR* fdr;
 iotAuth iotAuth;
+Utils utils;
 
 void processClientHello(char buffer[], int socket, struct sockaddr* client, int size)
 {
@@ -79,18 +80,20 @@ int handleIV(int _iv, FDR* _fdr)
     return result;
 }
 
-void processRSAKeyExchange(RSAExchange RSAExchangeStruct, int socket, struct sockaddr* client, int size)
+void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, int size)
 {
-    /* Recebe uma struct RSAExchange por parâmetro. */
-
+    /* Realiza a geração das chaves pública e privada (RSA). */
+    printf("*******GENERATION OF RSA KEYS******\n");
+    keyManager->setRSAKeyPair(iotAuth.generateRSAKeyPair());
+    cout << "PUBLIC SERVER KEY: (" << keyManager->getServerPublicKey().d << ", " << keyManager->getServerPublicKey().n << ")" << endl;
+    cout << "PRIVATE SERVER KEY: (" << keyManager->getServerPrivateKey().e << ", " << keyManager->getServerPrivateKey().n << ")" << endl;
+    printf("***********************************\n\n");
 
     /* Recebe chave pública do cliente e o IV */
     printf("******CLIENT RSA KEY RECEIVED******\n");
-    FDR* fdr = new FDR(RSAExchangeStruct.operatorFdr, RSAExchangeStruct.operandFdr);
-
-    keyManager->setClientPublicKey(RSAExchangeStruct.publicKey);
-    keyManager->setFDR(fdr);
-    keyManager->setIV(RSAExchangeStruct.iv);
+    keyManager->setClientPublicKey(StringHandler.getClientPublicKey(buffer));
+    keyManager->setFDR(StringHandler.getRSAClientFdr(buffer));
+    keyManager->setIV(StringHandler.getRSAExchangeIv(buffer));
 
     std::cout << "Client RSA Public Key: (" << keyManager->getClientPublicKey().d << ", " << keyManager->getClientPublicKey().n << ")" << std::endl;
     std::cout << "IV: " << keyManager->getIV() << std::endl;
@@ -104,8 +107,10 @@ void processRSAKeyExchange(RSAExchange RSAExchangeStruct, int socket, struct soc
     printf("*******SEND SERVER RSA KEY*********\n");
     std::string sendString;
     std::string spacer (SPACER_S);
-    sendString = std::to_string(keyManager->getServerPublicKey()) + spacer +
+    sendString = std::to_string(keyManager->getServerPublicKey().d) + spacer +
+                 std::to_string(keyManager->getServerPublicKey().n) + spacer +
                  std::to_string(handleIV(keyManager->getIV(), keyManager->getFDR()));
+
     char sendBuffer[sendString.length()];
     strcpy(sendBuffer, sendString.c_str());
 
@@ -120,7 +125,8 @@ void processRSAKeyExchange(RSAExchange RSAExchangeStruct, int socket, struct soc
         printf("Client and Server RSA KEY failed!\n");
     }
 
-    std::cout << "Server RSA Public Key: " << keyManager->getServerPublicKey() << std::endl;
+    std::cout << "Server RSA Public Key: (" << keyManager->getServerPublicKey().d
+              << ", " << keyManager->getServerPublicKey().n << ")" << std::endl;
     std::cout << "IV Obtained: " << handleIV(keyManager->getIV(), keyManager->getFDR()) << std::endl;
     std::cout << "***********************************\n" << std::endl;
 
@@ -149,10 +155,55 @@ void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr*
     std::string sendString;
     std::string spacer (SPACER_S);
     sendString = std::to_string(keyManager->getDiffieHellmanKey()) + spacer +
+                 std::to_string(keyManager->getBase()) + spacer +
+                 std::to_string(keyManager->getModulus()) + spacer +
+                 std::to_string(keyManager->getIV()) + spacer +
                  std::to_string(handleIV(ivClient, keyManager->getFDR()));
-    char sendBuffer[sendString.length()];
-    strcpy(sendBuffer, sendString.c_str());
+    // char sendBuffer[sendString.length()];
+    // strcpy(sendBuffer, sendString.c_str());
 
+    /* Geração do HASH */
+    string hash = iotAuth.hash(sendString);
+    cout << "Hash: " << hash << endl;
+
+    /* Codificação da mensagem com a chave privada de B (server) */
+    char enc[sizeof(sendString)];
+    strncpy(enc, sendString.c_str(), sizeof(enc));
+    int* encrypted = iotAuth.encryptRSAPrivateKey(enc, keyManager->getServerPrivateKey(), sizeof(enc));
+
+    string encrypted_string = "";
+    for (int i = 0; i < sizeof(enc); i++)
+        encrypted_string += to_string(encrypted[i]);
+
+    cout << "Encriptado: " << encrypted_string << endl << endl;
+
+    /* Concatenação do bloco */
+    string package = hash + spacer + encrypted_string;
+
+    cout << "Pacote: " << package << endl << endl;
+    cout << "Tamanho Pacote: " << package.length() << endl << endl;
+
+    /* Codificação do bloco com a chave pública de A (client) */
+    char packageChar[package.length()];
+    strncpy(packageChar, package.c_str(), sizeof(packageChar));
+
+    cout << "Tamanho Pacote Char: " << sizeof(packageChar) << endl << endl;
+    int* encryptedPackage = iotAuth.encryptRSAPublicKey(packageChar, keyManager->getServerPublicKey(), sizeof(packageChar));
+
+    string encryptedPackage_string = "";
+    for (int i = 0; i < sizeof(packageChar); i++)
+        encryptedPackage_string += to_string(encryptedPackage[i]);
+
+    cout << "Encrypted Package: " << encryptedPackage_string << endl<< endl;
+
+    string decryptedPackage = iotAuth.decryptRSAPrivateKey(encryptedPackage, keyManager->getServerPrivateKey(), sizeof(packageChar));
+
+    cout << "Decrypted Package: " << decryptedPackage << endl<< endl;
+
+
+
+
+    char sendBuffer[10];
     std::cout << "Sent Message: " << sendBuffer << std::endl;
 
     int sended = sendto(socket, sendBuffer, strlen(sendBuffer), 0, client, size);
@@ -193,42 +244,21 @@ int main(int argc, char *argv[]){
     printf("*** Servidor de Mensagens ***\n");
     while(1){
 
-        /* Recebimento da struct */
-        RSAExchange* RSAExchangeStruct = (RSAExchange*)malloc(sizeof(RSAExchange));
-
        tam_cliente=sizeof(struct sockaddr_in);
 
-       // recvfrom(meuSocket, teste, sizeof(*teste), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
-
-       // cout << "Recebido Struct: " << teste->key_public << " :: " << teste->iv << endl;
-       // cout << "Operador: " << teste->operator_fdr << " :: " << "operando: " << teste->operand_fdr << endl;
-
-       // cout << "Recebido: " << buffer << endl;
-       //
-       // byte plain[64];
-       // iotAuth.decrypt(plain, sizeof(plain), buffer, sizeof(buffer));
-       // cout << "Decifrado em CHAR (Server): " << plain << endl;
-
-
-
-
-
-
-
+       recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
 
        // printf("Recebi:%s de <endereço:%s> <porta:%d>\n",buffer,inet_ntoa(cliente.sin_addr),ntohs(cliente.sin_port));
 
        /* HELLO */
        if (!CLIENT_HELLO) {
-           recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
            processClientHello(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
          /* DONE */
-       // } else if (strcmp(buffer, DONE_MESSAGE) == 0) {
-       //     processClientDone(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
-           /* CLIENT_KEY_PUBLIC # IV # FDR */
+       } else if (strcmp(buffer, DONE_MESSAGE) == 0) {
+           processClientDone(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+           /* CLIENT_PUBLIC_KEY (D) # CLIENT_PUBLIC_KEY (N) # ANSWER FDR # IV # FDR */
        } else if (CLIENT_HELLO && !RECEIVED_RSA_KEY) {
-           recvfrom(meuSocket, RSAExchangeStruct, sizeof(*RSAExchangeStruct), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
-           processRSAKeyExchange(*RSAExchangeStruct, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+           processRSAKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
            /* DH_KEY_CLIENT # BASE # MODULUS # CLIENT_IV */
        } else if (CLIENT_HELLO && !RECEIVED_DH_KEY) {
            processDiffieHellmanKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
