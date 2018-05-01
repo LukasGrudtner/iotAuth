@@ -47,17 +47,17 @@ int KeyManager::getServerPrivateKey()
 /*  getClientPublicKey()
     Retorna a chave pública do cliente armazenada no objeto.
 */
-int KeyManager::getClientPublicKey()
+PublicRSAKey KeyManager::getClientPublicKey()
 {
-    return clientPublicKey;
+    return PublicRSAKeyStruct;
 }
 
 /*  setClientPublicKey()
     Armazena a chave pública do cliente no objeto.
 */
-void KeyManager::setClientPublicKey(int _clientPublicKey)
+void KeyManager::setClientPublicKey(PublicRSAKey _PublicRSAKeyStruct)
 {
-    clientPublicKey = _clientPublicKey;
+    PublicRSAKeyStruct = _PublicRSAKeyStruct;
 }
 
 /*  setSessionKey()

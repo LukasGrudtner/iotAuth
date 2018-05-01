@@ -1,5 +1,9 @@
+#ifndef KEY_MANAGER_H
+#define KEY_MANAGER_H
+
 #include <cmath>
 #include "fdr.h"
+#include "settings.h"
 
 class KeyManager
 {
@@ -9,8 +13,8 @@ class KeyManager
         int getDiffieHellmanKey(int base);
         int getServerPublicKey();
         int getServerPrivateKey();
-        int getClientPublicKey();
-        void setClientPublicKey(int _clientPublicKey);
+        PublicRSAKey getClientPublicKey();
+        void setClientPublicKey(PublicRSAKey PublicRSAKeyStruct);
         void setSessionKey(int _sessionKey);
         int getSessionKey();
         void setBase(int base);
@@ -30,8 +34,10 @@ class KeyManager
         int serverPublicKey = 8736;
         int serverPrivateKey = 3782;
 
-        int clientPublicKey;
+        PublicRSAKey PublicRSAKeyStruct;
 
         int iv;
         FDR* fdr;
 };
+
+#endif

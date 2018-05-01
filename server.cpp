@@ -79,15 +79,20 @@ int handleIV(int _iv, FDR* _fdr)
     return result;
 }
 
-void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, int size)
+void processRSAKeyExchange(RSAExchange RSAExchangeStruct, int socket, struct sockaddr* client, int size)
 {
+    /* Recebe uma struct RSAExchange por parâmetro. */
+
+
     /* Recebe chave pública do cliente e o IV */
     printf("******CLIENT RSA KEY RECEIVED******\n");
-    keyManager->setClientPublicKey(StringHandler.getClientPublicKey(buffer));
-    keyManager->setFDR(StringHandler.getRSAClientFdr(buffer));
-    keyManager->setIV(StringHandler.getRSAExchangeIv(buffer));
+    FDR* fdr = new FDR(RSAExchangeStruct.operatorFdr, RSAExchangeStruct.operandFdr);
 
-    std::cout << "Client RSA Public Key: " << keyManager->getClientPublicKey() << std::endl;
+    keyManager->setClientPublicKey(RSAExchangeStruct.publicKey);
+    keyManager->setFDR(fdr);
+    keyManager->setIV(RSAExchangeStruct.iv);
+
+    std::cout << "Client RSA Public Key: (" << keyManager->getClientPublicKey().d << ", " << keyManager->getClientPublicKey().n << ")" << std::endl;
     std::cout << "IV: " << keyManager->getIV() << std::endl;
     std::cout << "FDR: IV (" << keyManager->getIV() << ") " << keyManager->getFDR()->getOperator()
               << " " << keyManager->getFDR()->getOperand() << std::endl;
@@ -189,13 +194,14 @@ int main(int argc, char *argv[]){
     while(1){
 
         /* Recebimento da struct */
-        DHExchange* teste = (DHExchange*)malloc(sizeof(DHExchange));
+        RSAExchange* RSAExchangeStruct = (RSAExchange*)malloc(sizeof(RSAExchange));
 
        tam_cliente=sizeof(struct sockaddr_in);
-       recvfrom(meuSocket, teste, sizeof(*teste), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
 
-       cout << "Rebecido Struct: " << teste->key_public << " :: " << teste->iv << endl;
-       cout << "Operador: " << teste->operator_fdr << " :: " << "operando: " << teste->operand_fdr << endl;
+       // recvfrom(meuSocket, teste, sizeof(*teste), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
+
+       // cout << "Recebido Struct: " << teste->key_public << " :: " << teste->iv << endl;
+       // cout << "Operador: " << teste->operator_fdr << " :: " << "operando: " << teste->operand_fdr << endl;
 
        // cout << "Recebido: " << buffer << endl;
        //
@@ -214,13 +220,15 @@ int main(int argc, char *argv[]){
 
        /* HELLO */
        if (!CLIENT_HELLO) {
+           recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
            processClientHello(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
          /* DONE */
-       } else if (strcmp(buffer, DONE_MESSAGE) == 0) {
-           processClientDone(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+       // } else if (strcmp(buffer, DONE_MESSAGE) == 0) {
+       //     processClientDone(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
            /* CLIENT_KEY_PUBLIC # IV # FDR */
        } else if (CLIENT_HELLO && !RECEIVED_RSA_KEY) {
-           processRSAKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+           recvfrom(meuSocket, RSAExchangeStruct, sizeof(*RSAExchangeStruct), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
+           processRSAKeyExchange(*RSAExchangeStruct, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
            /* DH_KEY_CLIENT # BASE # MODULUS # CLIENT_IV */
        } else if (CLIENT_HELLO && !RECEIVED_DH_KEY) {
            processDiffieHellmanKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));

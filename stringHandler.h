@@ -1,3 +1,6 @@
+#ifndef STRING_HANDLER_H
+#define STRING_HANDLER_H
+
 #include <string>
 #include <string.h>
 #include <iostream>
@@ -20,3 +23,5 @@ class StringHandler
     private:
         std::string getData(char buffer[], int position);
 };
+
+#endif

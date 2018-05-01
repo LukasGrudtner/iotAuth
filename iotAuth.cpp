@@ -78,3 +78,49 @@ void iotAuth::decryptHEX(byte plain[], int plain_size, char cipherHex[], int cip
     decryptAES(256, 64, key, plain, iv, cipher);
     cout << "Decifrado em CHAR (iotAuth): " << plain << endl;
 }
+
+RSAKeyPair iotAuth::generateRSAKeyPair()
+{
+    srand(time(NULL));
+    long long p, p2, n, phi, e, d;
+
+    p = rsa.geraPrimo(100*rsa.geraNumeroRandom());
+    p2 = rsa.geraPrimo(100*rsa.geraNumeroRandom());
+
+    //Calcula o n
+	n = p * p2;
+
+    //Calcula o quociente de euler
+	phi = (p - 1)*(p2 - 1);
+
+    //Escolhe o e para calcular a chave privada
+	e = rsa.escolheE(phi, p, p2, n);
+
+    //Escolhe o d para calcular a chave pública
+	d = rsa.mdcEstendido(phi, e);
+
+    PublicRSAKey publicRSAKey = {d, n};
+    PrivateRSAKey privateRSAKey = {e, n};
+    RSAKeyPair keys = {publicRSAKey, privateRSAKey};
+
+    return keys;
+}
+
+string iotAuth::hashDHPackage(DHPackage DHPackageStruct)
+{
+    char sessionKeyChar[sizeof(DHPackageStruct.sessionKey)];
+    utils.ByteToChar(DHPackageStruct.sessionKey, sessionKeyChar, sizeof(sessionKeyChar));
+    string sessionKeyString (sessionKeyChar);
+    string struct_concat =  sessionKeyString + to_string(DHPackageStruct.g) +
+                to_string(DHPackageStruct.p) + to_string(DHPackageStruct.iv) +
+                to_string(DHPackageStruct.Fiv);
+
+    return hash(struct_concat);
+}
+
+string iotAuth::hash(string message)
+{
+    string output = sha512(message);
+
+    return output;
+}
