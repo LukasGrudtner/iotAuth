@@ -44,7 +44,7 @@ void iotAuth::decryptAES(int bits, int cipher_size, byte *key, byte plain[], uns
     a cifragem do texto plano (plain, em bytes), e o resultado é armazenado
     em um array de char cipherHex, com o valor em hexadecimal.
 */
-void iotAuth::encrypt(byte plain[], int plain_size, char cipherHex[], int cipherHex_size)
+void iotAuth::encryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size)
 {
     byte *key = (unsigned char*)"1234567891234567";
     unsigned long long int iv = 11111111;
@@ -63,7 +63,7 @@ void iotAuth::encrypt(byte plain[], int plain_size, char cipherHex[], int cipher
     a decifragem do texto cifrado (cipher, em hexadecimal) e o resultado é
     armazenado em um array de bytes, plain.
 */
-void iotAuth::decrypt(byte plain[], int plain_size, char cipherHex[], int cipherHex_size)
+void iotAuth::decryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size)
 {
     byte *key = (unsigned char*)"1234567891234567";
     unsigned long long int iv = 11111111;

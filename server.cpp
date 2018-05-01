@@ -188,14 +188,26 @@ int main(int argc, char *argv[]){
     printf("*** Servidor de Mensagens ***\n");
     while(1){
 
+        /* Recebimento da struct */
+        DHExchange* teste = (DHExchange*)malloc(sizeof(DHExchange));
+
        tam_cliente=sizeof(struct sockaddr_in);
-       recvfrom(meuSocket, buffer, 128, MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
+       recvfrom(meuSocket, teste, sizeof(*teste), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
+
+       cout << "Rebecido Struct: " << teste->key_public << " :: " << teste->iv << endl;
+       cout << "Operador: " << teste->operator_fdr << " :: " << "operando: " << teste->operand_fdr << endl;
 
        // cout << "Recebido: " << buffer << endl;
        //
        // byte plain[64];
        // iotAuth.decrypt(plain, sizeof(plain), buffer, sizeof(buffer));
        // cout << "Decifrado em CHAR (Server): " << plain << endl;
+
+
+
+
+
+
 
 
        // printf("Recebi:%s de <endereço:%s> <porta:%d>\n",buffer,inet_ntoa(cliente.sin_addr),ntohs(cliente.sin_port));
