@@ -179,34 +179,24 @@ void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr*
 
     /* Concatenação do bloco */
     string package = hash + spacer + encrypted_string;
-
     cout << "Pacote: " << package << endl << endl;
-    cout << "Tamanho Pacote: " << package.length() << endl << endl;
 
     /* Codificação do bloco com a chave pública de A (client) */
     char packageChar[package.length()];
     strncpy(packageChar, package.c_str(), sizeof(packageChar));
 
-    cout << "Tamanho Pacote Char: " << sizeof(packageChar) << endl << endl;
-    int* encryptedPackage = iotAuth.encryptRSAPublicKey(packageChar, keyManager->getServerPublicKey(), sizeof(packageChar));
+    int* encryptedPackage = iotAuth.encryptRSAPublicKey(packageChar, keyManager->getClientPublicKey(), sizeof(packageChar));
 
     string encryptedPackage_string = "";
     for (int i = 0; i < sizeof(packageChar); i++)
         encryptedPackage_string += to_string(encryptedPackage[i]);
-
     cout << "Encrypted Package: " << encryptedPackage_string << endl<< endl;
 
-    string decryptedPackage = iotAuth.decryptRSAPrivateKey(encryptedPackage, keyManager->getServerPrivateKey(), sizeof(packageChar));
-
-    cout << "Decrypted Package: " << decryptedPackage << endl<< endl;
-
-
-
-
-    char sendBuffer[10];
+    char sendBuffer[encryptedPackage_string.length()];
+    strncpy(sendBuffer, encryptedPackage_string.c_str(), encryptedPackage_string.length());
     std::cout << "Sent Message: " << sendBuffer << std::endl;
 
-    int sended = sendto(socket, sendBuffer, strlen(sendBuffer), 0, client, size);
+    int sended = sendto(socket, sendBuffer, sizeof(sendBuffer), 0, client, size);
 
     if (sended >= 0) {
        printf("Client and Server DH KEY Successful!\n");

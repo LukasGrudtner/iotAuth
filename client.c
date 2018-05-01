@@ -118,8 +118,11 @@ int main(int argc, char *argv[]){
        // sendto(meuSocket, (DHExchange*)&teste, sizeof(teste),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in)); // Envio de struct
        sendto(meuSocket,envia,strlen(envia),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
        tam_cliente=sizeof(struct sockaddr_in);
-       recvfrom(meuSocket,recebe,556,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-       printf("Recebi:%s",recebe);
+       recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+
+       string recebido (recebe);
+       cout << "Recebi: " << recebido << endl;
+       // printf("Recebi:%s",recebe);
        memset(envia, 0, sizeof(envia));
        memset(recebe, 0, sizeof(recebe));
     }
