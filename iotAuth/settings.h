@@ -3,11 +3,14 @@
 
 #define DEFAULT_PORT 8888
 #define SPACER '#'
+#define SEPARATOR "#"
 #define SPACER_S "#"
 #define HELLO_MESSAGE "HELLO"
 #define DONE_MESSAGE "DONE"
 #define HELLO_ACK "#"
+#define HELLO_ACK_CHAR '#'
 #define DONE_ACK "!"
+#define DONE_ACK_CHAR '!'
 
 #define FDRb "+7"
 

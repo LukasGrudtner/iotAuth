@@ -120,7 +120,7 @@ void iotAuth::decryptHEX(byte plain[], int plain_size, char cipherHex[], int cip
 RSAKeyPair iotAuth::generateRSAKeyPair()
 {
     srand(time(NULL));
-    long long p, p2, n, phi, e, d;
+    long p, p2, n, phi, e, d;
 
     p = rsa.geraPrimo(100*rsa.geraNumeroRandom());
     p2 = rsa.geraPrimo(100*rsa.geraNumeroRandom());

@@ -6,20 +6,13 @@
 #include "AES.h"
 #include "./printf.h"
 #include "iotAuth.h"
+#include "keyManager.h"
+#include "stringHandler.h"
 
 #define SEPARATOR "#"
 #define SEPARATOR_CHAR '#'
 
-#define HELLO_ACK '#'
-#define HELLO_MESSAGE "HELLO"
-
-#define DONE_ACK '!'
-#define DONE_MESSAGE "DONE"
-
 #define FDR "+1"
-
-#define PUBLIC_KEY_CLIENT 9827
-#define PRIVATE_KEY_CLIENT 3786
 #define IV 8
 
 #define EXPONENT 2
@@ -28,6 +21,10 @@
 
 iotAuth iotAuth;
 unsigned long tempo_conexao;
+long long int clientPublicKey;
+long long int clientPrivateKey;
+KeyManager keyManager;
+StringHandler stringHandler;
 
 // Enter a MAC address and IP address for your controller below.
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
@@ -72,15 +69,28 @@ void setup() {
 }
 
 void sendsRSAKey() {
+  keyManager.setRSAKeyPair(iotAuth.generateRSAKeyPair());
+  Serial.print("Chave: ");
+//  char teste[256];
+//  sprintf(teste, "%lld", keyManager.getClientPublicKeyD());
+  Serial.println(keyManager.getClientPublicKeyD());
+  
   Serial.println("************SEND RSA CLIENT***********"); 
-  char sendData[32];
+  char sendData[128];
+//  char cPublicKeyD[20];/
+  char cPublicKeyN[20];
   char iv[8];
+  memset(sendData, 0, 128);
 
-  sprintf(sendData, "%i", PUBLIC_KEY_CLIENT);
+  sprintf(sendData, "%li", keyManager.getClientPublicKeyD());
+  sprintf(cPublicKeyN, "%li", keyManager.getClientPublicKeyN());
   sprintf(iv, "%i", IV);
 
   /* Concatena chave pública, # e iv em rsabuf. */
   strcat(sendData, SEPARATOR);
+  strcat(sendData, cPublicKeyN);
+  strcat(sendData, SEPARATOR);
+  strcat(sendData, "0"); // answerFDR, não utilizado neste passo
   strcat(sendData, iv);
   strcat(sendData, SEPARATOR);
   strcat(sendData, FDR);
@@ -90,8 +100,9 @@ void sendsRSAKey() {
   Udp.write(sendData);
   Udp.endPacket();
 
-  Serial.print("RSA Public Key: ");
-  Serial.println(PUBLIC_KEY_CLIENT);
+  Serial.print("RSA Client Public Key: (");
+  Serial.print(keyManager.getClientPublicKeyD());    Serial.print(", ");
+  Serial.print(keyManager.getClientPublicKeyN());   Serial.println(")");
   Serial.print("IV: ");
   Serial.println(IV);
   Serial.println("**************************************\n");
@@ -105,34 +116,68 @@ void receiveRSAKey() {
 
   if (packetSize) {
     Serial.println("*********RECEIVED RSA SERVER**********"); 
+    memset(packetBuffer, 0, sizeof(packetBuffer));
     Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
 
-    /* Remove chave pública do Servidor do buffer. */
+    Serial.print("RECEBIDO: ");
+    Serial.println(packetBuffer);
+
+    /* Remove chave pública (D) do Servidor do buffer. */
     int i = 0;
-    char publicKeyServerAux[32];
+    char publicKeyServerAuxD[32];
+    memset(publicKeyServerAuxD, 0, sizeof(publicKeyServerAuxD));
     while (packetBuffer[i] != SEPARATOR_CHAR) {
-      publicKeyServerAux[i] = packetBuffer[i];
+      publicKeyServerAuxD[i] = packetBuffer[i];
       i++;
     }
     i++;
-    publicKeyServer = atoi(publicKeyServerAux);
+
+    long int publicKeyServerD = atol(publicKeyServerAuxD);
+
+    /***************************************************/
+
+    /* Remove chave pública (N) do Servidor do buffer. */
+    
+    int j = 0;
+    char publicKeyServerAuxN[32];
+    memset(publicKeyServerAuxN, 0, sizeof(publicKeyServerAuxN));
+    while (packetBuffer[i] != SEPARATOR_CHAR) {
+      publicKeyServerAuxN[j] = packetBuffer[i];
+      j++;
+      i++;
+    }
+    i++;
+
+    long int publicKeyServerN = atol(publicKeyServerAuxN);
+
+    /***************************************************/
       
     /* Remove iv do buffer. */
     int receivedIv;
     char receivedIvAux[8];
-    int j = 0;
+    int k = 0;
     while (packetBuffer[i] != '\0') {
-      receivedIvAux[j] = packetBuffer[i];
-      j++;
+      receivedIvAux[k] = packetBuffer[i];
+      k++;
       i++;
     }
     receivedIv = atoi(receivedIvAux);
 
+    /***************************************************/
+    /* Seta a chave do servidor no keyManager em forma de struct */
+
+    PublicRSAKey publicKeyServer = {publicKeyServerD, publicKeyServerN};
+    keyManager.setServerPublicKey(publicKeyServer);
+
+    /***************************************************/
     
-    Serial.print("RSA Public Key: ");
-    Serial.println(publicKeyServer);
+    Serial.print("RSA Server Public Key: (");
+    Serial.print(keyManager.getServerPublicKeyD());    Serial.print(", ");
+    Serial.print(keyManager.getServerPublicKeyN());   Serial.println(")");
     Serial.print("IV: ");
     Serial.println(receivedIv);
+
+    /***************************************************/
 
     if ((receivedIv-1) == IV){
       //Serial.println("O iv recebido está correto.");
@@ -143,6 +188,8 @@ void receiveRSAKey() {
       sendClientDone();
       receiveServerDone();
     } 
+
+    /***************************************************/
     // clear the char arrays for the next receive packet and send
     memset(ReplyBuffer, 0, sizeof(ReplyBuffer));
     memset(packetBuffer, 0, sizeof(packetBuffer));
@@ -287,7 +334,7 @@ void receiveServerHello(){
       Serial.println("************HELLO SERVER**************");
       Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
       char recebido[32];
-      if (packetBuffer[0] == HELLO_ACK){
+      if (packetBuffer[0] == HELLO_ACK_CHAR){
         Serial.println("Server Client: Successful");
         clientHello = true;
         clientDone = false;
@@ -323,7 +370,7 @@ void receiveServerDone() {
   if (packetSize) {
     Serial.println("**************DONE SERVER****************");
     Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
-    if (packetBuffer[0] == DONE_ACK) {
+    if (packetBuffer[0] == DONE_ACK_CHAR) {
       Serial.println("Server Client: Successful");
       clientDone = true;
     }
@@ -406,27 +453,27 @@ void loop() {
     memset(cipher, 0, sizeof(cipher));
 
 
-    /* Encripta e envia os dados para o server */
-    iotAuth.encryptAES(256, sizeof(cipher), key21, plain1, my_iv, cipher);
-    /* Byte para Hexa */
-    char hex[sizeof(cipher)*2];
-    byteArrayToHexString(cipher, sizeof(cipher), hex, sizeof(hex));
-    
-    Serial.print("HEXA: ");
-    Serial.println(hex);
-
-//    char cipher_char[sizeof(cipher)];
-//    ByteToChar(cipher, cipher_char, sizeof(cipher));
-
-    Udp.beginPacket(pc, localPort);
-//    Udp.write(cipher, sizeof(cipher)); // envia em bytes/
-    Udp.write(hex); // envia em hexa//
-    Udp.endPacket();
-
-    char plain2[sizeof(cipher)];
-    iotAuth.decryptAES(256, sizeof(cipher), key21, plain2, my_iv, cipher);
-    Serial.print("Decifrado: ");
-    Serial.println(plain2);
+//    /* Encripta e envia os dados para o server */
+//    iotAuth.encryptAES(256, sizeof(cipher), key21, plain1, my_iv, cipher);
+//    /* Byte para Hexa */
+//    char hex[sizeof(cipher)*2];
+//    byteArrayToHexString(cipher, sizeof(cipher), hex, sizeof(hex));
+//    
+//    Serial.print("HEXA: ");
+//    Serial.println(hex);
+//
+////    char cipher_char[sizeof(cipher)];
+////    ByteToChar(cipher, cipher_char, sizeof(cipher));
+//
+//    Udp.beginPacket(pc, localPort);
+////    Udp.write(cipher, sizeof(cipher)); // envia em bytes/
+//    Udp.write(hex); // envia em hexa//
+//    Udp.endPacket();
+//
+//    char plain2[sizeof(cipher)];
+//    iotAuth.decryptAES(256, sizeof(cipher), key21, plain2, my_iv, cipher);
+//    Serial.print("Decifrado: ");
+//    Serial.println(plain2);
 //
 //    char teste[] = "0123456789012345678901234567890123456789012345678901234567890123";
 //    byte teste_byte[sizeof(teste)];

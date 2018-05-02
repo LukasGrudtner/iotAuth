@@ -5,7 +5,10 @@
 */
 int StringHandler::getDHClientKey(char buffer[])
 {
-    return std::stoi(getData(buffer, 0));
+    char buf[sizeof(buffer)];
+    memset(buf, 0, sizeof(buf));
+    strncpy(buf, getData(buffer, 0).c_str(), sizeof(buf));
+    return atol(buf);
 }
 
 /*  getClientBase()
@@ -14,7 +17,10 @@ int StringHandler::getDHClientKey(char buffer[])
 */
 int StringHandler::getClientBase(char buffer[])
 {
-    return std::stoi(getData(buffer, 1));
+    char buf[sizeof(buffer)];
+    memset(buf, 0, sizeof(buf));
+    strncpy(buf, getData(buffer, 1).c_str(), sizeof(buf));
+    return atol(buf);
 }
 
 /*  getClientModulus()
@@ -23,7 +29,10 @@ int StringHandler::getClientBase(char buffer[])
 */
 int StringHandler::getClientModulus(char buffer[])
 {
-    return std::stoi(getData(buffer, 2));
+    char buf[sizeof(buffer)];
+    memset(buf, 0, sizeof(buf));
+    strncpy(buf, getData(buffer, 2).c_str(), sizeof(buf));
+    return atol(buf);
 }
 
 /*  getDHIvClient()
@@ -32,16 +41,31 @@ int StringHandler::getClientModulus(char buffer[])
 */
 int StringHandler::getDHIvClient(char buffer[])
 {
-    return std::stoi(getData(buffer, 3));
+    char buf[sizeof(buffer)];
+    memset(buf, 0, sizeof(buf));
+    strncpy(buf, getData(buffer, 3).c_str(), sizeof(buf));
+    return atol(buf);
 }
 
 /*  getClientPublicKey()
     Retorna a chave pública do cliente contida no buffer recebido por parâmetro.
 */
-PublicRSAKey StringHandler::getClientPublicKey(char buffer[])
+long int StringHandler::getServerPublicKeyD(char buffer[])
 {
-    PublicRSAKey publicKey = {std::stol(getData(buffer, 0)), std::stol(getData(buffer, 1))};
-    return publicKey;
+    char buf[20];
+    memset(buf, 0, sizeof(buf));
+    strncpy(buf, getData(buffer, 0).c_str(), sizeof(buf));
+
+    return atol(buf);
+}
+
+long int StringHandler::getServerPublicKeyN(char buffer[])
+{
+    char buf[20];
+    memset(buf, 0, sizeof(buf));
+    strncpy(buf, getData(buffer, 1).c_str(), sizeof(buf));
+
+    return atol(buf);
 }
 
 /*  getRSAExchangeIv()
@@ -50,12 +74,18 @@ PublicRSAKey StringHandler::getClientPublicKey(char buffer[])
 */
 int StringHandler::getRSAExchangeAnswerFdr(char buffer[])
 {
-    return std::stoi(getData(buffer, 2));
+    char buf[sizeof(buffer)];
+    memset(buf, 0, sizeof(buf));
+    strncpy(buf, getData(buffer, 2).c_str(), sizeof(buf));
+    return atol(buf);
 }
 
 int StringHandler::getRSAExchangeIv(char buffer[])
 {
-    return std::stoi(getData(buffer, 3));
+    char buf[sizeof(buffer)];
+    memset(buf, 0, sizeof(buf));
+    strncpy(buf, getData(buffer, 3).c_str(), sizeof(buf));
+    return atol(buf);
 }
 
 /*  getData()
@@ -73,7 +103,7 @@ std::string StringHandler::getData(char buffer[], int position)
 
         int i;
         for (i = 0; i < strlen(buffer); i++) {
-            if (buffer[i] == SPACER) {
+            if (buffer[i] == SEPARATOR) {
                 current_spacer++;
 
                 if (current_spacer == position)
@@ -83,14 +113,14 @@ std::string StringHandler::getData(char buffer[], int position)
         i++;
 
         for (int j = i; j < strlen(buffer); j++) {
-            if (buffer[j] == SPACER)
+            if (buffer[j] == SEPARATOR)
                 break;
             buffer_aux[cont] = buffer[j];
             cont++;
         }
     } else {
         for (int i = 0; i < strlen(buffer); i++) {
-            if (buffer[i] == SPACER)
+            if (buffer[i] == SEPARATOR)
                 break;
             buffer_aux[cont] = buffer[i];
             cont++;
@@ -121,7 +151,10 @@ FDR* StringHandler::getRSAClientFdr(char buffer[])
     }
 
     std::string data (buffer_aux);
-    FDR* f = new FDR(op, std::stoi(data));
+    char buf[data.length()];
+    memset(buf, 0, sizeof(buf));
+    strncpy(buf, data.c_str(), sizeof(buf));
+    FDR* f = new FDR(op, atol(buf));
 
     return (f);
 }

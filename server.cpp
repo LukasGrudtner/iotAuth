@@ -237,7 +237,7 @@ int main(int argc, char *argv[]){
        tam_cliente=sizeof(struct sockaddr_in);
 
        recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
-
+       cout << "*** RECEBIDO *** :" << buffer << endl<< endl;
        // printf("Recebi:%s de <endereço:%s> <porta:%d>\n",buffer,inet_ntoa(cliente.sin_addr),ntohs(cliente.sin_port));
 
        /* HELLO */

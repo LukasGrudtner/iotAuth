@@ -42,9 +42,9 @@ long RSA::geraNumeroRandom(){
 }
 
 //Descobre se um número é primo verificando se ele é divisível para qualquer i até a sua raiz quadrada
-long RSA::verificaPrimo(long p){
+long long RSA::verificaPrimo(long long p){
 
-	long i;
+	long long i;
 	double j;
 
 	//Calcula a raiz quadrada para p
@@ -72,9 +72,9 @@ long RSA::geraPrimo(long numero){
 }
 
 //Escolhe o menor primo que divide o coeficiente de euler. Obs: Ele deve ser diferente de p e p2.
-long RSA::escolheE(long phi, long p, long p2, long n){
+long long RSA::escolheE(long long phi, long long p, long long p2, long long n){
 
-	long i, e;
+	long long i, e;
 	for(i = 2; i < phi; i++){
 
 		if(phi%i != 0 && verificaPrimo(i) && i != p && i != p2){
@@ -87,7 +87,7 @@ long RSA::escolheE(long phi, long p, long p2, long n){
 }
 
 //Calcula o resto e o quociente de uma divisão
-void RSA::divisao(long *resto, long *quociente, long a, long b){
+void RSA::divisao(long long *resto, long long *quociente, long long a, long long b){
 
 	if(a >= 0){
 
@@ -103,9 +103,9 @@ void RSA::divisao(long *resto, long *quociente, long a, long b){
 }
 
 //Calcula o mdc estendido e retorna o beta(inverso do e módulo phi) para ser o d
-long RSA::mdcEstendido(long a, long b){
+long long RSA::mdcEstendido(long long a, long long b){
 
-	long resto, quociente, xB = 1, yB = 0, x = 0, y = 1, alpha, beta, phi;
+	long long resto, quociente, xB = 1, yB = 0, x = 0, y = 1, alpha, beta, phi;
 	phi = a;
 
 	resto = a;
@@ -131,9 +131,9 @@ long RSA::mdcEstendido(long a, long b){
 }
 
 //Calcula a forma reduzida de a^e módulo n, usando a expansão binária do expoente
-long RSA::potencia(long a, long e, long n){
+long RSA::potencia(long long a, long long e, long long n){
 
-	long A = a, P = 1, E = e;
+	long long A = a, P = 1, E = e;
 
 	while(1){
 
@@ -158,12 +158,12 @@ long RSA::potencia(long a, long e, long n){
 }
 
 //Codifica uma string de caracteres usando o resto da divisão de a^e por n para cada caractere, para a é utilizado o código da tabela ASCII
-int *RSA::codifica(char *mensagem, long e, long n, int quant){
+int *RSA::codifica(char *mensagem, long long e, long long n, int quant){
 
-	long i;
+	long long i;
 	int *mensagemC;
 	long VALOR;
-	mensagemC = (int*)malloc(quant * sizeof(long));
+	mensagemC = (int*)malloc(quant * sizeof(long long));
 	for(i = 0; i < quant; i++){
 		VALOR = potencia(mensagem[i], e, n);
 		// ESSE VALOR QUE TEM QUE CONVERTER PARA HEXADECIMAL
@@ -175,9 +175,9 @@ int *RSA::codifica(char *mensagem, long e, long n, int quant){
 }
 
 //Decodifica um vetor de inteiros em uma string de caracteres usando o resto da divisão de a^d por n para cada inteiro
-char *RSA::decodifica(int *mensagemC, long d, long n, int quant){
+char *RSA::decodifica(int *mensagemC, long long d, long long n, int quant){
 
-	long i;
+	long long i;
 	char *mensagem;
 
 	mensagem = (char*)malloc(quant * sizeof(char));
