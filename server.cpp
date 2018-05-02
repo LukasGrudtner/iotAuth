@@ -82,6 +82,7 @@ int handleIV(int _iv, FDR* _fdr)
 
 void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, int size)
 {
+    cout << "Received: " << buffer << endl;
     /* Realiza a geração das chaves pública e privada (RSA). */
     printf("*******GENERATION OF RSA KEYS******\n");
     keyManager->setRSAKeyPair(iotAuth.generateRSAKeyPair());
@@ -159,42 +160,45 @@ void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr*
                  std::to_string(keyManager->getModulus()) + spacer +
                  std::to_string(keyManager->getIV()) + spacer +
                  std::to_string(handleIV(ivClient, keyManager->getFDR()));
-    // char sendBuffer[sendString.length()];
-    // strcpy(sendBuffer, sendString.c_str());
+    char sendBuffer[sendString.length()];
+    memset(sendBuffer, 0, sizeof(sendBuffer));
+    strncpy(sendBuffer, sendString.c_str(), sizeof(sendBuffer));
 
-    /* Geração do HASH */
-    string hash = iotAuth.hash(sendString);
-    cout << "Hash: " << hash << endl;
+    cout << sendBuffer << endl;
 
-    /* Codificação da mensagem com a chave privada de B (server) */
-    char enc[sizeof(sendString)];
-    strncpy(enc, sendString.c_str(), sizeof(enc));
-    int* encrypted = iotAuth.encryptRSAPrivateKey(enc, keyManager->getServerPrivateKey(), sizeof(enc));
-
-    string encrypted_string = "";
-    for (int i = 0; i < sizeof(enc); i++)
-        encrypted_string += to_string(encrypted[i]);
-
-    cout << "Encriptado: " << encrypted_string << endl << endl;
-
-    /* Concatenação do bloco */
-    string package = hash + spacer + encrypted_string;
-    cout << "Pacote: " << package << endl << endl;
-
-    /* Codificação do bloco com a chave pública de A (client) */
-    char packageChar[package.length()];
-    strncpy(packageChar, package.c_str(), sizeof(packageChar));
-
-    int* encryptedPackage = iotAuth.encryptRSAPublicKey(packageChar, keyManager->getClientPublicKey(), sizeof(packageChar));
-
-    string encryptedPackage_string = "";
-    for (int i = 0; i < sizeof(packageChar); i++)
-        encryptedPackage_string += to_string(encryptedPackage[i]);
-    cout << "Encrypted Package: " << encryptedPackage_string << endl<< endl;
-
-    char sendBuffer[encryptedPackage_string.length()];
-    strncpy(sendBuffer, encryptedPackage_string.c_str(), encryptedPackage_string.length());
-    std::cout << "Sent Message: " << sendBuffer << std::endl;
+    // /* Geração do HASH */
+    // string hash = iotAuth.hash(sendString);
+    // cout << "Hash: " << hash << endl;
+    //
+    // /* Codificação da mensagem com a chave privada de B (server) */
+    // char enc[sizeof(sendString)];
+    // strncpy(enc, sendString.c_str(), sizeof(enc));
+    // int* encrypted = iotAuth.encryptRSAPrivateKey(enc, keyManager->getServerPrivateKey(), sizeof(enc));
+    //
+    // string encrypted_string = "";
+    // for (int i = 0; i < sizeof(enc); i++)
+    //     encrypted_string += to_string(encrypted[i]);
+    //
+    // cout << "Encriptado: " << encrypted_string << endl << endl;
+    //
+    // /* Concatenação do bloco */
+    // string package = hash + spacer + encrypted_string;
+    // cout << "Pacote: " << package << endl << endl;
+    //
+    // /* Codificação do bloco com a chave pública de A (client) */
+    // char packageChar[package.length()];
+    // strncpy(packageChar, package.c_str(), sizeof(packageChar));
+    //
+    // int* encryptedPackage = iotAuth.encryptRSAPublicKey(packageChar, keyManager->getClientPublicKey(), sizeof(packageChar));
+    //
+    // string encryptedPackage_string = "";
+    // for (int i = 0; i < sizeof(packageChar); i++)
+    //     encryptedPackage_string += to_string(encryptedPackage[i]);
+    // cout << "Encrypted Package: " << encryptedPackage_string << endl<< endl;
+    //
+    // char sendBuffer[encryptedPackage_string.length()];
+    // strncpy(sendBuffer, encryptedPackage_string.c_str(), encryptedPackage_string.length());
+    // std::cout << "Sent Message: " << sendBuffer << std::endl;
 
     int sended = sendto(socket, sendBuffer, sizeof(sendBuffer), 0, client, size);
 

@@ -100,6 +100,8 @@ void sendsRSAKey() {
   Udp.write(sendData);
   Udp.endPacket();
 
+  Serial.print("Sent: ");
+  Serial.println(sendData);
   Serial.print("RSA Client Public Key: (");
   Serial.print(keyManager.getClientPublicKeyD());    Serial.print(", ");
   Serial.print(keyManager.getClientPublicKeyN());   Serial.println(")");
@@ -251,35 +253,44 @@ void receiveDiffieHellmanKey() {
     Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
   
     /* Recupera chave do Servidor do buffer. */
-    int value;
-    char valueBuf[32] = {' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '};
+    char B_aux[32];
+    memset(B_aux, 0, sizeof(B_aux));
 
     int i = 0;
     while (packetBuffer[i] != SEPARATOR_CHAR) {
-      valueBuf[i] = packetBuffer[i];
+      B_aux[i] = packetBuffer[i];
       i++;
     }
     i++;
 
-    value = atoi(valueBuf);
-    int aux1 = (int) pow(value, a);
-    simpleKeyServer = aux1 % p;
-    //simpleKeyServer = value;
-    Serial.print("Diffie-Hellman Key: ");
-    Serial.println(value);
+    int B = atoi(B_aux);
+    
+    int pot = (int) pow(B, a);
+    simpleKeyServer = pot % p;
 
-    int aux = (int) pow(value, a);
-    simpleKey = aux % p;
+    Serial.print("Session Key: ");
+    Serial.println(simpleKeyServer);
       
     /* Remove iv do buffer. */
     int iv_recebidoDH;
     char iv_recebido_stringDH[8];
     int j = 0;
+    i = 0;
+    int cont = 0;
+    while (packetBuffer[i] != '\0') {
+      if (packetBuffer[i] == SEPARATOR_CHAR)
+        cont++;
+      i++;
+      if (cont == 4)
+        break;
+    }
+    
     while (packetBuffer[i] != '\0') {
       iv_recebido_stringDH[j] = packetBuffer[i];
       j++;
       i++;
     }
+    
     iv_recebidoDH = atoi(iv_recebido_stringDH);
 
     

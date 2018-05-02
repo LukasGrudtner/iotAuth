@@ -55,7 +55,7 @@ int StringHandler::getRSAExchangeAnswerFdr(char buffer[])
 
 int StringHandler::getRSAExchangeIv(char buffer[])
 {
-    return std::stoi(getData(buffer, 3));
+    return std::stoi(getData(buffer, 2));
 }
 
 /*  getData()
