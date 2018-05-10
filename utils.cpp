@@ -63,3 +63,39 @@ void Utils::ByteToChar(byte* bytes, char* chars, unsigned int count)
     for(unsigned int i = 0; i < count; i++)
          chars[i] = (char)bytes[i];
 }
+
+int* Utils::RSAToIntArray(char encrypted[], int size)
+{
+    int* intArray = (int*)malloc(size * sizeof(int));
+    int k = 0;
+    int i = 0;
+    while (encrypted[i] != '\0') {
+
+        string numb = "";
+        while ((encrypted[i] != '.') && (encrypted[i] != '\0')) {
+            numb += encrypted[i];
+            i++;
+        }
+
+        if (encrypted[i] == '.')
+            i++;
+
+        intArray[k] = stoi(numb);
+        k++;
+    }
+
+    return intArray;
+}
+
+int Utils::intArraySize(int array[])
+{
+    int size = 0;
+    int i = 0;
+
+    while (array[i] != '\0') {
+        size++;
+        i++;
+    }
+
+    return size;
+}

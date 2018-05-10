@@ -1,5 +1,7 @@
 #include "iotAuth.h"
 
+
+
 /*  encryptAES()
     Função interna.
     Realiza a cifragem de plain com o algoritmo AES, onde o resultado é
@@ -9,6 +11,7 @@ void iotAuth::encryptAES(int bits, int cipher_size, byte *key, byte plain[], uns
 {
     aes.iv_inc();
     byte iv[N_BLOCK];
+    memset(iv, 0, sizeof(iv));
 
     aes.set_IV(my_iv);
     aes.get_IV(iv);
@@ -24,6 +27,7 @@ void iotAuth::encryptAES(int bits, int cipher_size, byte *key, byte plain[], uns
 void iotAuth::decryptAES(int bits, int cipher_size, byte *key, byte plain[], unsigned long long int my_iv, byte cipher[])
 {
     byte iv[N_BLOCK];
+    memset(iv, 0, sizeof(iv));
 
     aes.set_IV(my_iv);
     aes.get_IV(iv);
@@ -57,7 +61,6 @@ void iotAuth::encryptHEX(byte plain[], int plain_size, char cipherHex[], int cip
 
     encryptAES(256, 64, key, plain, iv, cipher);
     utils.ByteArrayToHexString(cipher, sizeof(cipher), cipherHex, cipherHex_size);
-    cout << "Cifrado em HEXA (iotAuth): " << cipherHex << endl;
 }
 
 /*  decrypt()
@@ -78,7 +81,6 @@ void iotAuth::decryptHEX(byte plain[], int plain_size, char cipherHex[], int cip
     utils.HexStringToByteArray(cipherHex, cipherHex_size, cipher, sizeof(cipher));
 
     decryptAES(256, 64, key, plain, iv, cipher);
-    cout << "Decifrado em CHAR (iotAuth): " << plain << endl;
 }
 
 RSAKeyPair iotAuth::generateRSAKeyPair()
@@ -108,11 +110,10 @@ RSAKeyPair iotAuth::generateRSAKeyPair()
     return keys;
 }
 
-string iotAuth::hash(string message)
+void iotAuth::hash(char message[], char hash[])
 {
     string output = sha512(message);
-
-    return output;
+    strncpy(hash, output.c_str(), 128);
 }
 
 int* iotAuth::encryptRSAPublicKey(char plain[], PublicRSAKey publicKey, int size)
@@ -161,4 +162,19 @@ string iotAuth::decryptRSAPrivateKey(int cipher[], PrivateRSAKey privateKey, int
 
     string output (plain);
     return output;
+}
+
+void iotAuth::teste(char hex[])
+{
+    char message[] = "hello";
+    byte plainTeste[64];
+    memset(plainTeste, '0', sizeof(plainTeste));
+
+    for (int i = 0; i < sizeof(message); i++) {
+        plainTeste[i] = message[i];
+    }
+
+    encryptHEX(plainTeste, sizeof(plainTeste), hex, sizeof(hex));
+
+    return hex;
 }

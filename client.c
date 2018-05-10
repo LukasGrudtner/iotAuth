@@ -11,55 +11,12 @@
 #include "iotAuth.h"
 #include "utils.h"
 #include "settings.h"
-
-#define DEFAULT_PORT 8888
+#include "Arduino.h"
 
 using namespace std;
 
-iotAuth iotAuth;
 Utils utils;
-
-
-
-int byteArrayToHexString(uint8_t *byte_array, int byte_array_len,
-                         char *hexstr, int hexstr_len)
-{
-    int off = 0;
-    int i;
-
-    for (i = 0; i < byte_array_len; i ++) {
-        off += snprintf(hexstr + off, hexstr_len - off,
-                           "%02x", byte_array[i]);
-    }
-
-    hexstr[off] = '\0';
-
-    return off;
-}
-
-template<typename T>
-array< byte, sizeof(T)> to_bytes(const T& object)
-{
-    std::array< byte, sizeof(T) > bytes ;
-
-    const byte* begin = reinterpret_cast< const byte* >( std::addressof(object) ) ;
-    const byte* end = begin + sizeof(T) ;
-    std::copy( begin, end, std::begin(bytes) ) ;
-
-    return bytes ;
-}
-
-template<typename T>
-T& from_bytes(const array<byte, sizeof(T)> &bytes, T& object)
-{
-    // http://en.cppreference.com/w/cpp/types/is_trivially_copyable
-    static_assert( std::is_trivially_copyable<T>::value, "not a TriviallyCopyable type" ) ;
-
-    byte* begin_object = reinterpret_cast< byte* >( std::addressof(object) ) ;
-    std::copy( std::begin(bytes), std::end(bytes), begin_object ) ;
-
-    return object ;
-}
+Arduino arduino;
 
 int main(int argc, char *argv[]){
 
@@ -94,10 +51,46 @@ int main(int argc, char *argv[]){
     memset(envia, 0, sizeof(envia));
     memset(recebe, 0, sizeof(recebe));
 
+    tam_cliente=sizeof(struct sockaddr_in);
+
     while(1){
+
        printf("\n*** Bem vindo ao cliente ***\n");
        printf("Escreva uma mensagem:\n");
        fgets(envia,556,stdin);
+
+       if (!arduino.clientHello) {
+           char* message = arduino.sendClientHello();
+           sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+
+           while (!arduino.clientHello) {
+               recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+               arduino.receiveServerHello(recebe);
+           }
+       }
+
+       if (arduino.clientHello && !arduino.receivedRSAKey) {
+           char* message = arduino.sendRSAKey();
+           sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+
+           while (!arduino.receivedRSAKey && !arduino.clientDone) {
+               recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+               arduino.receiveRSAKey(recebe);
+           }
+       }
+
+       if (arduino.receivedRSAKey && !arduino.receivedDHKey) {
+           char* message = arduino.sendDiffieHellmanKey();
+           sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+
+           // while (!arduino.receivedDHKey && !arduino.clientDone) {
+           //     recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+           //     arduino.receiveDiffieHellmanKey(recebe);
+           // }
+       }
+
+
+
 
        // /* PASSO 1: Envio de HELLO. */
        // char a[] = "HELLO\n";

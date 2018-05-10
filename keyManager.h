@@ -11,11 +11,11 @@ class KeyManager
         KeyManager();
         int getDiffieHellmanKey();
         int getDiffieHellmanKey(int base);
-        PublicRSAKey getServerPublicKey();
-        PrivateRSAKey getServerPrivateKey();
+        PublicRSAKey getMyPublicKey();
+        PrivateRSAKey getMyPrivateKey();
         void setRSAKeyPair(RSAKeyPair keys);
-        PublicRSAKey getClientPublicKey();
-        void setClientPublicKey(PublicRSAKey publicKey);
+        PublicRSAKey getPartnerPublicKey();
+        void setPartnerPublicKey(PublicRSAKey publicKey);
         void setSessionKey(int _sessionKey);
         int getSessionKey();
         void setBase(int base);
@@ -36,7 +36,7 @@ class KeyManager
         int sessionKey;
         RSAKeyPair rsaKeys;
 
-        PublicRSAKey clientPublicKey;
+        PublicRSAKey partnerPublicKey;
 
         long long int iv;
         FDR* fdr;

@@ -20,10 +20,12 @@ class Utils
 
     public:
 
+        int* RSAToIntArray(char encrypted[], int size);
         int ByteArrayToHexString(uint8_t *byte_array, int byte_array_len, char *hexstr, int hexstr_len);
         void HexStringToByteArray(char *hexstr, int hexstr_len, uint8_t *byte_array, int byte_array_len);
         void CharToByte(unsigned char* chars, byte* bytes, unsigned int count);
         void ByteToChar(byte* bytes, char* chars, unsigned int count);
+        int intArraySize(int array[]);
 
         /* Converte um objeto T em um array de bytes. */
         template<typename T>

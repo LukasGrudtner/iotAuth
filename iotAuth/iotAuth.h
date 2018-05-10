@@ -18,12 +18,13 @@ class iotAuth
 
     public:
 
+        void teste(char hex[]);
         void encryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size);
         void decryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size);
 
         RSAKeyPair generateRSAKeyPair();
 
-        string hash(string message);
+        void hash(char message[], char hash[]);
 
         int* encryptRSAPublicKey(char plain[], PublicRSAKey publicKey, int size);
         int* encryptRSAPrivateKey(char plain[], PrivateRSAKey privateKey, int size);

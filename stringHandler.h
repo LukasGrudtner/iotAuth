@@ -8,6 +8,8 @@
 #include "settings.h"
 #include "fdr.h"
 
+using namespace std;
+
 class StringHandler
 {
     public:
@@ -16,10 +18,10 @@ class StringHandler
         int getClientBase(char buffer[]);
         int getClientModulus(char buffer[]);
         int getDHIvClient(char buffer[]);
-        PublicRSAKey getClientPublicKey(char buffer[]);
+        PublicRSAKey getPartnerPublicKey(char buffer[]);
         int getRSAExchangeAnswerFdr(char buffer[]);
         int getRSAExchangeIv(char buffer[]);
-        FDR* getRSAClientFdr(char buffer[]);
+        FDR* getRSAExchangeFdr(char buffer[]);
         // std::string byteToHex(char data[], int len);
     private:
         std::string getData(char buffer[], int position);

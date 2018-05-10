@@ -20,9 +20,7 @@
 #define MODULUS 86
 
 iotAuth iotAuth;
-unsigned long tempo_conexao;
-long long int clientPublicKey;
-long long int clientPrivateKey;
+//unsigned long tempo_conexao;/
 KeyManager keyManager;
 StringHandler stringHandler;
 
@@ -30,30 +28,21 @@ StringHandler stringHandler;
 byte mac[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
 // The IP address will be dependent on your local network:
 IPAddress ip(150, 162, 63, 205);
-IPAddress pc(150, 162, 63, 202);
+IPAddress pc(150, 162, 63, 204);
 
-int localPort = 8888;      // local port to listen on
+int localPort = 8080;      // local port to listen on
 
 // buffers for receiving and sending data
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE];  //buffer to hold incoming packet,
-char  ReplyBuffer[38];//[] = "acknowledged";       // a string to send back
-char  temp[38];
-String replay;
 
-int a = 2;
-int g = 23;
-int p = 86;
+#define a 2
+#define g 23
+#define p 86
 
 boolean clientHello = false;
 boolean clientDone = false;
 boolean receivedRSAKey = false;
 boolean receivedDiffieHellmanKey = false;
-
-int publicKeyServer;
-
-int iv = 8;
-int simpleKey = 0;
-int simpleKeyServer = 0;
 
 // An EthernetUDP instance to let us send and receive packets over UDP
 EthernetUDP Udp;
@@ -71,16 +60,13 @@ void setup() {
 void sendsRSAKey() {
   keyManager.setRSAKeyPair(iotAuth.generateRSAKeyPair());
   Serial.print("Chave: ");
-//  char teste[256];
-//  sprintf(teste, "%lld", keyManager.getClientPublicKeyD());
   Serial.println(keyManager.getClientPublicKeyD());
   
   Serial.println("************SEND RSA CLIENT***********"); 
-  char sendData[128];
-//  char cPublicKeyD[20];/
-  char cPublicKeyN[20];
+  char sendData[32];
+  char cPublicKeyN[8];
   char iv[8];
-  memset(sendData, 0, 128);
+  memset(sendData, 0, sizeof(sendData));
 
   sprintf(sendData, "%li", keyManager.getClientPublicKeyD());
   sprintf(cPublicKeyN, "%li", keyManager.getClientPublicKeyN());
@@ -100,13 +86,13 @@ void sendsRSAKey() {
   Udp.write(sendData);
   Udp.endPacket();
 
-  Serial.print("Sent: ");
-  Serial.println(sendData);
-  Serial.print("RSA Client Public Key: (");
-  Serial.print(keyManager.getClientPublicKeyD());    Serial.print(", ");
-  Serial.print(keyManager.getClientPublicKeyN());   Serial.println(")");
-  Serial.print("IV: ");
-  Serial.println(IV);
+//  Serial.print("Sent: ");
+//  Serial.println(sendData);
+//  Serial.print("RSA Client Public Key: (");
+//  Serial.print(keyManager.getClientPublicKeyD());    Serial.print(", ");
+//  Serial.print(keyManager.getClientPublicKeyN());   Serial.println(")");
+//  Serial.print("IV: ");
+//  Serial.println(IV);
   Serial.println("**************************************\n");
 
   delay(3000);
@@ -126,7 +112,7 @@ void receiveRSAKey() {
 
     /* Remove chave pública (D) do Servidor do buffer. */
     int i = 0;
-    char publicKeyServerAuxD[32];
+    char publicKeyServerAuxD[8];
     memset(publicKeyServerAuxD, 0, sizeof(publicKeyServerAuxD));
     while (packetBuffer[i] != SEPARATOR_CHAR) {
       publicKeyServerAuxD[i] = packetBuffer[i];
@@ -134,14 +120,14 @@ void receiveRSAKey() {
     }
     i++;
 
-    long int publicKeyServerD = atol(publicKeyServerAuxD);
+    int publicKeyServerD = atol(publicKeyServerAuxD);
 
     /***************************************************/
 
     /* Remove chave pública (N) do Servidor do buffer. */
     
     int j = 0;
-    char publicKeyServerAuxN[32];
+    char publicKeyServerAuxN[8];
     memset(publicKeyServerAuxN, 0, sizeof(publicKeyServerAuxN));
     while (packetBuffer[i] != SEPARATOR_CHAR) {
       publicKeyServerAuxN[j] = packetBuffer[i];
@@ -150,7 +136,7 @@ void receiveRSAKey() {
     }
     i++;
 
-    long int publicKeyServerN = atol(publicKeyServerAuxN);
+    int publicKeyServerN = atol(publicKeyServerAuxN);
 
     /***************************************************/
       
@@ -158,6 +144,7 @@ void receiveRSAKey() {
     int receivedIv;
     char receivedIvAux[8];
     int k = 0;
+
     while (packetBuffer[i] != '\0') {
       receivedIvAux[k] = packetBuffer[i];
       k++;
@@ -184,7 +171,7 @@ void receiveRSAKey() {
     if ((receivedIv-1) == IV){
       //Serial.println("O iv recebido está correto.");
       receivedRSAKey = true;
-    }else{
+    } else{
       Serial.println("O iv recebido está incorreto.");
       done();
       sendClientDone();
@@ -193,7 +180,6 @@ void receiveRSAKey() {
 
     /***************************************************/
     // clear the char arrays for the next receive packet and send
-    memset(ReplyBuffer, 0, sizeof(ReplyBuffer));
     memset(packetBuffer, 0, sizeof(packetBuffer));
     delay(3000);
     Serial.println("**************************************\n");
@@ -203,12 +189,12 @@ void receiveRSAKey() {
 void sendDiffieHellmanKey() {
   /* Envio da primeira chave. */
   Serial.println("************SEND DH CLIENT************");  
-  int aux = (int) pow(BASE, EXPONENT);
-  int dhKey = aux % MODULUS;
-  char base[10];
-  char modulus[10];
-  char iv[10];
-  char sendData[32];
+  byte aux = (int) pow(BASE, EXPONENT);
+  byte dhKey = aux % MODULUS;
+  char base[2];
+  char modulus[2];
+  char iv[2];
+  char sendData[134];
 
   /* Passa os valores p, g e iv para string. */  
   sprintf(base, "%i", BASE);
@@ -224,6 +210,13 @@ void sendDiffieHellmanKey() {
   strcat(sendData, modulus);
   strcat(sendData, SEPARATOR);
   strcat(sendData, iv);
+//  char hash[128];
+//  iotAuth.hash(sendData, hash);
+//
+//  Serial.print("Hash: ");
+//  Serial.println(hash);
+
+  
 
   
     
@@ -232,15 +225,15 @@ void sendDiffieHellmanKey() {
   Udp.write(sendData);
   Udp.endPacket();
 
-  Serial.print("Diffie-Hellman Key: ");
-  Serial.println(dhKey);
-  Serial.print("g: ");
-  Serial.println(base);
-  Serial.print("p: ");
-  Serial.println(modulus);
-  Serial.print("IV: ");
-  Serial.println(iv);
-  Serial.println("**************************************\n");
+//  Serial.print("Diffie-Hellman Key: ");
+//  Serial.println(dhKey);
+//  Serial.print("g: ");
+//  Serial.println(base);
+//  Serial.print("p: ");
+//  Serial.println(modulus);
+//  Serial.print("IV: ");
+//  Serial.println(iv);
+//  Serial.println("**************************************\n");
 
   delay(3000);
 }
@@ -253,84 +246,83 @@ void receiveDiffieHellmanKey() {
     Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
   
     /* Recupera chave do Servidor do buffer. */
-    char B_aux[32];
+    char B_aux[8];
     memset(B_aux, 0, sizeof(B_aux));
 
-    int i = 0;
+    byte i = 0;
     while (packetBuffer[i] != SEPARATOR_CHAR) {
       B_aux[i] = packetBuffer[i];
       i++;
     }
     i++;
 
-    int B = atoi(B_aux);
+    byte B = atoi(B_aux);
     
-    int pot = (int) pow(B, a);
-    simpleKeyServer = pot % p;
+    byte pot = (int) pow(B, a);
+    byte simpleKeyServer = pot % p;
 
     Serial.print("Session Key: ");
     Serial.println(simpleKeyServer);
       
-    /* Remove iv do buffer. */
-    int iv_recebidoDH;
-    char iv_recebido_stringDH[8];
-    int j = 0;
-    i = 0;
-    int cont = 0;
-    while (packetBuffer[i] != '\0') {
-      if (packetBuffer[i] == SEPARATOR_CHAR)
-        cont++;
-      i++;
-      if (cont == 4)
-        break;
-    }
-    
-    while (packetBuffer[i] != '\0') {
-      iv_recebido_stringDH[j] = packetBuffer[i];
-      j++;
-      i++;
-    }
-    
-    iv_recebidoDH = atoi(iv_recebido_stringDH);
+//    /* Remove iv do buffer. */
+//    int iv_recebidoDH;
+//    char iv_recebido_stringDH[8];
+//    int j = 0;
+//    i = 0;
+//    int cont = 0;
+//    while (packetBuffer[i] != '\0') {
+//      if (packetBuffer[i] == SEPARATOR_CHAR)
+//        cont++;
+//      i++;
+//      if (cont == 4)
+//        break;
+//    }
+//    
+//    while (packetBuffer[i] != '\0') {
+//      iv_recebido_stringDH[j] = packetBuffer[i];
+//      j++;
+//      i++;
+//    }
+//    
+//    iv_recebidoDH = atoi(iv_recebido_stringDH);
+//
+//    
+//    Serial.print("IV: ");
+//    Serial.println(iv_recebidoDH);
+//    
+//    if ((iv_recebidoDH-1) == IV){
+//      //Serial.println("O iv recebido está correto.");
+//      receivedDiffieHellmanKey = true;
+//    }else{
+//      Serial.println("O iv recebido est/á incorreto.");
+//      done();
+//      sendClientDone();
+//      receiveServerDone();
+//    }
 
-    
-    Serial.print("IV: ");
-    Serial.println(iv_recebidoDH);
-    
-    if ((iv_recebidoDH-1) == iv){
-      //Serial.println("O iv recebido está correto.");
-      receivedDiffieHellmanKey = true;
-    }else{
-      Serial.println("O iv recebido est/á incorreto.");
-      done();
-      sendClientDone();
-      receiveServerDone();
-    }
-
-    Serial.print("Tempo para estabelecimento da conexão: ");
-    Serial.print(micros()-tempo_conexao);
-    Serial.println();
+//    Serial.print("Tempo para estabelecimento da conexão: ");/
+//    Serial.print(micros()-tempo_conexao);/
+//    Serial.println();/
     
     // clear the char arrays for the next receive packet and send
-    memset(ReplyBuffer, 0, sizeof(ReplyBuffer));
     memset(packetBuffer, 0, sizeof(packetBuffer));
 
-    Serial.println("**************************************\n");
-  
-    Serial.println("***SYMMETRICAL SESSION CLIENT-SERVER***");
-    Serial.print("Session Key: ");
-    Serial.println(simpleKeyServer);
+//    Serial.println("**************************************\n");
+//  
+//    Serial.println("***SYMMETRICAL SESSION CLIENT-SERVER***");
+//    Serial.print("Session Key: ");
+//    Serial.println(simpleKeyServer);
     delay(3000);
-    Serial.println("**************************************\n");
+//    Serial.println("**************************************\n");
   }
 }
 
 void sendClientHello(){
-    tempo_conexao = micros ();
+//    tempo_conexao = micros ();/
     char message[] = HELLO_MESSAGE;
 
-    Serial.println("************HELLO CLIENT**************");
-    Serial.println("Hello Client: Successful");
+//    Serial.println("************HELLO CLIENT**************");
+//    Serial.println("Hello Client: Successful");
     Udp.beginPacket(pc, localPort);
     Udp.write(message);
     Udp.endPacket();
@@ -344,7 +336,7 @@ void receiveServerHello(){
     if (packetSize) {
       Serial.println("************HELLO SERVER**************");
       Udp.read(packetBuffer, UDP_TX_PACKET_MAX_SIZE);
-      char recebido[32];
+      char recebido[8];
       if (packetBuffer[0] == HELLO_ACK_CHAR){
         Serial.println("Server Client: Successful");
         clientHello = true;
@@ -353,7 +345,6 @@ void receiveServerHello(){
       Serial.println("**************************************\n");
     }
         // clear the char arrays for the next receive packet and send
-    memset(ReplyBuffer, 0, sizeof(ReplyBuffer));
     memset(packetBuffer, 0, sizeof(packetBuffer));
 }
 
@@ -367,8 +358,8 @@ void done() {
 
 void sendClientDone() {
   char message[] = DONE_MESSAGE;
-  Serial.println("**************DONE CLIENT****************");
-  Serial.println("Done Client: Successful");
+//  Serial.println("**************DONE CLIENT****************");
+//  Serial.println("Done Client: Successful");
   Udp.beginPacket(pc, localPort);
   Udp.write(message);
   Udp.endPacket();
@@ -388,37 +379,11 @@ void receiveServerDone() {
     Serial.println("**************************************\n");
   }
          // clear the char arrays for the next receive packet and send
-    memset(ReplyBuffer, 0, sizeof(ReplyBuffer));
     memset(packetBuffer, 0, sizeof(packetBuffer));
 }
 
-void CharToByte(char* chars, byte* bytes, unsigned int count){
-    for(unsigned int i = 0; i < count; i++)
-        bytes[i] = (byte)chars[i];
-}
-
-void ByteToChar(byte* bytes, char* chars, unsigned int count){
-    for(unsigned int i = 0; i < count; i++)
-         chars[i] = (char)bytes[i];
-}
-
-int byteArrayToHexString(uint8_t *byte_array, int byte_array_len,
-                         char *hexstr, int hexstr_len)
-{
-    int off = 0;
-    int i;
-
-    for (i = 0; i < byte_array_len; i ++) {
-        off += snprintf(hexstr + off, hexstr_len - off,
-                           "%02x", byte_array[i]);
-    }
-
-    hexstr[off] = '\0';
-
-    return off;
-}
-
 void loop() {
+
 
   if(!clientHello){
     sendClientHello();
@@ -446,53 +411,25 @@ void loop() {
   
   /* Com as chaves trocadas, inicia a troca de dados. */
   if (receivedRSAKey && receivedDiffieHellmanKey) {
-    uint8_t key[16];
-    uint8_t iv[16];
-    int j;
-    for (j = 0; j < 16; j++) {
-      key[j] = simpleKey;
-      iv[j] = j+1;
+
+    char message[] = "hello";
+    byte plain[64];
+    memset(plain, '0', sizeof(plain));
+    
+    for (int i = 0; i < sizeof(message); i++) {
+      plain[i] = message[i];
     }
     
-    const uint16_t data_len = 16;
+    char hex[128];
+    memset(hex, 0, sizeof(hex));
+    iotAuth.encryptHEX(plain, sizeof(plain), hex, sizeof(hex));
     
-    byte *key21 = (unsigned char*)"1234567891234567";
-    byte plain1[] = "Segurança é muito importante para IoT!";
-//    unsigned long long int my_iv = iv;
-    unsigned long long int my_iv = 11111111;
-    byte cipher[42];
-    memset(cipher, 0, sizeof(cipher));
+    Serial.print("Encriptado: ");
+    Serial.println(hex);
 
-
-//    /* Encripta e envia os dados para o server */
-//    iotAuth.encryptAES(256, sizeof(cipher), key21, plain1, my_iv, cipher);
-//    /* Byte para Hexa */
-//    char hex[sizeof(cipher)*2];
-//    byteArrayToHexString(cipher, sizeof(cipher), hex, sizeof(hex));
-//    
-//    Serial.print("HEXA: ");
-//    Serial.println(hex);
-//
-////    char cipher_char[sizeof(cipher)];
-////    ByteToChar(cipher, cipher_char, sizeof(cipher));
-//
-//    Udp.beginPacket(pc, localPort);
-////    Udp.write(cipher, sizeof(cipher)); // envia em bytes/
-//    Udp.write(hex); // envia em hexa//
-//    Udp.endPacket();
-//
-//    char plain2[sizeof(cipher)];
-//    iotAuth.decryptAES(256, sizeof(cipher), key21, plain2, my_iv, cipher);
-//    Serial.print("Decifrado: ");
-//    Serial.println(plain2);
-//
-//    char teste[] = "0123456789012345678901234567890123456789012345678901234567890123";
-//    byte teste_byte[sizeof(teste)];
-//    CharToByte(teste, teste_byte, sizeof(teste));
-//    char teste_hexa[sizeof(teste)*2];
-//    byteArrayToHexString(teste, sizeof(teste), teste_hexa, sizeof(teste_hexa));
-//    Serial.print("Teste: ");
-//    Serial.println(teste_hexa);
+    Udp.beginPacket(pc, localPort);
+    Udp.write(hex); // envia em hexa//
+    Udp.endPacket();
 
     delay(5000);
     Serial.println("**************************************\n");

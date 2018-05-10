@@ -5,11 +5,13 @@
 #include "utils.h"
 #include "RSA.h"
 #include "sha512.h"
+#include <string>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
-class iotAuth
+class IotAuth
 {
     protected:
 
@@ -17,13 +19,10 @@ class iotAuth
 
         void encryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size);
         void decryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size);
-        void encryptDHPackage(DHPackage DHPackageStruct, int package_size, char cipherHex[], int cipherHex_size);
-        void decryptDHPackage(DHPackage DHPackageStruct, int package_size, char cipherHex[], int cipherHex_size);
 
         RSAKeyPair generateRSAKeyPair();
 
-        string hash(string message);
-        string hashDHPackage(DHPackage DHPackageStruct);
+        void hash(char message[], char hash[]);
 
         int* encryptRSAPublicKey(char plain[], PublicRSAKey publicKey, int size);
         int* encryptRSAPrivateKey(char plain[], PrivateRSAKey privateKey, int size);
