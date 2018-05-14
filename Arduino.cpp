@@ -152,7 +152,7 @@ string Arduino::getHashEncrypted(string package)
 }
 
 
-char* Arduino::sendDiffieHellmanKey()
+string Arduino::sendDiffieHellmanKey()
 {
     cout << "************SEND DH CLIENT************" << endl;
     /*  Organiza o pacote com os dados Diffie-Hellman para enviar ao cliente. */
@@ -172,7 +172,7 @@ char* Arduino::sendDiffieHellmanKey()
     /* Realiza o cálculo do HASH do pacote obtido acima. */
     char hashArray[128];
     char messageArray[package.length()];
-    memset(hashArray, 0, sizeof(hashArray));
+    memset(hashArray, '\0', sizeof(hashArray));
 
     /* Converte o pacote (string) para um array de char (messageArray). */
     strncpy(messageArray, package.c_str(), sizeof(messageArray));
@@ -181,8 +181,7 @@ char* Arduino::sendDiffieHellmanKey()
     iotAuth.hash(messageArray, hashArray);
 
     cout << "Sent: " << package << endl;
-    string h (hashArray);
-    cout << "Hash: " << h << endl;
+    cout << "Hash: " << hashArray << endl;
 
     /* Encripta o hash utilizando a chave privada do cliente */
     int* hashEncrypted = iotAuth.encryptRSAPrivateKey(hashArray, keyManager.getMyPrivateKey(), sizeof(hashArray));
@@ -195,6 +194,8 @@ char* Arduino::sendDiffieHellmanKey()
         if (i < (utils.intArraySize(hashEncrypted)-1))
             hashEncryptedString += ".";
     }
+
+    cout << "Encrypted HASH: " << hashEncryptedString << endl;
 
     /**************************************************************************/
 
@@ -212,47 +213,48 @@ char* Arduino::sendDiffieHellmanKey()
 
     /*  Converte o array de int (sendDataEncrypted) para uma String (m),
         separando cada integer com um ponto (.). */
-    string m = "";
+    string message = "";
     for (int i = 0; i < utils.intArraySize(sendDataEncrypted); i++) {
-        m += to_string(sendDataEncrypted[i]);
+        message += to_string(sendDataEncrypted[i]);
 
         if (i < (utils.intArraySize(sendDataEncrypted)-1))
-            m += ".";
+            message += ".";
     }
+    message += "!";
 
     /*  Converte a string (m) em um array de char (message), que será enviado
         ao servidor. */
-    char* message = (char*)malloc(m.length());
-    memset(message, '0', sizeof(message));
-
-    strncpy(message, m.c_str(), m.length());
+    // char* message = (char*)malloc(m.length());
+    // memset(message, '\0', sizeof(message));
     //
-    // cout << endl << "Message: " << message << endl;
-    cout << "Message Length: " << m.length() << endl;
+    // strncpy(message, m.c_str(), sizeof(message));
 
-    /* TESTE ::: Processo de Decodificação da mensagem (apenas para testar) */
-    /* Decodificação */
-    int* decInt = (int*)malloc(m.length() * sizeof(int));
-    decInt = utils.RSAToIntArray(message, m.length());
+    // cout << endl << message << endl;
+    cout << "Message Length: " << message.length() << endl;
 
-    string packageDecrypted = iotAuth.decryptRSAPrivateKey(decInt, keyManager.getMyPrivateKey(), m.length());
-    // cout << "Package Decrypted: " << packageDecrypted << endl;
-
-    char packageDecryptedChar[packageDecrypted.length()];
-    strncpy(packageDecryptedChar, packageDecrypted.c_str(), sizeof(packageDecryptedChar));
-
-    string result = getHashEncrypted(packageDecrypted);
-    char resultChar[result.length()];
-    strncpy(resultChar, result.c_str(), sizeof(resultChar));
-    int* decInt2 = (int*)malloc(result.length() * sizeof(int));
-
-    decInt2 = utils.RSAToIntArray(resultChar, sizeof(resultChar));
-    // for (int i = 0; i < utils.intArraySize(decInt2); i++) {
-    //     cout << decInt2[i] << " ";
-    // }
-    string hashDec = iotAuth.decryptRSAPublicKey(decInt2, keyManager.getMyPublicKey(), result.length());
-
-    // cout << endl << "Hash dec: " << hashDec << endl;
+    // /* TESTE ::: Processo de Decodificação da mensagem (apenas para testar) */
+    // /* Decodificação */
+    // int* decInt = (int*)malloc(m.length() * sizeof(int));
+    // decInt = utils.RSAToIntArray(message, m.length());
+    //
+    // string packageDecrypted = iotAuth.decryptRSAPrivateKey(decInt, keyManager.getMyPrivateKey(), m.length());
+    // // cout << "Package Decrypted: " << packageDecrypted << endl;
+    //
+    // char packageDecryptedChar[packageDecrypted.length()];
+    // strncpy(packageDecryptedChar, packageDecrypted.c_str(), sizeof(packageDecryptedChar));
+    //
+    // string result = getHashEncrypted(packageDecrypted);
+    // char resultChar[result.length()];
+    // strncpy(resultChar, result.c_str(), sizeof(resultChar));
+    // int* decInt2 = (int*)malloc(result.length() * sizeof(int));
+    //
+    // decInt2 = utils.RSAToIntArray(resultChar, sizeof(resultChar));
+    // // for (int i = 0; i < utils.intArraySize(decInt2); i++) {
+    // //     cout << decInt2[i] << " ";
+    // // }
+    // string hashDec = iotAuth.decryptRSAPublicKey(decInt2, keyManager.getMyPublicKey(), result.length());
+    //
+    // // cout << endl << "Hash dec: " << hashDec << endl;
     /**************************************************************************/
 
     return message;

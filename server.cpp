@@ -167,6 +167,54 @@ string getHashEncrypted(string package)
 
     return resultado;
 }
+void receiveDiffieHellmanKey(char buffer[], int socket, struct sockaddr* client, int size)
+{
+    /* Decodifica o pacote recebido do cliente. */
+    string encryptedPackage (buffer);
+    int* decryptedPackageInt = (int*)malloc(encryptedPackage.length() * sizeof(int));
+    decryptedPackageInt = utils.RSAToIntArray(buffer, encryptedPackage.length());
+
+    /* Decodifica o pacote e converte para um array de char. */
+    string decryptedPackageString = iotAuth.decryptRSAPrivateKey(decryptedPackageInt, keyManager->getMyPrivateKey(), encryptedPackage.length());
+
+    /* Recupera o pacote com os dados Diffie-Hellman do Client. */
+    string dhPackage = getPackage(decryptedPackageString);
+
+    /***** HASH *****/
+    /* Recupera o hash cifrado com a chave Privada do Server. */
+    string encryptedHash = getHashEncrypted(decryptedPackageString);
+    char encryptedHashChar[encryptedHash.length()];
+    strncpy(encryptedHashChar, encryptedHash.c_str(), sizeof(encryptedHashChar));
+
+    cout << "Encrypted HASH: " << encryptedHash << endl;
+
+    int* encryptedHashInt = (int*)malloc(encryptedHash.length() * sizeof(int));
+    encryptedHashInt = utils.RSAToIntArray(encryptedHashChar, 128);
+
+    /* Decifra o HASH com a chave pública do Server. */
+    string decryptedHashString = iotAuth.decryptRSAPublicKey(encryptedHashInt, keyManager->getMyPublicKey(), encryptedHash.length());
+
+    cout << "Client Decrypted HASH: " << decryptedHashString << endl;
+    /***** HASH *****/
+
+    /* Recebe chave Diffie-Hellman e IV. */
+    printf("\n*******CLIENT DH KEY RECEIVED******\n");
+    char dhPackageChar[dhPackage.length()];
+    strncpy(dhPackageChar, dhPackage.c_str(), sizeof(dhPackageChar));
+    keyManager->setBase(StringHandler.getClientBase(dhPackageChar));
+    keyManager->setModulus(StringHandler.getClientModulus(dhPackageChar));
+    keyManager->setSessionKey(keyManager->getDiffieHellmanKey(StringHandler.getDHClientKey(dhPackageChar)));
+    int ivClient = StringHandler.getDHIvClient(dhPackageChar);
+
+    RECEIVED_DH_KEY = true;
+    std::cout << "Diffie-Hellman Key: " << StringHandler.getDHClientKey(dhPackageChar) << std::endl;
+    std::cout << "Base: " << StringHandler.getClientBase(dhPackageChar) << std::endl;
+    std::cout << "Modulus: " << StringHandler.getClientModulus(dhPackageChar) << std::endl;
+    std::cout << "Client IV: " << StringHandler.getDHIvClient(dhPackageChar) << std::endl;
+    std::cout << "Session Key: " << keyManager->getSessionKey() << std::endl;
+    std::cout << "***********************************\n" << std::endl;
+
+}
 
 void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr* client, int size)
 {
@@ -329,7 +377,7 @@ int main(int argc, char *argv[]){
     int meuSocket,enviei=0;
     socklen_t tam_cliente;
     // MTU padrão pela IETF
-    char buffer[556];
+    char buffer[10000];
 
     meuSocket=socket(PF_INET,SOCK_DGRAM,0);
     servidor.sin_family=AF_INET;
@@ -345,7 +393,8 @@ int main(int argc, char *argv[]){
 
        tam_cliente=sizeof(struct sockaddr_in);
 
-       recvfrom(meuSocket, buffer, 10000, MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
+       memset(buffer, 0, sizeof(buffer));
+       recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
        // printf("Recebi:%s de <endereço:%s> <porta:%d>\n",buffer,inet_ntoa(cliente.sin_addr),ntohs(cliente.sin_port));
 
        /* Aguarda o recebimento do HELLO do Client. */
@@ -363,43 +412,43 @@ int main(int argc, char *argv[]){
            /* Se já realizou a troa de chaves RSA, mas ainda não realizou a troca de chaves DH: */
            /* DH_KEY_CLIENT # BASE # MODULUS # CLIENT_IV */
        } else if (RECEIVED_RSA_KEY && !RECEIVED_DH_KEY) {
-           processDiffieHellmanKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+           receiveDiffieHellmanKey(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
            /* Aqui, todos as chaves foram trocadas, então é só receber os dados cifrados: */
        } else {
            /******* INCOMPLETO ***************/
-           cout << "Recebido: " << buffer << endl;
-           cout << "Tamanho buffer recebido: " << sizeof(buffer) << endl;
-
-           byte plain[64];
-           char plain_char[sizeof(plain)];
-
-           iotAuth.decryptHEX(plain, sizeof(plain), buffer, sizeof(buffer));
-           utils.ByteToChar(plain, plain_char, sizeof(plain));
-
-           cout << "Decifrado " << plain_char << endl;
-
-           byte plainTesteByte[64];
-           char plainTesteChar[] = "hello";
-           char hexTeste[128];
-           byte decifradoByte[64];
-           char decifradoChar[64];
-
-           memset(plainTesteByte, 0, sizeof(plainTesteByte));
-           memset(hexTeste, '0', sizeof(hexTeste));
-           memset(decifradoByte, 0, sizeof(decifradoByte));
-           memset(decifradoChar, '0', sizeof(decifradoChar));
-
-           for (int i = 0; i < sizeof(plainTesteChar); i++) {
-               plainTesteByte[i] = plainTesteChar[i];
-           }
-
-           iotAuth.encryptHEX(plainTesteByte, sizeof(plainTesteByte), hexTeste, sizeof(hexTeste));
-           cout << "Encriptado: " << hexTeste << endl;
-
-           iotAuth.decryptHEX(decifradoByte, sizeof(decifradoByte), hexTeste, sizeof(hexTeste));
-           utils.ByteToChar(decifradoByte, decifradoChar, sizeof(decifradoByte));
-
-           cout << "Decriptado: " << decifradoChar << endl;
+           // cout << "Recebido: " << buffer << endl;
+           // cout << "Tamanho buffer recebido: " << sizeof(buffer) << endl;
+           //
+           // byte plain[64];
+           // char plain_char[sizeof(plain)];
+           //
+           // iotAuth.decryptHEX(plain, sizeof(plain), buffer, sizeof(buffer));
+           // utils.ByteToChar(plain, plain_char, sizeof(plain));
+           //
+           // cout << "Decifrado " << plain_char << endl;
+           //
+           // byte plainTesteByte[64];
+           // char plainTesteChar[] = "hello";
+           // char hexTeste[128];
+           // byte decifradoByte[64];
+           // char decifradoChar[64];
+           //
+           // memset(plainTesteByte, 0, sizeof(plainTesteByte));
+           // memset(hexTeste, '0', sizeof(hexTeste));
+           // memset(decifradoByte, 0, sizeof(decifradoByte));
+           // memset(decifradoChar, '0', sizeof(decifradoChar));
+           //
+           // for (int i = 0; i < sizeof(plainTesteChar); i++) {
+           //     plainTesteByte[i] = plainTesteChar[i];
+           // }
+           //
+           // iotAuth.encryptHEX(plainTesteByte, sizeof(plainTesteByte), hexTeste, sizeof(hexTeste));
+           // cout << "Encriptado: " << hexTeste << endl;
+           //
+           // iotAuth.decryptHEX(decifradoByte, sizeof(decifradoByte), hexTeste, sizeof(hexTeste));
+           // utils.ByteToChar(decifradoByte, decifradoChar, sizeof(decifradoByte));
+           //
+           // cout << "Decriptado: " << decifradoChar << endl;
            /******* INCOMPLETO ***************/
        }
 

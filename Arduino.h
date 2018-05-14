@@ -42,7 +42,7 @@ class Arduino
         void receiveRSAKey(char message[]);
 
         /* Realiza o envio da chave Diffie-Hellman para o Server. */
-        char* sendDiffieHellmanKey();
+        string sendDiffieHellmanKey();
         /* Recebe a chave Diffie-Hellman do Server. */
         void receiveDiffieHellmanKey(char message[]);
 

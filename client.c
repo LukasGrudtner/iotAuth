@@ -56,10 +56,11 @@ int main(int argc, char *argv[]){
     while(1){
 
        printf("\n*** Bem vindo ao cliente ***\n");
-       printf("Escreva uma mensagem:\n");
-       fgets(envia,556,stdin);
 
        if (!arduino.clientHello) {
+           printf("########## ENTER para enviar um HELLO ao Server #####\n");
+           fgets(envia,556,stdin);
+
            char* message = arduino.sendClientHello();
            sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
@@ -70,6 +71,9 @@ int main(int argc, char *argv[]){
        }
 
        if (arduino.clientHello && !arduino.receivedRSAKey) {
+           printf("########## ENTER para enviar a chave RSA ao Server ##########\n");
+           fgets(envia, 556, stdin);
+
            char* message = arduino.sendRSAKey();
            sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
@@ -80,8 +84,17 @@ int main(int argc, char *argv[]){
        }
 
        if (arduino.receivedRSAKey && !arduino.receivedDHKey) {
-           char* message = arduino.sendDiffieHellmanKey();
-           sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+           printf("########## ENTER para enviar a chave DH ao Server ##########\n");
+           fgets(envia, 556, stdin);
+
+           string message = arduino.sendDiffieHellmanKey();
+           char messageChar[message.length()];
+           memset(messageChar, '\0', sizeof(messageChar));
+           strncpy(messageChar, message.c_str(), sizeof(messageChar));
+
+           cout << "Size Message Char: " << sizeof(messageChar) << endl;
+
+           sendto(meuSocket,messageChar,strlen(messageChar),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
            // while (!arduino.receivedDHKey && !arduino.clientDone) {
            //     recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);

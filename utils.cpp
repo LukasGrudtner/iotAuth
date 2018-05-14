@@ -72,10 +72,10 @@ int* Utils::RSAToIntArray(char encrypted[], int size)
     int* intArray = (int*)malloc(size * sizeof(int));
     int k = 0;
     int i = 0;
-    while (encrypted[i] != '\0') {
+    while (encrypted[i] != '!') {
 
-        string numb = "";
-        while ((encrypted[i] != '.') && (encrypted[i] != '\0')) {
+        string numb = "0";
+        while ((encrypted[i] != '.') && (encrypted[i] != '!')) {
             numb += encrypted[i];
             i++;
         }
