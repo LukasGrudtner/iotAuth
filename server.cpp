@@ -348,19 +348,25 @@ int main(int argc, char *argv[]){
        recvfrom(meuSocket, buffer, 10000, MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
        // printf("Recebi:%s de <endereço:%s> <porta:%d>\n",buffer,inet_ntoa(cliente.sin_addr),ntohs(cliente.sin_port));
 
+       /* Aguarda o recebimento do HELLO do Client. */
        /* HELLO */
        if (!CLIENT_HELLO) {
            processClientHello(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+         /* Se a mensagem recebida do Client for um DONE: */
          /* DONE */
        } else if (strcmp(buffer, DONE_MESSAGE) == 0) {
            processClientDone(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+           /* Se já recebeu um CLIENT_HELLO, mas a troca de chaves RSA ainda não ocorreu: */
            /* CLIENT_PUBLIC_KEY (D) # CLIENT_PUBLIC_KEY (N) # ANSWER FDR # IV # FDR */
        } else if (CLIENT_HELLO && !RECEIVED_RSA_KEY) {
            processRSAKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+           /* Se já realizou a troa de chaves RSA, mas ainda não realizou a troca de chaves DH: */
            /* DH_KEY_CLIENT # BASE # MODULUS # CLIENT_IV */
-       } else if (CLIENT_HELLO && !RECEIVED_DH_KEY) {
+       } else if (RECEIVED_RSA_KEY && !RECEIVED_DH_KEY) {
            processDiffieHellmanKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+           /* Aqui, todos as chaves foram trocadas, então é só receber os dados cifrados: */
        } else {
+           /******* INCOMPLETO ***************/
            cout << "Recebido: " << buffer << endl;
            cout << "Tamanho buffer recebido: " << sizeof(buffer) << endl;
 
@@ -394,7 +400,7 @@ int main(int argc, char *argv[]){
            utils.ByteToChar(decifradoByte, decifradoChar, sizeof(decifradoByte));
 
            cout << "Decriptado: " << decifradoChar << endl;
-
+           /******* INCOMPLETO ***************/
        }
 
        memset(buffer, 0, sizeof(buffer));

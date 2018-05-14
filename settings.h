@@ -1,6 +1,7 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+/* Definição de alguns atributos utilizados na comunicação */
 #define DEFAULT_PORT 8080
 #define SPACER '#'
 #define SPACER_S "#"
@@ -10,29 +11,33 @@
 #define HELLO_ACK_CHAR '#'
 #define DONE_ACK "!"
 #define DONE_ACK_CHAR '!'
-
 #define FDRb "+7"
 
+/* Definição do tipo "byte" utilizado. */
 typedef unsigned char byte;
 
+/* Definição da struct de chave privada. */
 typedef struct private_rsa_key
 {
     long int e;
     long int n;
 } PrivateRSAKey;
 
+/* Definição da struct de chave pública. */
 typedef struct public_rsa_key
 {
     long int d;
     long int n;
 } PublicRSAKey;
 
+/* Definição da struct que representa o par de chaves RSA. */
 typedef struct rsa_key_pair
 {
     PublicRSAKey publicRSAKey;
     PrivateRSAKey privateRSAKey;
 } RSAKeyPair;
 
+/* Definição da struct que represneta o pacote de dados trocados no passo RSA. */
 typedef struct rsaExchange
 {
     PublicRSAKey publicKey;

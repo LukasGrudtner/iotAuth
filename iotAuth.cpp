@@ -83,6 +83,8 @@ void IotAuth::decryptHEX(byte plain[], int plain_size, char cipherHex[], int cip
     decryptAES(256, 64, key, plain, iv, cipher);
 }
 
+/*  Realiza a geração de um par de chaves RSA, retornando uma struct RSAKeyPair
+    com ambas as chaves. Essa struct é definida em "settings.h". */
 RSAKeyPair IotAuth::generateRSAKeyPair()
 {
     srand(time(NULL));
@@ -110,12 +112,15 @@ RSAKeyPair IotAuth::generateRSAKeyPair()
     return keys;
 }
 
+/*  Realiza o hash do parâmetro message e armazena no array (hash) (retorno por
+    parâmetro) */
 void IotAuth::hash(char message[], char hash[])
 {
     string output = sha512(message);
     strncpy(hash, output.c_str(), 128);
 }
 
+/* Realiza a cifragem RSA utilizando uma chave pública fornecida por parâmetro */
 int* IotAuth::encryptRSAPublicKey(char plain[], PublicRSAKey publicKey, int size)
 {
     int* mensagemC;
@@ -131,6 +136,7 @@ int* IotAuth::encryptRSAPublicKey(char plain[], PublicRSAKey publicKey, int size
     return mensagemC;
 }
 
+/* Realiza a cifragem RSA utilizando uma chave privada fornecida por parâmetro. */
 int* IotAuth::encryptRSAPrivateKey(char plain[], PrivateRSAKey privateKey, int size)
 {
     int* mensagemC;
@@ -146,6 +152,8 @@ int* IotAuth::encryptRSAPrivateKey(char plain[], PrivateRSAKey privateKey, int s
     return mensagemC;
 }
 
+/* Realiza a decifragem RSA utilizando uma chave pública fornecida por parâmetro. */
+/* PublicRSAKey é uma struct definida em "settings.h" */
 string IotAuth::decryptRSAPublicKey(int cipher[], PublicRSAKey publicKey, int size)
 {
     char* plain;
@@ -155,6 +163,8 @@ string IotAuth::decryptRSAPublicKey(int cipher[], PublicRSAKey publicKey, int si
     return output;
 }
 
+/* Realiza a decifragem RSA utilizando uma chave privada fornecida por parâmetro */
+/* PrivateRSAKey é uma struct definida em "settings.h" */
 string IotAuth::decryptRSAPrivateKey(int cipher[], PrivateRSAKey privateKey, int size)
 {
     char* plain;

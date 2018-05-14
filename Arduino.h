@@ -9,6 +9,8 @@
 
 using namespace std;
 
+/* Simulação das funções executadas pelo Arduino. */
+
 class Arduino
 {
     public:
@@ -24,15 +26,24 @@ class Arduino
         bool receivedRSAKey = false;
         bool receivedDHKey = false;
 
+        /* Envia Client Hello para o Server. */
         char* sendClientHello();
+        /* Envia Client Done para o Server. */
         char* sendClientDone();
+
+        /* Recebe o Server Hello. */
         bool receiveServerHello(char buffer[]);
+        /* Recebe o Server Done. */
         bool receiveServerDone(char buffer[]);
 
+        /* Realiza o envio da chave RSA para o Server. */
         char* sendRSAKey();
+        /* Recebe a chave RSA do Server. */
         void receiveRSAKey(char message[]);
 
+        /* Realiza o envio da chave Diffie-Hellman para o Server. */
         char* sendDiffieHellmanKey();
+        /* Recebe a chave Diffie-Hellman do Server. */
         void receiveDiffieHellmanKey(char message[]);
 
     private:
@@ -42,8 +53,16 @@ class Arduino
         StringHandler stringHandler;
         Utils utils;
 
+        /*  Retorna toda a string anterior ao símbolo "*".
+            Essa string representa o Hash encriptado. */
         string getHashEncrypted(string package);
+
+        /*  Retorna toda a string logo após o símbolo "*".
+            Essa string representa o pacote com os dados DH recebidos
+            do Server. */
         string getPackage(string package);
+
+        /* Realiza o envio do Done para o Server. */
         void done();
 };
 

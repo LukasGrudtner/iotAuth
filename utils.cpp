@@ -64,6 +64,9 @@ void Utils::ByteToChar(byte* bytes, char* chars, unsigned int count)
          chars[i] = (char)bytes[i];
 }
 
+/*  O array recebido por parâmetro (encrypted) é composto por inteiros separados
+    por um ponto (.), devido à cifragem RSA. Este método pega cada inteiro
+    separado por ponto e retorna um array com estes números. */
 int* Utils::RSAToIntArray(char encrypted[], int size)
 {
     int* intArray = (int*)malloc(size * sizeof(int));
@@ -87,6 +90,7 @@ int* Utils::RSAToIntArray(char encrypted[], int size)
     return intArray;
 }
 
+/* Retorna o tamanho de um array de ints. */
 int Utils::intArraySize(int array[])
 {
     int size = 0;

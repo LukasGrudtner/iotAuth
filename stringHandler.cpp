@@ -44,8 +44,8 @@ PublicRSAKey StringHandler::getPartnerPublicKey(char buffer[])
     return publicKey;
 }
 
-/*  getRSAExchangeIv()
-    Retorna o atributo 'IV' utilizado na troca de chaves RSA, e que está
+/*  getRSAExchangeAnswerFdr()
+    Retorna o atributo 'answerFdr' utilizado na troca de chaves RSA, e que está
     contida no buffer recebido por parâmetro.
 */
 int StringHandler::getRSAExchangeAnswerFdr(char buffer[])
@@ -53,6 +53,10 @@ int StringHandler::getRSAExchangeAnswerFdr(char buffer[])
     return std::stoi(getData(buffer, 2));
 }
 
+/*  getRSAExchangeIv()
+    Retorna o atributo 'IV' utilizado na troca de chaves RSA, e que está
+    contida no buffer recebido por parâmetro.
+*/
 int StringHandler::getRSAExchangeIv(char buffer[])
 {
     return std::stoi(getData(buffer, 3));

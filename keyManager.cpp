@@ -124,15 +124,19 @@ void KeyManager::setFDR(FDR* _fdr)
     fdr = _fdr;
 }
 
+/*  Armazena o par de chaves RSA */
 void KeyManager::setRSAKeyPair(RSAKeyPair keys)
 {
     rsaKeys = keys;
 }
+
+/* Retorna a base utlizada no cálculo do Diffie-Hellman. */
 int KeyManager::getBase()
 {
     return base;
 }
 
+/* Retorna o módulo utilizado no cálculo do Diffie-Hellman. */
 int KeyManager::getModulus()
 {
     return modulus;

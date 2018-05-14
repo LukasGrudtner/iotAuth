@@ -59,8 +59,13 @@ char* Arduino::sendRSAKey()
 {
     cout << "************SEND RSA CLIENT***********" << endl;
 
+    /* Gera um par de chaves RSA e o armazena no keyManager. */
     keyManager.setRSAKeyPair(iotAuth.generateRSAKeyPair());
 
+    /* Organiza os dados que serão enviados para o Server:
+        Chave Pública (D) + # + Chave Pública (N) + # + Resposta do DR + # +
+        IV + # + Função Desafio Resposta
+    */
     string spacer (SPACER_S);
     string sendData = "";
     string answerFdr = "null";
@@ -77,6 +82,9 @@ char* Arduino::sendRSAKey()
     cout << "Iv: " << iv << endl;
     cout << "Fdr: " << fdr << endl;
 
+    /*  Converte a string para um array de char (message), e retorna este
+        array.
+    */
     char* message = (char*)malloc(sendData.length());
     strcpy(message, sendData.c_str());
 
@@ -93,6 +101,10 @@ void Arduino::receiveRSAKey(char buffer[])
 
     cout << "Received: " << buffer << endl;
 
+    /*  Armazena a chave pública do servidor obtida, passando como parâmetro
+        uma chamada à função getPartnerPublicKey do StringHandler, que extrai
+        a chave pública do servidor do buffer (recebido do server).
+    */
     keyManager.setPartnerPublicKey(stringHandler.getPartnerPublicKey(buffer));
 
     long int answerFdr = stringHandler.getRSAExchangeAnswerFdr(buffer);
@@ -121,6 +133,9 @@ void Arduino::receiveRSAKey(char buffer[])
 
 string Arduino::getHashEncrypted(string package)
 {
+    /*  Pega todos os caracteres anteriores ao símbolo "*", coloca-os em uma
+        string e a retorna. Esta string é o HASH encriptado recebido do server.
+    */
     string resultado = "";
     int i = 0;
 
@@ -140,6 +155,7 @@ string Arduino::getHashEncrypted(string package)
 char* Arduino::sendDiffieHellmanKey()
 {
     cout << "************SEND DH CLIENT************" << endl;
+    /*  Organiza o pacote com os dados Diffie-Hellman para enviar ao cliente. */
     long int pot = pow(g, a);
     long int A = pot % p;
 
@@ -151,23 +167,28 @@ char* Arduino::sendDiffieHellmanKey()
                         to_string(p) + spacer +
                         to_string(iv);
 
+    /**************************************************************************/
+
+    /* Realiza o cálculo do HASH do pacote obtido acima. */
     char hashArray[128];
     char messageArray[package.length()];
     memset(hashArray, 0, sizeof(hashArray));
+
+    /* Converte o pacote (string) para um array de char (messageArray). */
     strncpy(messageArray, package.c_str(), sizeof(messageArray));
 
+    /* Armazena o hash no buffer hashArray */
     iotAuth.hash(messageArray, hashArray);
 
     cout << "Sent: " << package << endl;
     string h (hashArray);
     cout << "Hash: " << h << endl;
 
+    /* Encripta o hash utilizando a chave privada do cliente */
     int* hashEncrypted = iotAuth.encryptRSAPrivateKey(hashArray, keyManager.getMyPrivateKey(), sizeof(hashArray));
-    // cout << "Hash Encrypted: ";
-    // for (int i = 0; i < utils.intArraySize(hashEncrypted); i++) {
-    //     cout << hashEncrypted[i];
-    // }
 
+    /*  Converte o array de int (hashEncrypted) para uma String, separando
+        cada integer com um ponto (.). */
     string hashEncryptedString = "";
     for (int i = 0; i < utils.intArraySize(hashEncrypted); i++) {
         hashEncryptedString += to_string(hashEncrypted[i]);
@@ -175,19 +196,22 @@ char* Arduino::sendDiffieHellmanKey()
             hashEncryptedString += ".";
     }
 
-    string sendData = package + "*" + hashEncryptedString;
-    // cout << endl<< "Send Data: " << sendData << endl;
+    /**************************************************************************/
 
+    /* Prepara o pacote completo que será enviado ao servidor. */
+    string sendData = package + "*" + hashEncryptedString;
+
+    /* Converte a string (sendData) para um array de chars (sendDataArray). */
     char sendDataArray[sendData.length()];
     memset(sendDataArray, 0, sizeof(sendDataArray));
     strncpy(sendDataArray, sendData.c_str(), sizeof(sendDataArray));
 
+    /* Encripta o sendDataArray utilizando a chave pública do servidor. */
     int* sendDataEncrypted = iotAuth.encryptRSAPublicKey(sendDataArray,
                 keyManager.getPartnerPublicKey(), sizeof(sendDataArray));
 
-    // int* sendDataEncrypted = iotAuth.encryptRSAPublicKey(sendDataArray,
-    //             keyManager.getMyPublicKey(), sizeof(sendDataArray));
-
+    /*  Converte o array de int (sendDataEncrypted) para uma String (m),
+        separando cada integer com um ponto (.). */
     string m = "";
     for (int i = 0; i < utils.intArraySize(sendDataEncrypted); i++) {
         m += to_string(sendDataEncrypted[i]);
@@ -196,7 +220,8 @@ char* Arduino::sendDiffieHellmanKey()
             m += ".";
     }
 
-    // cout << endl << endl << "M: " << m << endl;
+    /*  Converte a string (m) em um array de char (message), que será enviado
+        ao servidor. */
     char* message = (char*)malloc(m.length());
     memset(message, '0', sizeof(message));
 
@@ -205,6 +230,7 @@ char* Arduino::sendDiffieHellmanKey()
     // cout << endl << "Message: " << message << endl;
     cout << "Message Length: " << m.length() << endl;
 
+    /* TESTE ::: Processo de Decodificação da mensagem (apenas para testar) */
     /* Decodificação */
     int* decInt = (int*)malloc(m.length() * sizeof(int));
     decInt = utils.RSAToIntArray(message, m.length());
@@ -227,12 +253,14 @@ char* Arduino::sendDiffieHellmanKey()
     string hashDec = iotAuth.decryptRSAPublicKey(decInt2, keyManager.getMyPublicKey(), result.length());
 
     // cout << endl << "Hash dec: " << hashDec << endl;
+    /**************************************************************************/
 
     return message;
 }
 
 string Arduino::getPackage(string package)
 {
+    /*  Retorna o pacote recebido do servidor. */
     string resultado = "";
     int i = 0;
 
@@ -246,23 +274,36 @@ string Arduino::getPackage(string package)
 
 void Arduino::receiveDiffieHellmanKey(char message[])
 {
+    /*  Decifragem do pacote com os dados Diffie-Hellman enviados pelo server */
+    /*  Converte a mensagem encriptada (RSA) que foi recebida para um array de
+        ints através da função RSAToIntArray da classe Utils. */
     string encrypted (message);
     int* decInt = (int*)malloc(encrypted.length() * sizeof(int));
     decInt = utils.RSAToIntArray(message, encrypted.length());
 
+    /*  Desencripta esse array (decInt) com a chave privada do cliente. */
     string packageDecrypted = iotAuth.decryptRSAPrivateKey(decInt, keyManager.getMyPrivateKey(), encrypted.length());
     char packageDecryptedChar[packageDecrypted.length()];
     strncpy(packageDecryptedChar, packageDecrypted.c_str(), sizeof(packageDecryptedChar));
 
-    /* Recupera as chaves */
+    /* Recupera o pacote decifrado. */
     string package = getPackage(packageDecrypted);
 
+    /**************************************************************************/
+
+    /* Recupera o hash cifrado. */
     string result = getHashEncrypted(packageDecrypted);
+
+    /* Converte a string (result) para um array de chars (resultChar) */
     char resultChar[result.length()];
     strncpy(resultChar, result.c_str(), sizeof(resultChar));
     int* decInt2 = (int*)malloc(result.length() * sizeof(int));
 
+    /*  Converte resultChar (hash cifrado) em um array de integer através da
+        função RSAToIntArray da classe Utils. */
     decInt2 = utils.RSAToIntArray(resultChar, sizeof(resultChar));
+
+    /* Decifra o hash */
     string hashDec = iotAuth.decryptRSAPublicKey(decInt2, keyManager.getMyPublicKey(), result.length());
 
     cout << "Hash decifrado: " << hashDec << endl;
