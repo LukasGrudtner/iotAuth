@@ -22,10 +22,10 @@ class IotAuth
 
         RSAKeyPair generateRSAKeyPair();
 
-        void hash(char message[], char hash[]);
+        string hash(char message[]);
 
-        int* encryptRSAPublicKey(char plain[], PublicRSAKey publicKey, int size);
-        int* encryptRSAPrivateKey(char plain[], PrivateRSAKey privateKey, int size);
+        int* encryptRSAPublicKey(string plain, PublicRSAKey publicKey, int size);
+        int* encryptRSAPrivateKey(string plain, PrivateRSAKey privateKey, int size);
         string decryptRSAPublicKey(int cipher[], PublicRSAKey publicKey, int size);
         string decryptRSAPrivateKey(int cipher[], PrivateRSAKey privateKey, int size);
 

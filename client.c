@@ -96,10 +96,11 @@ int main(int argc, char *argv[]){
 
            sendto(meuSocket,messageChar,strlen(messageChar),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
-           // while (!arduino.receivedDHKey && !arduino.clientDone) {
-           //     recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-           //     arduino.receiveDiffieHellmanKey(recebe);
-           // }
+           while (!arduino.receivedDHKey && !arduino.clientDone) {
+               recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+               cout << "Recebido: " << recebe << endl;
+               // arduino.receiveDiffieHellmanKey(recebe);
+           }
        }
 
 

@@ -216,49 +216,8 @@ void receiveDiffieHellmanKey(char buffer[], int socket, struct sockaddr* client,
 
 }
 
-void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr* client, int size)
+string sendDiffieHellmanKey()
 {
-    /* Decofificação */
-    string encrypted (buffer);
-    int* decInt = (int*)malloc(encrypted.length() * sizeof(int));
-    decInt = utils.RSAToIntArray(buffer, encrypted.length());
-
-    string packageDecrypted = iotAuth.decryptRSAPrivateKey(decInt, keyManager->getMyPrivateKey(), encrypted.length());
-    char packageDecryptedChar[packageDecrypted.length()];
-    strncpy(packageDecryptedChar, packageDecrypted.c_str(), sizeof(packageDecryptedChar));
-
-    /* Recupera as chaves */
-    string package = getPackage(packageDecrypted);
-
-    string result = getHashEncrypted(packageDecrypted);
-    char resultChar[result.length()];
-    strncpy(resultChar, result.c_str(), sizeof(resultChar));
-    int* decInt2 = (int*)malloc(result.length() * sizeof(int));
-
-    decInt2 = utils.RSAToIntArray(resultChar, sizeof(resultChar));
-    string hashDec = iotAuth.decryptRSAPublicKey(decInt2, keyManager->getMyPublicKey(), result.length());
-
-    cout << "Hash decifrado: " << hashDec << endl;
-
-    /* Recebe chave Diffie-Hellman e IV. */
-    printf("\n*******CLIENT DH KEY RECEIVED******\n");
-    char pkg[package.length()];
-    strncpy(pkg, package.c_str(), sizeof(pkg));
-    keyManager->setBase(StringHandler.getClientBase(pkg));
-    keyManager->setModulus(StringHandler.getClientModulus(pkg));
-    keyManager->setSessionKey(keyManager->getDiffieHellmanKey(StringHandler.getDHClientKey(pkg)));
-    int ivClient = StringHandler.getDHIvClient(pkg);
-
-    RECEIVED_DH_KEY = true;
-    std::cout << "Diffie-Hellman Key: " << StringHandler.getDHClientKey(pkg) << std::endl;
-    std::cout << "Base: " << StringHandler.getClientBase(pkg) << std::endl;
-    std::cout << "Modulus: " << StringHandler.getClientModulus(pkg) << std::endl;
-    std::cout << "Client IV: " << StringHandler.getDHIvClient(pkg) << std::endl;
-    std::cout << "Session Key: " << keyManager->getSessionKey() << std::endl;
-    std::cout << "***********************************\n" << std::endl;
-
-    /* ENVIO */
-
     /* Envia chave Diffie-Hellman e IV. */
     printf("*********SEND SERVER DH KEY********\n");
     std::string sendString;
@@ -267,18 +226,21 @@ void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr*
                  std::to_string(keyManager->getBase()) + spacer +
                  std::to_string(keyManager->getModulus()) + spacer +
                  std::to_string(keyManager->getIV()) + spacer +
-                 std::to_string(handleIV(ivClient, keyManager->getFDR()));
+                 std::to_string(handleIV(keyManager->getIV(), keyManager->getFDR()));
 
     char messageArray[sendString.length()];
-    memset(messageArray, '0', sizeof(messageArray));
-    strncpy(messageArray, package.c_str(), sizeof(messageArray));
-    /* Geração do HASH */
+    memset(messageArray, 0, sizeof(messageArray));
+    strncpy(messageArray, sendString.c_str(), sizeof(messageArray));
 
+    /***************************** Geração do HASH *******************************/
     char hashArray[128];
     memset(hashArray, 0, sizeof(hashArray));
-    iotAuth.hash(messageArray, hashArray);
-    cout << "Hash: " << hashArray << endl;
-    int* hashEncrypted = iotAuth.encryptRSAPrivateKey(hashArray, keyManager->getMyPrivateKey(), sizeof(hashArray));
+    string hash = iotAuth.hash(messageArray);
+    cout << "Hash: " << hash << endl;
+    printf("0\n");
+    int* hashEncrypted = iotAuth.encryptRSAPrivateKey(hash, keyManager->getMyPrivateKey(), hash.length());
+
+    printf("1");
 
     string hashEncryptedString = "";
     for (int i = 0; i < utils.intArraySize(hashEncrypted); i++) {
@@ -286,88 +248,35 @@ void processDiffieHellmanKeyExchange(char buffer[], int socket, struct sockaddr*
         if (i < (utils.intArraySize(hashEncrypted)-1))
             hashEncryptedString += ".";
     }
+        printf("2");
 
-    /* Preparação do pacote */
+    /************************* Preparação do pacote ******************************/
     string sendData = sendString + "*" + hashEncryptedString;
-    // cout << endl<< "Send Data: " << sendData << endl;
+    printf("1");
 
     char sendDataArray[sendData.length()];
-    memset(sendDataArray, 0, sizeof(sendDataArray));
+    memset(sendDataArray, '0', sizeof(sendDataArray));
     strncpy(sendDataArray, sendData.c_str(), sizeof(sendDataArray));
+
+    printf("2");
 
     int* sendDataEncrypted = iotAuth.encryptRSAPublicKey(sendDataArray,
                 keyManager->getPartnerPublicKey(), sizeof(sendDataArray));
 
-    // int* sendDataEncrypted = iotAuth.encryptRSAPublicKey(sendDataArray,
-    //             keyManager.getMyPublicKey(), sizeof(sendDataArray));
+    printf("3");
 
-    string m = "";
+    string message = "";
     for (int i = 0; i < utils.intArraySize(sendDataEncrypted); i++) {
-        m += to_string(sendDataEncrypted[i]);
+        message += to_string(sendDataEncrypted[i]);
 
         if (i < (utils.intArraySize(sendDataEncrypted)-1))
-            m += ".";
+            message += ".";
     }
+    message += "!";
 
-    // cout << endl << endl << "M: " << m << endl;
-    char* message = (char*)malloc(m.length());
-    memset(message, '0', sizeof(message));
+    printf("4");
 
-    strncpy(message, m.c_str(), m.length());
-    //
-    // cout << endl << "Message: " << message << endl;
-    // cout << "Message Length: " << m.length() << endl;
-
-
-
-
-
-
-    // /* Codificação da mensagem com a chave privada de B (server) */
-    // char enc[sizeof(sendString)];
-    // strncpy(enc, sendString.c_str(), sizeof(enc));
-    // int* encrypted = iotAuth.encryptRSAPrivateKey(enc, keyManager->getServerPrivateKey(), sizeof(enc));
-    //
-    // string encrypted_string = "";
-    // for (int i = 0; i < sizeof(enc); i++)
-    //     encrypted_string += to_string(encrypted[i]);
-    //
-    // cout << "Encriptado: " << encrypted_string << endl << endl;
-    //
-    // /* Concatenação do bloco */
-    // string package = hash + spacer + encrypted_string;
-    // cout << "Pacote: " << package << endl << endl;
-    //
-    // /* Codificação do bloco com a chave pública de A (client) */
-    // char packageChar[package.length()];
-    // strncpy(packageChar, package.c_str(), sizeof(packageChar));
-    //
-    // int* encryptedPackage = iotAuth.encryptRSAPublicKey(packageChar, keyManager->getClientPublicKey(), sizeof(packageChar));
-    //
-    // string encryptedPackage_string = "";
-    // for (int i = 0; i < sizeof(packageChar); i++)
-    //     encryptedPackage_string += to_string(encryptedPackage[i]);
-    // cout << "Encrypted Package: " << encryptedPackage_string << endl<< endl;
-    //
-    // char sendBuffer[encryptedPackage_string.length()];
-    // strncpy(sendBuffer, encryptedPackage_string.c_str(), encryptedPackage_string.length());
-    // std::cout << "Sent Message: " << sendBuffer << std::endl;
-
-    int sended = sendto(socket, message, sizeof(m.length()), 0, client, size);
-
-    if (sended >= 0) {
-       printf("Client and Server DH KEY Successful!\n");
-    } else {
-        herror("sendto");
-        printf("Client and Server DH KEY failed!\n");
-    }
-
-    // std::cout << "Diffie-Hellman Key: " << keyManager->getSessionKey() << std::endl;
-    // std::cout << "***********************************\n" << std::endl;
-    //
-    // std::cout << "*SYMMETRICAL SESSION CLIENT-SERVER*" << std::endl;
-    // std::cout << "Session Key: " << keyManager->getSessionKey() << std::endl;
-    // std::cout << "***********************************\n" << std::endl;
+    return message;
 }
 
 int main(int argc, char *argv[]){
@@ -413,6 +322,13 @@ int main(int argc, char *argv[]){
            /* DH_KEY_CLIENT # BASE # MODULUS # CLIENT_IV */
        } else if (RECEIVED_RSA_KEY && !RECEIVED_DH_KEY) {
            receiveDiffieHellmanKey(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+
+           string message = sendDiffieHellmanKey();
+           char messageArray[message.length()];
+           strncpy(messageArray, message.c_str(), sizeof(messageArray));
+
+           sendto(meuSocket, messageArray, strlen(messageArray), 0, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+
            /* Aqui, todos as chaves foram trocadas, então é só receber os dados cifrados: */
        } else {
            /******* INCOMPLETO ***************/

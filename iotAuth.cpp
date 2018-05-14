@@ -114,17 +114,19 @@ RSAKeyPair IotAuth::generateRSAKeyPair()
 
 /*  Realiza o hash do parâmetro message e armazena no array (hash) (retorno por
     parâmetro) */
-void IotAuth::hash(char message[], char hash[])
+string IotAuth::hash(char message[])
 {
-    string output = sha512(message);
-    strncpy(hash, output.c_str(), 128);
+    return sha512(message);
 }
 
 /* Realiza a cifragem RSA utilizando uma chave pública fornecida por parâmetro */
-int* IotAuth::encryptRSAPublicKey(char plain[], PublicRSAKey publicKey, int size)
+int* IotAuth::encryptRSAPublicKey(string plain, PublicRSAKey publicKey, int size)
 {
+    char plainChar[plain.length()];
+    strncpy(plainChar, plain.c_str(), sizeof(plainChar));
+
     int* mensagemC;
-    mensagemC = rsa.codifica(plain, publicKey.d, publicKey.n, size);
+    mensagemC = rsa.codifica(plainChar, publicKey.d, publicKey.n, size);
 
     string encrypted = "";
     for (int i = 0; i < size; i++) {
@@ -137,10 +139,13 @@ int* IotAuth::encryptRSAPublicKey(char plain[], PublicRSAKey publicKey, int size
 }
 
 /* Realiza a cifragem RSA utilizando uma chave privada fornecida por parâmetro. */
-int* IotAuth::encryptRSAPrivateKey(char plain[], PrivateRSAKey privateKey, int size)
+int* IotAuth::encryptRSAPrivateKey(string plain, PrivateRSAKey privateKey, int size)
 {
+    char plainChar[plain.length()];
+    strncpy(plainChar, plain.c_str(), sizeof(plainChar));
+
     int* mensagemC;
-    mensagemC = rsa.codifica(plain, privateKey.e, privateKey.n, size);
+    mensagemC = rsa.codifica(plainChar, privateKey.e, privateKey.n, size);
 
     string encrypted = "";
     for (int i = 0; i < size; i++) {

@@ -178,13 +178,13 @@ string Arduino::sendDiffieHellmanKey()
     strncpy(messageArray, package.c_str(), sizeof(messageArray));
 
     /* Armazena o hash no buffer hashArray */
-    iotAuth.hash(messageArray, hashArray);
+    string hash = iotAuth.hash(messageArray);
 
     cout << "Sent: " << package << endl;
     cout << "Hash: " << hashArray << endl;
 
     /* Encripta o hash utilizando a chave privada do cliente */
-    int* hashEncrypted = iotAuth.encryptRSAPrivateKey(hashArray, keyManager.getMyPrivateKey(), sizeof(hashArray));
+    int* hashEncrypted = iotAuth.encryptRSAPrivateKey(hash, keyManager.getMyPrivateKey(), hash.length());
 
     /*  Converte o array de int (hashEncrypted) para uma String, separando
         cada integer com um ponto (.). */
