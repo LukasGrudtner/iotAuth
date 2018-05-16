@@ -50,6 +50,7 @@ class Arduino
 
         IotAuth iotAuth;
         KeyManager keyManager;
+
         StringHandler stringHandler;
         Utils utils;
 

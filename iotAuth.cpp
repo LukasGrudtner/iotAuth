@@ -88,7 +88,7 @@ void IotAuth::decryptHEX(byte plain[], int plain_size, char cipherHex[], int cip
 RSAKeyPair IotAuth::generateRSAKeyPair()
 {
     srand(time(NULL));
-    long long p, p2, n, phi, e, d;
+    int p, p2, n, phi, e, d;
 
     p = rsa.geraPrimo(100*rsa.geraNumeroRandom());
     p2 = rsa.geraPrimo(100*rsa.geraNumeroRandom());
@@ -120,51 +120,58 @@ string IotAuth::hash(char message[])
 }
 
 /* Realiza a cifragem RSA utilizando uma chave pública fornecida por parâmetro */
-int* IotAuth::encryptRSAPublicKey(string plain, PublicRSAKey publicKey, int size)
+string IotAuth::encryptRSAPublicKey(string plain, PublicRSAKey publicKey, int size)
 {
     char plainChar[plain.length()];
     strncpy(plainChar, plain.c_str(), sizeof(plainChar));
 
-    int* mensagemC;
-    mensagemC = rsa.codifica(plainChar, publicKey.d, publicKey.n, size);
+    int mensagemC[size];
+    rsa.codifica(mensagemC, plainChar, publicKey.d, publicKey.n, sizeof(plainChar));
 
+    /* Converte o array de integer para uma string formatada. */
     string encrypted = "";
     for (int i = 0; i < size; i++) {
-      stringstream ss;
-      ss << mensagemC[i];
-      encrypted += ss.str();
+        encrypted += to_string(mensagemC[i]);
+        if (i < (size-1))
+            encrypted += ".";
     }
 
-    return mensagemC;
+    return encrypted;
 }
 
 /* Realiza a cifragem RSA utilizando uma chave privada fornecida por parâmetro. */
-int* IotAuth::encryptRSAPrivateKey(string plain, PrivateRSAKey privateKey, int size)
+string IotAuth::encryptRSAPrivateKey(string plain, PrivateRSAKey privateKey, int size)
 {
     char plainChar[plain.length()];
     strncpy(plainChar, plain.c_str(), sizeof(plainChar));
 
-    int* mensagemC;
-    mensagemC = rsa.codifica(plainChar, privateKey.e, privateKey.n, size);
+    int mensagemC[size];
+    rsa.codifica(mensagemC, plainChar, privateKey.e, privateKey.n, sizeof(plainChar));
 
+    /* Converte o array de integer para uma string formatada. */
     string encrypted = "";
     for (int i = 0; i < size; i++) {
-      stringstream ss;
-      ss << mensagemC[i];
-      encrypted += ss.str();
+        encrypted += to_string(mensagemC[i]);
+        if (i < (size-1))
+            encrypted += ".";
     }
 
-    return mensagemC;
+    return encrypted;
 }
 
 /* Realiza a decifragem RSA utilizando uma chave pública fornecida por parâmetro. */
 /* PublicRSAKey é uma struct definida em "settings.h" */
 string IotAuth::decryptRSAPublicKey(int cipher[], PublicRSAKey publicKey, int size)
 {
-    char* plain;
-    plain = rsa.decodifica(cipher, publicKey.d, publicKey.n, size);
+    char plain[size];
+    memset(plain, '\0', sizeof(plain));
+    rsa.decodifica(plain, cipher, publicKey.d, publicKey.n, size);
 
-    string output (plain);
+    string output = "";
+    for (int i = 0; i < sizeof(plain); i++) {
+        output += plain[i];
+    }
+    
     return output;
 }
 
@@ -172,8 +179,8 @@ string IotAuth::decryptRSAPublicKey(int cipher[], PublicRSAKey publicKey, int si
 /* PrivateRSAKey é uma struct definida em "settings.h" */
 string IotAuth::decryptRSAPrivateKey(int cipher[], PrivateRSAKey privateKey, int size)
 {
-    char* plain;
-    plain = rsa.decodifica(cipher, privateKey.e, privateKey.n, size);
+    char plain[size];
+    rsa.decodifica(plain, cipher, privateKey.e, privateKey.n, size);
 
     string output (plain);
     return output;

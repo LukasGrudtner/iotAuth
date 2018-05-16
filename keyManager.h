@@ -20,6 +20,7 @@ class KeyManager
         int getSessionKey();
         void setBase(int base);
         void setModulus(int modulus);
+        void setExponent(int exponent);
 
         int getBase();
         int getModulus();
@@ -29,7 +30,7 @@ class KeyManager
         void setFDR(FDR* _fdr);
 
     private:
-        int exponent = 3; // a
+        int exponent = 0; // a
         int base = 0; // g
         int modulus = 0; // p
 

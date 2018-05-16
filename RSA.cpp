@@ -33,7 +33,7 @@ long RSA::geraNumeroMax(int n){
     return rand() % n + 1;
 }
 
-long RSA::geraNumeroRandom(){
+int RSA::geraNumeroRandom(){
 	/*char res;
 	res = to_hex(10);
 	printf("\n NUMERO:10 RES: %c \n", res);*/
@@ -62,8 +62,8 @@ long RSA::verificaPrimo(long p){
 }
 
 // GERAR NOVO PRIMO
-long RSA::geraPrimo(long numero){
-    long primo;
+int RSA::geraPrimo(int numero){
+    int primo;
     primo = geraNumeroRandom();
     while(verificaPrimo(primo) != 1){/*Em quanto primalidade não for igual a 1 que é verdadeiro*/
         primo = geraNumeroMax(numero); /*Gerando numero aleatorio entre 1 e X*/
@@ -72,7 +72,7 @@ long RSA::geraPrimo(long numero){
 }
 
 //Escolhe o menor primo que divide o coeficiente de euler. Obs: Ele deve ser diferente de p e p2.
-long RSA::escolheE(long phi, long p, long p2, long n){
+int RSA::escolheE(int phi, int p, int p2, int n){
 
 	long i, e;
 	for(i = 2; i < phi; i++){
@@ -131,7 +131,7 @@ long RSA::mdcEstendido(long a, long b){
 }
 
 //Calcula a forma reduzida de a^e módulo n, usando a expansão binária do expoente
-long RSA::potencia(long a, long e, long n){
+int RSA::potencia(long a, long e, long n){
 
 	long A = a, P = 1, E = e;
 
@@ -157,34 +157,41 @@ long RSA::potencia(long a, long e, long n){
 	}
 }
 
-//Codifica uma string de caracteres usando o resto da divisão de a^e por n para cada caractere, para a é utilizado o código da tabela ASCII
-int *RSA::codifica(char *mensagem, long e, long n, int quant){
+// //Codifica uma string de caracteres usando o resto da divisão de a^e por n para cada caractere, para a é utilizado o código da tabela ASCII
+// int *RSA::codifica(char *mensagem, long e, long n, int quant){
+//
+// 	long i;
+// 	int *mensagemC;
+// 	long VALOR;
+// 	mensagemC = (int*)malloc(quant * sizeof(long));
+// 	for(i = 0; i < quant; i++){
+// 		VALOR = potencia(mensagem[i], e, n);
+// 		// ESSE VALOR QUE TEM QUE CONVERTER PARA HEXADECIMAL
+// 		mensagemC[i] = VALOR;
+// 	}
+//
+// 	//Retorna um vetor de long longeiros
+// 	return mensagemC;
+// }
 
-	long i;
-	int *mensagemC;
-	long VALOR;
-	mensagemC = (int*)malloc(quant * sizeof(long));
+//Codifica uma string de caracteres usando o resto da divisão de a^e por n para cada caractere, para a é utilizado o código da tabela ASCII
+void RSA::codifica(int encrypted[], char *mensagem, int e, int n, int quant){
+
+	int i;
+	int VALOR;
 	for(i = 0; i < quant; i++){
 		VALOR = potencia(mensagem[i], e, n);
 		// ESSE VALOR QUE TEM QUE CONVERTER PARA HEXADECIMAL
-		mensagemC[i] = VALOR;
+		encrypted[i] = VALOR;
 	}
-
-	//Retorna um vetor de long longeiros
-	return mensagemC;
 }
 
 //Decodifica um vetor de inteiros em uma string de caracteres usando o resto da divisão de a^d por n para cada inteiro
-char *RSA::decodifica(int *mensagemC, long d, long n, int quant){
+void RSA::decodifica(char message[], int mensagemC[], int d, int n, int quant){
 
-	long i;
-	char *mensagem;
-
-	mensagem = (char*)malloc(quant * sizeof(char));
+	int i;
 
 	for(i = 0; i < quant; i++){
-		mensagem[i] = potencia(mensagemC[i], d, n);
+		message[i] = potencia(mensagemC[i], d, n);
 	}
-
-	return mensagem;
 }

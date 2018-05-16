@@ -24,8 +24,8 @@ class IotAuth
 
         string hash(char message[]);
 
-        int* encryptRSAPublicKey(string plain, PublicRSAKey publicKey, int size);
-        int* encryptRSAPrivateKey(string plain, PrivateRSAKey privateKey, int size);
+        string encryptRSAPublicKey(string plain, PublicRSAKey publicKey, int size);
+        string encryptRSAPrivateKey(string plain, PrivateRSAKey privateKey, int size);
         string decryptRSAPublicKey(int cipher[], PublicRSAKey publicKey, int size);
         string decryptRSAPrivateKey(int cipher[], PrivateRSAKey privateKey, int size);
 

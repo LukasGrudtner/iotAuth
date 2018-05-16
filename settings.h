@@ -19,15 +19,15 @@ typedef unsigned char byte;
 /* Definição da struct de chave privada. */
 typedef struct private_rsa_key
 {
-    long int e;
-    long int n;
+    int e;
+    int n;
 } PrivateRSAKey;
 
 /* Definição da struct de chave pública. */
 typedef struct public_rsa_key
 {
-    long int d;
-    long int n;
+    int d;
+    int n;
 } PublicRSAKey;
 
 /* Definição da struct que representa o par de chaves RSA. */

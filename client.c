@@ -24,7 +24,7 @@ int main(int argc, char *argv[]){
     int meuSocket;
     socklen_t tam_cliente;
     char envia[556];
-    char recebe[556];
+    char recebe[10000];
     struct hostent *server;
 
     if (argv[1] == NULL) {
@@ -92,15 +92,18 @@ int main(int argc, char *argv[]){
            memset(messageChar, '\0', sizeof(messageChar));
            strncpy(messageChar, message.c_str(), sizeof(messageChar));
 
-           cout << "Size Message Char: " << sizeof(messageChar) << endl;
+           cout << "Size Message Char: " << strlen(messageChar) << endl;
 
            sendto(meuSocket,messageChar,strlen(messageChar),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
            while (!arduino.receivedDHKey && !arduino.clientDone) {
                recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-               cout << "Recebido: " << recebe << endl;
-               // arduino.receiveDiffieHellmanKey(recebe);
+               arduino.receiveDiffieHellmanKey(recebe);
            }
+       }
+
+       if (arduino.receivedRSAKey && arduino.receivedDHKey){
+           cout << "Envio de dados criptografados com AES." << endl << endl;
        }
 
 
@@ -127,8 +130,6 @@ int main(int argc, char *argv[]){
        tam_cliente=sizeof(struct sockaddr_in);
        recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
 
-       string recebido (recebe);
-       cout << "Recebi: " << recebido << endl;
        // printf("Recebi:%s",recebe);
        memset(envia, 0, sizeof(envia));
        memset(recebe, 0, sizeof(recebe));

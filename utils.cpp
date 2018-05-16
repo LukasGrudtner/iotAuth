@@ -67,27 +67,31 @@ void Utils::ByteToChar(byte* bytes, char* chars, unsigned int count)
 /*  O array recebido por parâmetro (encrypted) é composto por inteiros separados
     por um ponto (.), devido à cifragem RSA. Este método pega cada inteiro
     separado por ponto e retorna um array com estes números. */
-int* Utils::RSAToIntArray(char encrypted[], int size)
+void Utils::RSAToIntArray(int intArray[], string encrypted, int size)
 {
-    int* intArray = (int*)malloc(size * sizeof(int));
     int k = 0;
     int i = 0;
-    while (encrypted[i] != '!') {
+    cout << "Size of Encrypted: " << encrypted.length() << endl;
+    cout << "Encrypted: " << encrypted << endl << endl;
 
-        string numb = "0";
-        while ((encrypted[i] != '.') && (encrypted[i] != '!')) {
-            numb += encrypted[i];
+    while (encrypted.at(i) != '!') {
+
+        string numb = "";
+        while ((encrypted.at(i) != '.') && (encrypted.at(i) != '!')) {
+            numb += encrypted.at(i);
             i++;
         }
 
-        if (encrypted[i] == '.')
+        // cout << "Numb: " << numb << endl;
+
+        if (encrypted.at(i) == '.')
             i++;
 
         intArray[k] = stoi(numb);
         k++;
     }
 
-    return intArray;
+    // cout << "i: " << i << endl;
 }
 
 /* Retorna o tamanho de um array de ints. */
@@ -102,4 +106,14 @@ int Utils::intArraySize(int array[])
     }
 
     return size;
+}
+
+int Utils::countMarks(string encrypted) {
+    int marks = 0;
+    for (int i = 0; i < encrypted.length(); i++) {
+        if (encrypted.at(i) == '.')
+            marks++;
+    }
+
+    return marks;
 }

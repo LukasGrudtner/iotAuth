@@ -40,7 +40,7 @@ int StringHandler::getDHIvClient(char buffer[])
 */
 PublicRSAKey StringHandler::getPartnerPublicKey(char buffer[])
 {
-    PublicRSAKey publicKey = {std::stol(getData(buffer, 0)), std::stol(getData(buffer, 1))};
+    PublicRSAKey publicKey = {std::stoi(getData(buffer, 0)), std::stoi(getData(buffer, 1))};
     return publicKey;
 }
 

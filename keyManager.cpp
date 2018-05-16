@@ -141,3 +141,8 @@ int KeyManager::getModulus()
 {
     return modulus;
 }
+
+void KeyManager::setExponent(int _exponent)
+{
+    exponent = _exponent;
+}

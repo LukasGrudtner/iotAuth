@@ -144,9 +144,17 @@ string Arduino::getHashEncrypted(string package)
     }
     i++;
 
-    for (int j = i; j < package.length(); j++) {
-        resultado += package.at(j);
+    while (package.at(i) != '!') {
+        resultado += package.at(i);
+        // printf(" %c", package.at(i));
+        i++;
     }
+    resultado += package.at(i);
+
+    // for (int j = i; j < package.length(); j++) {
+    //     resultado += package.at(j);
+    //     printf(" %c", package.at(j));
+    // }
 
     return resultado;
 }
@@ -154,6 +162,7 @@ string Arduino::getHashEncrypted(string package)
 
 string Arduino::sendDiffieHellmanKey()
 {
+    keyManager.setExponent(a);
     cout << "************SEND DH CLIENT************" << endl;
     /*  Organiza o pacote com os dados Diffie-Hellman para enviar ao cliente. */
     long int pot = pow(g, a);
@@ -162,10 +171,10 @@ string Arduino::sendDiffieHellmanKey()
     string answerFdr = "1";
     string spacer (SPACER_S);
     string package = to_string(A) + spacer +
-                        answerFdr + spacer +
                         to_string(g) + spacer +
                         to_string(p) + spacer +
-                        to_string(iv);
+                        to_string(iv) + spacer +
+                        answerFdr;
 
     /**************************************************************************/
 
@@ -180,22 +189,14 @@ string Arduino::sendDiffieHellmanKey()
     /* Armazena o hash no buffer hashArray */
     string hash = iotAuth.hash(messageArray);
 
-    cout << "Sent: " << package << endl;
-    cout << "Hash: " << hashArray << endl;
+    cout << "Sent: " << package << endl << endl;
+    cout << "Client Hash: " << hash << endl << endl;
 
     /* Encripta o hash utilizando a chave privada do cliente */
-    int* hashEncrypted = iotAuth.encryptRSAPrivateKey(hash, keyManager.getMyPrivateKey(), hash.length());
+    string hashEncryptedString = iotAuth.encryptRSAPrivateKey(hash, keyManager.getMyPrivateKey(), hash.length());
+    hashEncryptedString += "!";
 
-    /*  Converte o array de int (hashEncrypted) para uma String, separando
-        cada integer com um ponto (.). */
-    string hashEncryptedString = "";
-    for (int i = 0; i < utils.intArraySize(hashEncrypted); i++) {
-        hashEncryptedString += to_string(hashEncrypted[i]);
-        if (i < (utils.intArraySize(hashEncrypted)-1))
-            hashEncryptedString += ".";
-    }
-
-    cout << "Encrypted HASH: " << hashEncryptedString << endl;
+    cout << "Client Encrypted HASH: " << hashEncryptedString << endl << endl;
 
     /**************************************************************************/
 
@@ -208,56 +209,17 @@ string Arduino::sendDiffieHellmanKey()
     strncpy(sendDataArray, sendData.c_str(), sizeof(sendDataArray));
 
     /* Encripta o sendDataArray utilizando a chave pública do servidor. */
-    int* sendDataEncrypted = iotAuth.encryptRSAPublicKey(sendDataArray,
-                keyManager.getPartnerPublicKey(), sizeof(sendDataArray));
+    string sendDataEncrypted = iotAuth.encryptRSAPublicKey(sendData,
+                keyManager.getPartnerPublicKey(), sendData.length());
+    cout << "Size of SendData: " << sendData.length() << endl;
+    sendDataEncrypted += "!";
 
-    /*  Converte o array de int (sendDataEncrypted) para uma String (m),
-        separando cada integer com um ponto (.). */
-    string message = "";
-    for (int i = 0; i < utils.intArraySize(sendDataEncrypted); i++) {
-        message += to_string(sendDataEncrypted[i]);
+    cout << "Send Data Encrypted Length: " << sendDataEncrypted.length() << endl << endl;
 
-        if (i < (utils.intArraySize(sendDataEncrypted)-1))
-            message += ".";
-    }
-    message += "!";
+    cout << "Send Data Encrypted: " << sendDataEncrypted << endl << endl;
 
-    /*  Converte a string (m) em um array de char (message), que será enviado
-        ao servidor. */
-    // char* message = (char*)malloc(m.length());
-    // memset(message, '\0', sizeof(message));
-    //
-    // strncpy(message, m.c_str(), sizeof(message));
 
-    // cout << endl << message << endl;
-    cout << "Message Length: " << message.length() << endl;
-
-    // /* TESTE ::: Processo de Decodificação da mensagem (apenas para testar) */
-    // /* Decodificação */
-    // int* decInt = (int*)malloc(m.length() * sizeof(int));
-    // decInt = utils.RSAToIntArray(message, m.length());
-    //
-    // string packageDecrypted = iotAuth.decryptRSAPrivateKey(decInt, keyManager.getMyPrivateKey(), m.length());
-    // // cout << "Package Decrypted: " << packageDecrypted << endl;
-    //
-    // char packageDecryptedChar[packageDecrypted.length()];
-    // strncpy(packageDecryptedChar, packageDecrypted.c_str(), sizeof(packageDecryptedChar));
-    //
-    // string result = getHashEncrypted(packageDecrypted);
-    // char resultChar[result.length()];
-    // strncpy(resultChar, result.c_str(), sizeof(resultChar));
-    // int* decInt2 = (int*)malloc(result.length() * sizeof(int));
-    //
-    // decInt2 = utils.RSAToIntArray(resultChar, sizeof(resultChar));
-    // // for (int i = 0; i < utils.intArraySize(decInt2); i++) {
-    // //     cout << decInt2[i] << " ";
-    // // }
-    // string hashDec = iotAuth.decryptRSAPublicKey(decInt2, keyManager.getMyPublicKey(), result.length());
-    //
-    // // cout << endl << "Hash dec: " << hashDec << endl;
-    /**************************************************************************/
-
-    return message;
+    return sendDataEncrypted;
 }
 
 string Arduino::getPackage(string package)
@@ -276,54 +238,54 @@ string Arduino::getPackage(string package)
 
 void Arduino::receiveDiffieHellmanKey(char message[])
 {
-    /*  Decifragem do pacote com os dados Diffie-Hellman enviados pelo server */
-    /*  Converte a mensagem encriptada (RSA) que foi recebida para um array de
-        ints através da função RSAToIntArray da classe Utils. */
-    string encrypted (message);
-    int* decInt = (int*)malloc(encrypted.length() * sizeof(int));
-    decInt = utils.RSAToIntArray(message, encrypted.length());
+    /* Decodifica o pacote recebido do cliente. */
+    printf("0\n");
+    string encryptedPackage (message);
 
-    /*  Desencripta esse array (decInt) com a chave privada do cliente. */
-    string packageDecrypted = iotAuth.decryptRSAPrivateKey(decInt, keyManager.getMyPrivateKey(), encrypted.length());
-    char packageDecryptedChar[packageDecrypted.length()];
-    strncpy(packageDecryptedChar, packageDecrypted.c_str(), sizeof(packageDecryptedChar));
+    int decryptedPackageInt[utils.countMarks(encryptedPackage)+1];
+    utils.RSAToIntArray(decryptedPackageInt, message, encryptedPackage.length());
 
-    /* Recupera o pacote decifrado. */
-    string package = getPackage(packageDecrypted);
+    printf("1\n");
 
-    /**************************************************************************/
+    /* Decodifica o pacote e converte para um array de char. */
+    string decryptedPackageString = iotAuth.decryptRSAPrivateKey(decryptedPackageInt, keyManager.getMyPrivateKey(), encryptedPackage.length());
 
-    /* Recupera o hash cifrado. */
-    string result = getHashEncrypted(packageDecrypted);
+    printf("2\n");
 
-    /* Converte a string (result) para um array de chars (resultChar) */
-    char resultChar[result.length()];
-    strncpy(resultChar, result.c_str(), sizeof(resultChar));
-    int* decInt2 = (int*)malloc(result.length() * sizeof(int));
+    /* Recupera o pacote com os dados Diffie-Hellman do Client. */
+    string dhPackage = getPackage(decryptedPackageString);
 
-    /*  Converte resultChar (hash cifrado) em um array de integer através da
-        função RSAToIntArray da classe Utils. */
-    decInt2 = utils.RSAToIntArray(resultChar, sizeof(resultChar));
+    printf("3\n");
 
-    /* Decifra o hash */
-    string hashDec = iotAuth.decryptRSAPublicKey(decInt2, keyManager.getMyPublicKey(), result.length());
+    /***** HASH *****/
+    /* Recupera o hash cifrado com a chave Privada do Server. */
+    string encryptedHash = getHashEncrypted(decryptedPackageString);
 
-    cout << "Hash decifrado: " << hashDec << endl;
+    cout << "Server Encrypted HASH: " << encryptedHash << endl << endl;
+
+    int encryptedHashInt[128];
+    utils.RSAToIntArray(encryptedHashInt, encryptedHash, 128);
+    
+    /* Decifra o HASH com a chave pública do Server. */
+    string decryptedHashString = iotAuth.decryptRSAPublicKey(encryptedHashInt, keyManager.getMyPublicKey(), 128);
+
+    cout << "Server Decrypted HASH: " << decryptedHashString << endl << endl;
+    /***** HASH *****/
 
     /* Recebe chave Diffie-Hellman e IV. */
-    printf("\n*******CLIENT DH KEY RECEIVED******\n");
-    char pkg[package.length()];
-    strncpy(pkg, package.c_str(), sizeof(pkg));
-    keyManager.setBase(stringHandler.getClientBase(pkg));
-    keyManager.setModulus(stringHandler.getClientModulus(pkg));
-    keyManager.setSessionKey(keyManager.getDiffieHellmanKey(stringHandler.getDHClientKey(pkg)));
-    int ivClient = stringHandler.getDHIvClient(pkg);
+    printf("\n*******SERVER DH KEY RECEIVED******\n");
+    char dhPackageChar[dhPackage.length()];
+    strncpy(dhPackageChar, dhPackage.c_str(), sizeof(dhPackageChar));
+    keyManager.setBase(stringHandler.getClientBase(dhPackageChar));
+    keyManager.setModulus(stringHandler.getClientModulus(dhPackageChar));
+    keyManager.setSessionKey(keyManager.getDiffieHellmanKey(stringHandler.getDHClientKey(dhPackageChar)));
+    int ivClient = stringHandler.getDHIvClient(dhPackageChar);
 
     receivedDHKey = true;
-    std::cout << "Diffie-Hellman Key: " << stringHandler.getDHClientKey(pkg) << std::endl;
-    std::cout << "Base: " << stringHandler.getClientBase(pkg) << std::endl;
-    std::cout << "Modulus: " << stringHandler.getClientModulus(pkg) << std::endl;
-    std::cout << "Client IV: " << stringHandler.getDHIvClient(pkg) << std::endl;
+    std::cout << "Diffie-Hellman Key: " << stringHandler.getDHClientKey(dhPackageChar) << std::endl;
+    std::cout << "Base: " << stringHandler.getClientBase(dhPackageChar) << std::endl;
+    std::cout << "Modulus: " << stringHandler.getClientModulus(dhPackageChar) << std::endl;
+    std::cout << "Client IV: " << stringHandler.getDHIvClient(dhPackageChar) << std::endl;
     std::cout << "Session Key: " << keyManager.getSessionKey() << std::endl;
     std::cout << "***********************************\n" << std::endl;
 }
