@@ -1,5 +1,19 @@
 #include "utils.h"
 
+/*  Uint8_t_to_Hex_String
+    Converte um arrau de uint8_t para string em hexadecimal.
+*/
+string Utils::Uint8_t_to_Hex_String(uint8_t i[], int quant){
+  string saida = "";
+  for(int j = 0; j < quant; j++){
+    char buffer [3];
+    // itoa (i[j],buffer,16);
+    sprintf(buffer,"%02X",i[j]);
+    saida += buffer;
+  }
+  return saida;
+}
+
 /*  ByteArrayToHexString()
     Converte um array de bytes em um array de chars em hexadecimal.
 */
@@ -116,4 +130,22 @@ int Utils::countMarks(string encrypted) {
     }
 
     return marks;
+}
+
+void Utils::hexStringToCharArray(string hexString, int sizeHexString, char charArray[])
+{
+    char hexStringChar[sizeHexString];
+    strncpy(hexStringChar, hexString.c_str(), sizeHexString);
+
+    uint8_t byteArray[sizeHexString/2];
+
+    HexStringToByteArray(hexStringChar, sizeHexString, byteArray, sizeHexString/2);
+    ByteToChar(byteArray, charArray, sizeHexString/2);
+}
+
+void Utils::charToUint8_t(char charArray[], uint8_t byteArray[], int size)
+{
+    for (int i = 0; i < size; i++) {
+        byteArray[i] = uint8_t(charArray[i]);
+    }
 }

@@ -7,41 +7,64 @@
     Realiza a cifragem de plain com o algoritmo AES, onde o resultado é
     armazenado no array cipher.
 */
-void IotAuth::encryptAES(int bits, int cipher_size, byte *key, byte plain[], unsigned long long int my_iv, byte cipher[])
+
+uint8_t* IotAuth::encryptAES(uint8_t plaintext[], uint8_t key[], uint8_t iv[], int size)
 {
-    aes.iv_inc();
-    byte iv[N_BLOCK];
-    memset(iv, 0, sizeof(iv));
+    uint8_t *ciphertext = plaintext;
 
-    aes.set_IV(my_iv);
-    aes.get_IV(iv);
+    struct AES_ctx ctx;
+    aes.AES_init_ctx_iv(&ctx, key, iv);
+    aes.AES_CBC_encrypt_buffer(&ctx, ciphertext, size);
 
-    aes.do_aes_encrypt(plain, cipher_size, cipher, key, bits, iv);
+    return ciphertext;
 }
+
+// void IotAuth::encryptAES(int bits, int cipher_size, byte *key, byte plain[], unsigned long long int my_iv, byte cipher[])
+// {
+//     aes.iv_inc();
+//     byte iv[N_BLOCK];
+//     memset(iv, 0, sizeof(iv));
+//
+//     aes.set_IV(my_iv);
+//     aes.get_IV(iv);
+//
+//     aes.do_aes_encrypt(plain, cipher_size, cipher, key, bits, iv);
+// }
 
 /*  decryptAES()
     Função interna.
     Realiza decrifragem de cipher com o algoritmo AES, onde o resultado é
     armazenado no array plain.
 */
-void IotAuth::decryptAES(int bits, int cipher_size, byte *key, byte plain[], unsigned long long int my_iv, byte cipher[])
+uint8_t* IotAuth::decryptAES(uint8_t ciphertext[], uint8_t key[], uint8_t iv[], int size)
 {
-    byte iv[N_BLOCK];
-    memset(iv, 0, sizeof(iv));
+    uint8_t *plaintext = ciphertext;
 
-    aes.set_IV(my_iv);
-    aes.get_IV(iv);
+    struct AES_ctx ctx;
+    aes.AES_init_ctx_iv(&ctx, key, iv);
+    aes.AES_CBC_decrypt_buffer(&ctx, plaintext, size);
 
-    int total = 16;
-    if(cipher_size > 16 && cipher_size <= 32){
-        total = 32;
-    }else if(cipher_size > 32 && cipher_size <= 48){
-        total = 48;
-    }else if(cipher_size > 48 && cipher_size <= 64){
-        total = 64;
-    }
-    aes.do_aes_decrypt(cipher, total, plain, key, bits, iv);
+    return plaintext;
 }
+
+// void IotAuth::decryptAES(int bits, int cipher_size, byte *key, byte plain[], unsigned long long int my_iv, byte cipher[])
+// {
+//     byte iv[N_BLOCK];
+//     memset(iv, 0, sizeof(iv));
+//
+//     aes.set_IV(my_iv);
+//     aes.get_IV(iv);
+//
+//     int total = 16;
+//     if(cipher_size > 16 && cipher_size <= 32){
+//         total = 32;
+//     }else if(cipher_size > 32 && cipher_size <= 48){
+//         total = 48;
+//     }else if(cipher_size > 48 && cipher_size <= 64){
+//         total = 64;
+//     }
+//     aes.do_aes_decrypt(cipher, total, plain, key, bits, iv);
+// }
 
 
 
@@ -50,38 +73,40 @@ void IotAuth::decryptAES(int bits, int cipher_size, byte *key, byte plain[], uns
     a cifragem do texto plano (plain, em bytes), e o resultado é armazenado
     em um array de char cipherHex, com o valor em hexadecimal.
 */
-void IotAuth::encryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size)
-{
-    byte *key = (unsigned char*)"1234567891234567";
-    unsigned long long int iv = 11111111;
-    byte cipher[64];
 
-    memset(cipher, 0, sizeof(cipher));
-    memset(cipherHex, 0, cipherHex_size);
 
-    encryptAES(256, 64, key, plain, iv, cipher);
-    utils.ByteArrayToHexString(cipher, sizeof(cipher), cipherHex, cipherHex_size);
-}
+// void IotAuth::encryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size)
+// {
+//     byte *key = (unsigned char*)"1234567891234567";
+//     unsigned long long int iv = 11111111;
+//     byte cipher[64];
+//
+//     memset(cipher, 0, sizeof(cipher));
+//     memset(cipherHex, 0, cipherHex_size);
+//
+//     encryptAES(256, 64, key, plain, iv, cipher);
+//     utils.ByteArrayToHexString(cipher, sizeof(cipher), cipherHex, cipherHex_size);
+// }
 
 /*  decrypt()
     Função utilizada na comunicação entre cliente e servidor, onde é realizada
     a decifragem do texto cifrado (cipher, em hexadecimal) e o resultado é
     armazenado em um array de bytes, plain.
 */
-void IotAuth::decryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size)
-{
-    byte *key = (unsigned char*)"1234567891234567";
-    unsigned long long int iv = 11111111;
-
-    byte cipher[cipherHex_size/2];
-
-    memset(cipher, 0, sizeof(cipher));
-    memset(plain, 0, plain_size);
-
-    utils.HexStringToByteArray(cipherHex, cipherHex_size, cipher, sizeof(cipher));
-
-    decryptAES(256, 64, key, plain, iv, cipher);
-}
+// void IotAuth::decryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size)
+// {
+//     byte *key = (unsigned char*)"1234567891234567";
+//     unsigned long long int iv = 11111111;
+//
+//     byte cipher[cipherHex_size/2];
+//
+//     memset(cipher, 0, sizeof(cipher));
+//     memset(plain, 0, plain_size);
+//
+//     utils.HexStringToByteArray(cipherHex, cipherHex_size, cipher, sizeof(cipher));
+//
+//     decryptAES(256, 64, key, plain, iv, cipher);
+// }
 
 /*  Realiza a geração de um par de chaves RSA, retornando uma struct RSAKeyPair
     com ambas as chaves. Essa struct é definida em "settings.h". */
@@ -171,7 +196,7 @@ string IotAuth::decryptRSAPublicKey(int cipher[], PublicRSAKey publicKey, int si
     for (int i = 0; i < sizeof(plain); i++) {
         output += plain[i];
     }
-    
+
     return output;
 }
 

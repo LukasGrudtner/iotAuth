@@ -104,6 +104,17 @@ int main(int argc, char *argv[]){
 
        if (arduino.receivedRSAKey && arduino.receivedDHKey){
            cout << "Envio de dados criptografados com AES." << endl << endl;
+           printf("########## Escreva uma mensagem para o servidor: ##########\n");
+           fgets(envia, 665, stdin);
+
+           string encryptedMessage = arduino.sendEncryptedMessage(envia, 64);
+           cout << "Sent: " << encryptedMessage << endl;
+
+           char encryptedMessageChar[encryptedMessage.length()];
+           memset(encryptedMessageChar, '\0', sizeof(encryptedMessageChar));
+           strncpy(encryptedMessageChar, encryptedMessage.c_str(), sizeof(encryptedMessageChar));
+
+           sendto(meuSocket,encryptedMessageChar,strlen(encryptedMessageChar),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
        }
 
 

@@ -46,6 +46,8 @@ class Arduino
         /* Recebe a chave Diffie-Hellman do Server. */
         void receiveDiffieHellmanKey(char message[]);
 
+        string sendEncryptedMessage(char message[], int size);
+
     private:
 
         IotAuth iotAuth;

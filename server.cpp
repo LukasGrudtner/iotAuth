@@ -270,6 +270,31 @@ string sendDiffieHellmanKey()
     return sendDataEncrypted;
 }
 
+void receiveEncryptedMessage(char buffer[])
+{
+    string encryptedMessage (buffer);
+
+    cout << "Encrypted Message Received: " << encryptedMessage << endl;
+
+    char ciphertextChar[encryptedMessage.length()];
+    uint8_t ciphertext[64];
+    memset(ciphertext, 0, 64);
+
+    utils.hexStringToCharArray(encryptedMessage, encryptedMessage.length(), ciphertextChar);
+
+    uint8_t plaintext[64];
+    memset(plaintext, 0, 64);
+
+    uint8_t key[] = { 0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe, 0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
+                      0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7, 0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4 };
+    uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+
+    utils.charToUint8_t(ciphertextChar, ciphertext, 64);
+
+    uint8_t *decrypted = iotAuth.decryptAES(ciphertext, key, iv, 64);
+    cout << "Decrypted: " << decrypted << endl;
+}
+
 int main(int argc, char *argv[]){
     keyManager = new KeyManager();
     keyManager->setExponent(EXPONENT);
@@ -323,41 +348,7 @@ int main(int argc, char *argv[]){
            /* Aqui, todos as chaves foram trocadas, então é só receber os dados cifrados: */
        } else if(RECEIVED_RSA_KEY && RECEIVED_DH_KEY) {
            cout << "Envio de dados criptografados com AES." << endl << endl;
-           /******* INCOMPLETO ***************/
-           // cout << "Recebido: " << buffer << endl;
-           // cout << "Tamanho buffer recebido: " << sizeof(buffer) << endl;
-           //
-           // byte plain[64];
-           // char plain_char[sizeof(plain)];
-           //
-           // iotAuth.decryptHEX(plain, sizeof(plain), buffer, sizeof(buffer));
-           // utils.ByteToChar(plain, plain_char, sizeof(plain));
-           //
-           // cout << "Decifrado " << plain_char << endl;
-           //
-           // byte plainTesteByte[64];
-           // char plainTesteChar[] = "hello";
-           // char hexTeste[128];
-           // byte decifradoByte[64];
-           // char decifradoChar[64];
-           //
-           // memset(plainTesteByte, 0, sizeof(plainTesteByte));
-           // memset(hexTeste, '0', sizeof(hexTeste));
-           // memset(decifradoByte, 0, sizeof(decifradoByte));
-           // memset(decifradoChar, '0', sizeof(decifradoChar));
-           //
-           // for (int i = 0; i < sizeof(plainTesteChar); i++) {
-           //     plainTesteByte[i] = plainTesteChar[i];
-           // }
-           //
-           // iotAuth.encryptHEX(plainTesteByte, sizeof(plainTesteByte), hexTeste, sizeof(hexTeste));
-           // cout << "Encriptado: " << hexTeste << endl;
-           //
-           // iotAuth.decryptHEX(decifradoByte, sizeof(decifradoByte), hexTeste, sizeof(hexTeste));
-           // utils.ByteToChar(decifradoByte, decifradoChar, sizeof(decifradoByte));
-           //
-           // cout << "Decriptado: " << decifradoChar << endl;
-           /******* INCOMPLETO ***************/
+           receiveEncryptedMessage(buffer);
        }
 
        memset(buffer, 0, sizeof(buffer));
