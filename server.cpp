@@ -169,10 +169,6 @@ string getHashEncrypted(string package)
         i++;
     }
     resultado += package.at(i);
-    // for (int j = i; j < package.length(); j++) {
-    //     resultado += package.at(j);
-    //     printf(" %c", package.at(j));
-    // }
 
     return resultado;
 }
@@ -278,21 +274,21 @@ void receiveEncryptedMessage(char buffer[])
     cout << "Encrypted Message Received: " << encryptedMessage << endl;
 
     char ciphertextChar[encryptedMessage.length()];
-    uint8_t ciphertext[64];
-    memset(ciphertext, 0, 64);
+    uint8_t ciphertext[encryptedMessage.length()];
+    memset(ciphertext, 0, encryptedMessage.length());
 
     utils.hexStringToCharArray(encryptedMessage, encryptedMessage.length(), ciphertextChar);
 
-    uint8_t plaintext[64];
-    memset(plaintext, 0, 64);
+    uint8_t plaintext[encryptedMessage.length()];
+    memset(plaintext, 0, encryptedMessage.length());
 
     uint8_t key[] = { 0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe, 0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
                       0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7, 0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4 };
     uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
 
-    utils.charToUint8_t(ciphertextChar, ciphertext, 64);
+    utils.charToUint8_t(ciphertextChar, ciphertext, encryptedMessage.length());
 
-    uint8_t *decrypted = iotAuth.decryptAES(ciphertext, key, iv, 64);
+    uint8_t *decrypted = iotAuth.decryptAES(ciphertext, key, iv, encryptedMessage.length());
     cout << "Decrypted: " << decrypted << endl;
 }
 

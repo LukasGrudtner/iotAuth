@@ -114,7 +114,7 @@ int main(int argc, char *argv[]){
 
            while (strcmp(envia, "\n") != 0) {
 
-               string encryptedMessage = arduino.sendEncryptedMessage(envia, 64);
+               string encryptedMessage = arduino.sendEncryptedMessage(envia, sizeof(envia));
                cout << "Sent: " << encryptedMessage << endl;
 
                char encryptedMessageChar[encryptedMessage.length()];

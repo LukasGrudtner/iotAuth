@@ -286,7 +286,7 @@ void Arduino::receiveDiffieHellmanKey(char message[])
 
 string Arduino::sendEncryptedMessage(char message[], int size) {
     uint8_t plaintext[size];
-    memset(plaintext, 0, 64);
+    memset(plaintext, 0, size);
 
     uint8_t key[] = { 0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe, 0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
                       0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7, 0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4 };
@@ -296,11 +296,11 @@ string Arduino::sendEncryptedMessage(char message[], int size) {
     //     plaintext[i] = uint8_t(message[i]);
     // }
 
-    utils.charToUint8_t(message, plaintext, 64);
+    utils.charToUint8_t(message, plaintext, size);
 
-    uint8_t *encrypted = iotAuth.encryptAES(plaintext, key, iv, 64);
+    uint8_t *encrypted = iotAuth.encryptAES(plaintext, key, iv, size);
 
-    return (utils.Uint8_t_to_Hex_String(encrypted, 64));
+    return (utils.Uint8_t_to_Hex_String(encrypted, size));
 
 
 
