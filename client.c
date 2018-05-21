@@ -70,14 +70,6 @@ int main(int argc, char *argv[]){
                arduino.receiveServerHello(recebe);
 
            }
-
-
-
-           // auto resultado = std::chrono::high_resolution_clock::now() - inicio;
-           // long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(resultado).count();
-
-           // double Tempo = Ticks[1] - Ticks[0];
-           // cout << "Tempo decorrido nas etapas 1 e 2: " << microseconds << "ms." << endl;
        }
 
        if (arduino.clientHello && !arduino.receivedRSAKey) {
@@ -114,17 +106,25 @@ int main(int argc, char *argv[]){
 
        if (arduino.receivedRSAKey && arduino.receivedDHKey){
            cout << "Envio de dados criptografados com AES." << endl << endl;
-           printf("########## Escreva uma mensagem para o servidor: ##########\n");
+
+           printf("########## Escreva uma mensagem para o servidor ##########\n");
+           printf("------------- Linha em branco para finalizar -------------\n");
            fgets(envia, 665, stdin);
 
-           string encryptedMessage = arduino.sendEncryptedMessage(envia, 64);
-           cout << "Sent: " << encryptedMessage << endl;
 
-           char encryptedMessageChar[encryptedMessage.length()];
-           memset(encryptedMessageChar, '\0', sizeof(encryptedMessageChar));
-           strncpy(encryptedMessageChar, encryptedMessage.c_str(), sizeof(encryptedMessageChar));
+           while (strcmp(envia, "\n") != 0) {
 
-           sendto(meuSocket,encryptedMessageChar,strlen(encryptedMessageChar),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+               string encryptedMessage = arduino.sendEncryptedMessage(envia, 64);
+               cout << "Sent: " << encryptedMessage << endl;
+
+               char encryptedMessageChar[encryptedMessage.length()];
+               memset(encryptedMessageChar, '\0', sizeof(encryptedMessageChar));
+               strncpy(encryptedMessageChar, encryptedMessage.c_str(), sizeof(encryptedMessageChar));
+
+               sendto(meuSocket,encryptedMessageChar,strlen(encryptedMessageChar),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+               // memset(envia, '\0', sizeof(envia));
+               fgets(envia, 665, stdin);
+           }
        }
 
 
@@ -145,11 +145,9 @@ int main(int argc, char *argv[]){
         */
 
 
-       // sendto(meuSocket,cipherHex,strlen(cipherHex),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
-       // sendto(meuSocket, (DHExchange*)&teste, sizeof(teste),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in)); // Envio de struct
-       sendto(meuSocket,envia,strlen(envia),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
-       tam_cliente=sizeof(struct sockaddr_in);
-       recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+       // sendto(meuSocket,envia,strlen(envia),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+       // tam_cliente=sizeof(struct sockaddr_in);
+       // recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
 
        // printf("Recebi:%s",recebe);
        memset(envia, 0, sizeof(envia));

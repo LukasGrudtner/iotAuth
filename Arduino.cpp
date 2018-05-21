@@ -193,6 +193,7 @@ string Arduino::sendDiffieHellmanKey()
     cout << "Client Hash: " << hash << endl << endl;
 
     /* Encripta o hash utilizando a chave privada do cliente */
+    cout << "Encripta hash com a chave privada do cliente: (" << keyManager.getMyPrivateKey().e << ", " << keyManager.getMyPrivateKey().n << ")" << endl;
     string hashEncryptedString = iotAuth.encryptRSAPrivateKey(hash, keyManager.getMyPrivateKey(), hash.length());
     hashEncryptedString += "!";
 
@@ -239,23 +240,16 @@ string Arduino::getPackage(string package)
 void Arduino::receiveDiffieHellmanKey(char message[])
 {
     /* Decodifica o pacote recebido do cliente. */
-    printf("0\n");
     string encryptedPackage (message);
 
     int decryptedPackageInt[utils.countMarks(encryptedPackage)+1];
     utils.RSAToIntArray(decryptedPackageInt, message, encryptedPackage.length());
 
-    printf("1\n");
-
     /* Decodifica o pacote e converte para um array de char. */
     string decryptedPackageString = iotAuth.decryptRSAPrivateKey(decryptedPackageInt, keyManager.getMyPrivateKey(), encryptedPackage.length());
 
-    printf("2\n");
-
     /* Recupera o pacote com os dados Diffie-Hellman do Client. */
     string dhPackage = getPackage(decryptedPackageString);
-
-    printf("3\n");
 
     /***** HASH *****/
     /* Recupera o hash cifrado com a chave Privada do Server. */
@@ -267,7 +261,7 @@ void Arduino::receiveDiffieHellmanKey(char message[])
     utils.RSAToIntArray(encryptedHashInt, encryptedHash, 128);
 
     /* Decifra o HASH com a chave pública do Server. */
-    string decryptedHashString = iotAuth.decryptRSAPublicKey(encryptedHashInt, keyManager.getMyPublicKey(), 128);
+    string decryptedHashString = iotAuth.decryptRSAPublicKey(encryptedHashInt, keyManager.getPartnerPublicKey(), 128);
 
     cout << "Server Decrypted HASH: " << decryptedHashString << endl << endl;
     /***** HASH *****/

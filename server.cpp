@@ -202,7 +202,8 @@ void receiveDiffieHellmanKey(char buffer[])
     utils.RSAToIntArray(encryptedHashInt, encryptedHash, 128);
 
     /* Decifra o HASH com a chave pública do Server. */
-    string decryptedHashString = iotAuth.decryptRSAPublicKey(encryptedHashInt, keyManager->getMyPublicKey(), 128);
+    cout << "Decripta hash com a chave pública do cliente: (" << keyManager->getPartnerPublicKey().d << ", " << keyManager->getPartnerPublicKey().n << ")" << endl;
+    string decryptedHashString = iotAuth.decryptRSAPublicKey(encryptedHashInt, keyManager->getPartnerPublicKey(), 128);
 
     cout << "Client Decrypted HASH STRING: " << decryptedHashString << endl << endl;
     cout << "Client Decrypted HASH Lenght: " << decryptedHashString.length() << endl << endl;
@@ -334,6 +335,7 @@ int main(int argc, char *argv[]){
            /* Se já recebeu um CLIENT_HELLO, mas a troca de chaves RSA ainda não ocorreu: */
            /* CLIENT_PUBLIC_KEY (D) # CLIENT_PUBLIC_KEY (N) # ANSWER FDR # IV # FDR */
        } else if (CLIENT_HELLO && !RECEIVED_RSA_KEY) {
+           sleep(3); /* Agurda 5 segundos para gerar chaves RSA diferentes do client */
            processRSAKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
            /* Se já realizou a troa de chaves RSA, mas ainda não realizou a troca de chaves DH: */
            /* DH_KEY_CLIENT # BASE # MODULUS # CLIENT_IV */
