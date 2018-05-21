@@ -12,6 +12,7 @@
 #include "utils.h"
 #include "settings.h"
 #include "Arduino.h"
+#include <sys/time.h>
 
 using namespace std;
 
@@ -67,7 +68,16 @@ int main(int argc, char *argv[]){
            while (!arduino.clientHello) {
                recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
                arduino.receiveServerHello(recebe);
+
            }
+
+
+
+           // auto resultado = std::chrono::high_resolution_clock::now() - inicio;
+           // long long microseconds = std::chrono::duration_cast<std::chrono::microseconds>(resultado).count();
+
+           // double Tempo = Ticks[1] - Ticks[0];
+           // cout << "Tempo decorrido nas etapas 1 e 2: " << microseconds << "ms." << endl;
        }
 
        if (arduino.clientHello && !arduino.receivedRSAKey) {
