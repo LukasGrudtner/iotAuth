@@ -3,7 +3,7 @@
 ## Compilação e execução
 - <strong> Server </strong>
 ```sh
-$ g++ -o server server.c *.cpp -std=c++17
+$ ./server_compiler.sh
 ```
 ```sh
 $ ./server
@@ -11,8 +11,8 @@ $ ./server
 
 - <strong> Client </strong>
 ```sh
-$ g++ -o client client.c -std=c++17
+$ ./client_compiler.sh
 ```
 ```sh
-$ ./client 0.0.0.0
+$ ./client localhost
 ```
