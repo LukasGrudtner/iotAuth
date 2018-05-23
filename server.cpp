@@ -119,8 +119,8 @@ void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, i
     printf("*******SEND SERVER RSA KEY*********\n");
     std::string sendString;
     std::string spacer (SPACER_S);
-    int answerFdr = calculateFDRValue(partnerIV, partnerFDR);
-    // int answerFdr = calculateFDRValue(partnerIV, partnerFDR) + 1;
+    // int answerFdr = calculateFDRValue(partnerIV, partnerFDR);
+    int answerFdr = calculateFDRValue(partnerIV, partnerFDR) + 1;
 
     sendString = std::to_string(keyManager->getMyPublicKey().d) + spacer +
                  std::to_string(keyManager->getMyPublicKey().n) + spacer +
@@ -184,7 +184,7 @@ bool checkAnsweredFDR(int answeredFdr)
 
 void receiveDiffieHellmanKey(char buffer[])
 {
-    printf("1\n");
+    printf("receiveDHKey\n");
 
     /* Decodifica o pacote recebido do cliente. */
     string encryptedPackage (buffer);
@@ -360,6 +360,15 @@ int main(int argc, char *argv[]){
 
        memset(buffer, 0, sizeof(buffer));
        recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
+
+       /* Pega os 4 primeiros caracteres do buffer recebido para verificar
+       se é um DONE. */
+       char buffTest[5];
+       buffTest[4] = '\0';
+       for (int i = 0; i < 4; i++) {
+           buffTest[i] = buffer[i];
+       }
+
        // printf("Recebi:%s de <endereço:%s> <porta:%d>\n",buffer,inet_ntoa(cliente.sin_addr),ntohs(cliente.sin_port));
 
        /* Aguarda o recebimento do HELLO do Client. */
@@ -368,8 +377,8 @@ int main(int argc, char *argv[]){
            processClientHello(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
          /* Se a mensagem recebida do Client for um DONE: */
          /* DONE */
-       } else if (strcmp(buffer, DONE_MESSAGE) == 0) {
-           processClientDone(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+     } else if (strcmp(buffTest, DONE_MESSAGE) == 0) {
+           processClientDone(buffTest, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
            /* Se já recebeu um CLIENT_HELLO, mas a troca de chaves RSA ainda não ocorreu: */
            /* CLIENT_PUBLIC_KEY (D) # CLIENT_PUBLIC_KEY (N) # ANSWER FDR # IV # FDR */
        } else if (CLIENT_HELLO && !RECEIVED_RSA_KEY) {

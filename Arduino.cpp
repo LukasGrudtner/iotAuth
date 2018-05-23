@@ -15,8 +15,10 @@ char* Arduino::sendClientDone()
 {
     cout << "**************DONE CLIENT****************" << endl;
     string done (DONE_MESSAGE);
-    char *message;
-    strncpy(message, done.c_str(), done.length());
+    printf("1\n");
+    char *message = (char*)malloc(4);
+    strncpy(message, done.c_str(), 4);
+    printf("2\n");
     cout << "**************************************\n" << endl;
     return message;
 }
@@ -118,7 +120,7 @@ bool Arduino::checkAnsweredFDR(int answeredFdr)
     return answer == answeredFdr;
 }
 
-void Arduino::receiveRSAKey(char buffer[])
+bool Arduino::receiveRSAKey(char buffer[])
 {
     cout << "*********RECEIVED RSA SERVER**********" << endl;
 
@@ -145,12 +147,11 @@ void Arduino::receiveRSAKey(char buffer[])
     if (checkAnsweredFDR(answeredFdr)) {
         receivedRSAKey = true;
         cout << "Answered FDR ACCEPTED!" << endl;
+        return true;
     } else {
         cout << "Answered FDR REJECTED!" << endl;
         cout << "ENDING CONECTION..." << endl;
-        done();
-        sendClientDone();
-        receiveServerDone(buffer);
+        return false;
     }
 
     cout << "**************************************\n" << endl;

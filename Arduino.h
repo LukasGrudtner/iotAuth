@@ -21,7 +21,7 @@ class Arduino
 
         /* Resposta do FDR do servidor recebido no passo RSA Key Exchange e
         enviado no passo DH Key Exchange. */
-        int answerFDR = 0;; 
+        int answerFDR = 0;;
 
         bool clientHello = false;
         bool clientDone = false;
@@ -41,7 +41,7 @@ class Arduino
         /* Realiza o envio da chave RSA para o Server. */
         char* sendRSAKey();
         /* Recebe a chave RSA do Server. */
-        void receiveRSAKey(char message[]);
+        bool receiveRSAKey(char message[]);
 
         /* Realiza o envio da chave Diffie-Hellman para o Server. */
         string sendDiffieHellmanKey();
@@ -49,6 +49,9 @@ class Arduino
         void receiveDiffieHellmanKey(char message[]);
 
         string sendEncryptedMessage(char message[], int size);
+
+        /* Realiza o envio do Done para o Server. */
+        void done();
 
     private:
 
@@ -67,8 +70,7 @@ class Arduino
             do Server. */
         string getPackage(string package);
 
-        /* Realiza o envio do Done para o Server. */
-        void done();
+
 
         /*  Verifica se a resposta do FDR fornecida pelo Servidor é válida. */
         bool checkAnsweredFDR(int answeredFdr);

@@ -81,7 +81,17 @@ int main(int argc, char *argv[]){
 
            while (!arduino.receivedRSAKey && !arduino.clientDone) {
                recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-               arduino.receiveRSAKey(recebe);
+               bool validIV = arduino.receiveRSAKey(recebe);
+
+               if (!validIV) {
+                   arduino.done();
+                   char *message = arduino.sendClientDone();
+                   cout << "Message: " << message << endl;
+                   sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+
+                   recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+                   arduino.receiveServerDone(recebe);
+               }
            }
        }
 
@@ -100,7 +110,16 @@ int main(int argc, char *argv[]){
 
            while (!arduino.receivedDHKey && !arduino.clientDone) {
                recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-               arduino.receiveDiffieHellmanKey(recebe);
+               bool validIV = arduino.receiveRSAKey(recebe);
+
+               if (!validIV) {
+                   arduino.done();
+                   char *message = arduino.sendClientDone();
+                   sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+
+                   recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+                   arduino.receiveServerDone(recebe);
+               }
            }
        }
 
