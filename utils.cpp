@@ -85,8 +85,8 @@ void Utils::RSAToIntArray(int intArray[], string encrypted, int size)
 {
     int k = 0;
     int i = 0;
-    cout << "Size of Encrypted: " << encrypted.length() << endl;
-    cout << "Encrypted: " << encrypted << endl << endl;
+    // cout << "Size of Encrypted: " << encrypted.length() << endl;
+    // cout << "Encrypted: " << encrypted << endl << endl;
 
     while (encrypted.at(i) != '!') {
 

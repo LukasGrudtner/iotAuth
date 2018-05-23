@@ -59,7 +59,16 @@ int StringHandler::getRSAExchangeAnswerFdr(char buffer[])
 */
 int StringHandler::getRSAExchangeIv(char buffer[])
 {
+    cout << "getRSAExchangeIv: " << std::stoi(getData(buffer, 3)) << endl;
     return std::stoi(getData(buffer, 3));
+}
+
+/*  getDHExchangeAnsweredFDR()
+    Retorna o valor resposta do FDR enviado na troca de chaves Diffie-Hellman. */
+int StringHandler::getDHExchangeAnsweredFDR(char buffer[])
+{
+    cout << "getDHExchangeAnsweredFDR: " << std::stoi(getData(buffer, 4)) << endl;
+    return std::stoi(getData(buffer, 4));
 }
 
 /*  getData()
@@ -128,4 +137,10 @@ FDR* StringHandler::getRSAExchangeFdr(char buffer[])
     FDR* f = new FDR(op, std::stoi(data));
 
     return (f);
+}
+
+string StringHandler::FdrToString(FDR* fdr)
+{
+    string result = fdr->getOperator() + to_string(fdr->getOperand());
+    return result;
 }

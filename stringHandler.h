@@ -22,6 +22,8 @@ class StringHandler
         int getRSAExchangeAnswerFdr(char buffer[]);
         int getRSAExchangeIv(char buffer[]);
         FDR* getRSAExchangeFdr(char buffer[]);
+        int getDHExchangeAnsweredFDR(char buffer[]);
+        string FdrToString(FDR* fdr);
         // std::string byteToHex(char data[], int len);
     private:
         std::string getData(char buffer[], int position);

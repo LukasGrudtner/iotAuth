@@ -18,8 +18,10 @@ class Arduino
         int a = 2;
         int g = 23;
         int p = 86;
-        long int iv = 7;
-        string fdr = "+1";
+
+        /* Resposta do FDR do servidor recebido no passo RSA Key Exchange e
+        enviado no passo DH Key Exchange. */
+        int answerFDR = 0;; 
 
         bool clientHello = false;
         bool clientDone = false;
@@ -67,6 +69,13 @@ class Arduino
 
         /* Realiza o envio do Done para o Server. */
         void done();
+
+        /*  Verifica se a resposta do FDR fornecida pelo Servidor é válida. */
+        bool checkAnsweredFDR(int answeredFdr);
+
+        /* Calcula a resposta do FDR. */
+        int calculateFDRValue(int iv, FDR* fdr);
+
 };
 
 #endif

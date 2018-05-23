@@ -5,10 +5,12 @@
 #include "utils.h"
 #include "RSA.h"
 #include "sha512.h"
+#include "fdr.h"
 #include <string>
 #include <iostream>
 #include <sstream>
 #include "aes.h"
+#include <unistd.h>
 
 using namespace std;
 
@@ -25,6 +27,8 @@ class IotAuth
         // void decryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size);
 
         RSAKeyPair generateRSAKeyPair();
+        int generateIV();
+        FDR* generateFDR();
 
         string hash(char message[]);
 
@@ -34,6 +38,8 @@ class IotAuth
         string decryptRSAPrivateKey(int cipher[], PrivateRSAKey privateKey, int size);
 
     private:
+
+        int randomNumber(int upperBound);
 
         Utils utils;
         AES aes;

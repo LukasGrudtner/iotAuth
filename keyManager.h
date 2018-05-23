@@ -21,13 +21,13 @@ class KeyManager
         void setBase(int base);
         void setModulus(int modulus);
         void setExponent(int exponent);
+        void setMyIV(int _myIV);
 
         int getBase();
         int getModulus();
-        int getIV();
-        FDR* getFDR();
-        void setIV(int _iv);
-        void setFDR(FDR* _fdr);
+        int getMyIV();
+        FDR* getMyFDR();
+        void setMyFDR(FDR* _fdr);
 
     private:
         int exponent = 0; // a
@@ -39,8 +39,8 @@ class KeyManager
 
         PublicRSAKey partnerPublicKey;
 
-        long long int iv;
-        FDR* fdr;
+        int myIV = 0;
+        FDR* myFdr;
 };
 
 #endif

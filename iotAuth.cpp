@@ -129,8 +129,32 @@ string IotAuth::decryptRSAPublicKey(int cipher[], PublicRSAKey publicKey, int si
 string IotAuth::decryptRSAPrivateKey(int cipher[], PrivateRSAKey privateKey, int size)
 {
     char plain[size];
+    memset(plain, 0, sizeof(plain));
     rsa.decodifica(plain, cipher, privateKey.e, privateKey.n, size);
 
     string output (plain);
     return output;
+}
+
+/*  Gera um número aleatório menor que um dado limite superior. */
+int IotAuth::randomNumber(int upperBound)
+{
+    sleep(2);
+    srand(time(NULL));
+    return rand() % upperBound;
+}
+
+/*  Retorna um valor aleatório para ser usado como IV. */
+int IotAuth::generateIV()
+{
+    return randomNumber(100);
+}
+
+FDR* IotAuth::generateFDR()
+{
+    char _operator = '+';
+    int _operand = randomNumber(100);
+    FDR* fdr = new FDR(_operator, _operand);
+
+    return fdr;
 }

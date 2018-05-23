@@ -5,7 +5,7 @@
 */
 KeyManager::KeyManager()
 {
-    fdr = new FDR();
+    
 }
 
 /*  getDiffieHellmanKey()
@@ -95,33 +95,25 @@ void KeyManager::setModulus(int _modulus)
 /*  getIV()
     Retorna o valor do atributo 'IV' armazenado no objeto.
 */
-int KeyManager::getIV()
+int KeyManager::getMyIV()
 {
-    return iv;
-}
-
-/*  setIV()
-    Armazena o valor do atributo 'IV' no objeto.
-*/
-void KeyManager::setIV(int _iv)
-{
-    iv = _iv;
+    return myIV;
 }
 
 /*  getFDR()
     Retorna o valor do atributo 'FDR' armazenado no objeto.
 */
-FDR* KeyManager::getFDR()
+FDR* KeyManager::getMyFDR()
 {
-    return fdr;
+    return myFdr;
 }
 
 /*  setFDR()
     Armazena o valor do atributo 'FDR' no objeto.
 */
-void KeyManager::setFDR(FDR* _fdr)
+void KeyManager::setMyFDR(FDR* _fdr)
 {
-    fdr = _fdr;
+    myFdr = _fdr;
 }
 
 /*  Armazena o par de chaves RSA */
@@ -145,4 +137,12 @@ int KeyManager::getModulus()
 void KeyManager::setExponent(int _exponent)
 {
     exponent = _exponent;
+}
+
+/*  setMyIV()
+    Armazena o valor do atributo 'IV' da entidade no objeto.
+*/
+void KeyManager::setMyIV(int _myIV)
+{
+    myIV = _myIV;
 }
