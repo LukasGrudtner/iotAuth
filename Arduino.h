@@ -33,6 +33,8 @@ class Arduino
         /* Envia Client Done para o Server. */
         char* sendClientDone();
 
+        char* sendClientACKDone();
+
         /* Recebe o Server Hello. */
         bool receiveServerHello(char buffer[]);
         /* Recebe o Server Done. */
@@ -46,12 +48,15 @@ class Arduino
         /* Realiza o envio da chave Diffie-Hellman para o Server. */
         string sendDiffieHellmanKey();
         /* Recebe a chave Diffie-Hellman do Server. */
-        void receiveDiffieHellmanKey(char message[]);
+        bool receiveDiffieHellmanKey(char message[]);
 
         string sendEncryptedMessage(char message[], int size);
 
         /* Realiza o envio do Done para o Server. */
         void done();
+
+        /* Verifica se a mensagem vinda do servidor é um DONE. */
+        bool checkDoneServer(char buffer[]);
 
     private:
 

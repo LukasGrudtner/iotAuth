@@ -13,13 +13,20 @@ char* Arduino::sendClientHello()
 
 char* Arduino::sendClientDone()
 {
-    cout << "**************DONE CLIENT****************" << endl;
+    // cout << "\n**************DONE CLIENT****************" << endl;
     string done (DONE_MESSAGE);
-    printf("1\n");
     char *message = (char*)malloc(4);
     strncpy(message, done.c_str(), 4);
-    printf("2\n");
-    cout << "**************************************\n" << endl;
+    // cout << "**************************************\n" << endl;
+    return message;
+}
+
+char* Arduino::sendClientACKDone()
+{
+    string doneACK (DONE_ACK);
+    char *message = (char*)malloc(1);
+    strncpy(message, doneACK.c_str(), 1);
+
     return message;
 }
 
@@ -59,7 +66,7 @@ bool Arduino::receiveServerDone(char buffer[])
 
 char* Arduino::sendRSAKey()
 {
-    cout << "************SEND RSA CLIENT***********" << endl;
+
 
     /* Gera um par de chaves RSA e o armazena no keyManager. */
     keyManager.setRSAKeyPair(iotAuth.generateRSAKeyPair());
@@ -83,22 +90,23 @@ char* Arduino::sendRSAKey()
                 to_string(keyManager.getMyIV()) + spacer +
                 stringHandler.FdrToString(keyManager.getMyFDR());
 
-    cout << "Generated RSA Key: {(" << keyManager.getMyPublicKey().d
-         << ", " << keyManager.getMyPublicKey().n << "), ("
-         << keyManager.getMyPrivateKey().e << ", "
-         << keyManager.getMyPrivateKey().n << ")}" << endl;
-    cout << "Iv: " << keyManager.getMyIV() << endl;
-    cout << "Fdr: " << stringHandler.FdrToString(keyManager.getMyFDR()) << endl;
-
     /*  Converte a string para um array de char (message), e retorna este
         array.
     */
     char* message = (char*)malloc(sendData.length());
     strcpy(message, sendData.c_str());
 
-    cout << "Sent: " << message << endl;
-
-    cout << "**************************************\n" << endl;
+    if (VERBOSE) {
+        cout << "************SEND RSA CLIENT***********" << endl;
+        cout << "Generated RSA Key: {(" << keyManager.getMyPublicKey().d
+             << ", " << keyManager.getMyPublicKey().n << "), ("
+             << keyManager.getMyPrivateKey().e << ", "
+             << keyManager.getMyPrivateKey().n << ")}" << endl;
+        cout << "My IV: " << keyManager.getMyIV() << endl;
+        cout << "My FDR: " << stringHandler.FdrToString(keyManager.getMyFDR()) << endl;
+        cout << "Sent: " << message << endl;
+        cout << "**************************************\n" << endl;
+    }
 
     return message;
 }
@@ -122,9 +130,7 @@ bool Arduino::checkAnsweredFDR(int answeredFdr)
 
 bool Arduino::receiveRSAKey(char buffer[])
 {
-    cout << "*********RECEIVED RSA SERVER**********" << endl;
 
-    cout << "Received: " << buffer << endl;
 
     /*  Armazena a chave pública do servidor obtida, passando como parâmetro
         uma chamada à função getPartnerPublicKey do StringHandler, que extrai
@@ -137,28 +143,35 @@ bool Arduino::receiveRSAKey(char buffer[])
     FDR* partnerFdr = stringHandler.getRSAExchangeFdr(buffer);
     answerFDR = calculateFDRValue(partnerIV, partnerFdr);
 
-    cout << "RSA Server Public Key: (" <<stringHandler.getPartnerPublicKey(buffer).d <<
-            ", " << stringHandler.getPartnerPublicKey(buffer).n << ")" << endl;
-    cout << "Answered FDR: " << answeredFdr << endl;
-    cout << "Server IV: " << partnerIV << endl;
-    cout << "Server FDR: " << partnerFdr->getOperator() << partnerFdr->getOperand() << endl;
-    cout << "Server FDR Answer: " << answerFDR << endl;
+    if (VERBOSE) {
+        cout << "*********RECEIVED RSA SERVER**********" << endl;
+        cout << "Received: " << buffer << endl;
+        cout << "RSA Server Public Key: (" <<stringHandler.getPartnerPublicKey(buffer).d <<
+                ", " << stringHandler.getPartnerPublicKey(buffer).n << ")" << endl;
+        cout << "Answered FDR: " << answeredFdr << endl;
+        cout << "Server IV: " << partnerIV << endl;
+        cout << "Server FDR: " << partnerFdr->getOperator() << partnerFdr->getOperand() << endl;
+        cout << "Server FDR Answer: " << answerFDR << endl;
+    }
 
     if (checkAnsweredFDR(answeredFdr)) {
         receivedRSAKey = true;
-        cout << "Answered FDR ACCEPTED!" << endl;
+        if (VERBOSE) {
+            cout << "Answered FDR ACCEPTED!" << endl;
+            cout << "**************************************\n" << endl;
+        }
         return true;
     } else {
-        cout << "Answered FDR REJECTED!" << endl;
-        cout << "ENDING CONECTION..." << endl;
+        if (VERBOSE) {
+            cout << "Answered FDR REJECTED!" << endl;
+            cout << "ENDING CONECTION..." << endl;
+            cout << "**************************************\n" << endl;
+        }
         return false;
     }
-
-    cout << "**************************************\n" << endl;
 }
 
 /* Remove pacote da mensagem*/
-
 string Arduino::getHashEncrypted(string package)
 {
     /*  Pega todos os caracteres anteriores ao símbolo "*", coloca-os em uma
@@ -191,7 +204,7 @@ string Arduino::getHashEncrypted(string package)
 string Arduino::sendDiffieHellmanKey()
 {
     keyManager.setExponent(a);
-    cout << "************SEND DH CLIENT************" << endl;
+
     /*  Organiza o pacote com os dados Diffie-Hellman para enviar ao cliente. */
     long int pot = pow(g, a);
     long int A = pot % p;
@@ -215,15 +228,10 @@ string Arduino::sendDiffieHellmanKey()
     /* Armazena o hash no buffer hashArray */
     string hash = iotAuth.hash(messageArray);
 
-    // cout << "Sent: " << package << endl << endl;
-    cout << "Client Hash: " << hash << endl << endl;
-
     /* Encripta o hash utilizando a chave privada do cliente */
-    // cout << "Encripta hash com a chave privada do cliente: (" << keyManager.getMyPrivateKey().e << ", " << keyManager.getMyPrivateKey().n << ")" << endl;
     string hashEncryptedString = iotAuth.encryptRSAPrivateKey(hash, keyManager.getMyPrivateKey(), hash.length());
     hashEncryptedString += "!";
 
-    // cout << "Client Encrypted HASH: " << hashEncryptedString << endl << endl;
 
     /**************************************************************************/
 
@@ -238,13 +246,22 @@ string Arduino::sendDiffieHellmanKey()
     /* Encripta o sendDataArray utilizando a chave pública do servidor. */
     string sendDataEncrypted = iotAuth.encryptRSAPublicKey(sendData,
                 keyManager.getPartnerPublicKey(), sendData.length());
-    // cout << "Size of SendData: " << sendData.length() << endl;
+
     sendDataEncrypted += "!";
 
-    // cout << "Send Data Encrypted Length: " << sendDataEncrypted.length() << endl << endl;
+    if (VERBOSE) {
+        cout << "************SEND DH CLIENT************" << endl;
+        cout << "Client Hash: " << hash << endl << endl;
+        cout << "Client Package: " << package << endl;
+        cout << "                (A | g | p | iv | ansFdr)" << endl;
 
-    // cout << "Send Data Encrypted: " << sendDataEncrypted << endl << endl;
-
+        if (VERBOSE_2) {
+            cout << endl << "Encrypted HASH" << endl << hashEncryptedString << endl << endl;
+            cout << "Used Key: (" << keyManager.getPartnerPublicKey().d << ", " << keyManager.getPartnerPublicKey().n << ")" << endl;
+            cout << "Encrypted Data" << endl << sendDataEncrypted << endl << endl;
+        }
+        cout << "**************************************" << endl << endl;
+    }
 
     return sendDataEncrypted;
 }
@@ -263,7 +280,7 @@ string Arduino::getPackage(string package)
     return resultado;
 }
 
-void Arduino::receiveDiffieHellmanKey(char message[])
+bool Arduino::receiveDiffieHellmanKey(char message[])
 {
     /* Decodifica o pacote recebido do cliente. */
     string encryptedPackage (message);
@@ -289,11 +306,10 @@ void Arduino::receiveDiffieHellmanKey(char message[])
     /* Decifra o HASH com a chave pública do Server. */
     string decryptedHashString = iotAuth.decryptRSAPublicKey(encryptedHashInt, keyManager.getPartnerPublicKey(), 128);
 
-    cout << "Server Decrypted HASH: " << decryptedHashString << endl << endl;
+
     /***** HASH *****/
 
     /* Recebe chave Diffie-Hellman e IV. */
-    printf("\n*******SERVER DH KEY RECEIVED******\n");
     char dhPackageChar[dhPackage.length()];
     strncpy(dhPackageChar, dhPackage.c_str(), sizeof(dhPackageChar));
     keyManager.setBase(stringHandler.getClientBase(dhPackageChar));
@@ -302,12 +318,25 @@ void Arduino::receiveDiffieHellmanKey(char message[])
     int ivClient = stringHandler.getDHIvClient(dhPackageChar);
 
     receivedDHKey = true;
-    std::cout << "Diffie-Hellman Key: " << stringHandler.getDHClientKey(dhPackageChar) << std::endl;
-    std::cout << "Base: " << stringHandler.getClientBase(dhPackageChar) << std::endl;
-    std::cout << "Modulus: " << stringHandler.getClientModulus(dhPackageChar) << std::endl;
-    std::cout << "Client IV: " << stringHandler.getDHIvClient(dhPackageChar) << std::endl;
-    std::cout << "Session Key: " << keyManager.getSessionKey() << std::endl;
-    std::cout << "***********************************\n" << std::endl;
+
+    if (VERBOSE) {
+        printf("\n*******SERVER DH KEY RECEIVED******\n");
+
+        if (VERBOSE_2) {
+            cout << "Server Encrypted Data" << endl << encryptedPackage << endl << endl;
+            cout << "Server Encrypted Hash" << endl << encryptedHash << endl << endl;
+        }
+
+        cout << "Server Decrypted Hash: " << decryptedHashString << endl << endl;
+        cout << "Diffie-Hellman Key: " << stringHandler.getDHClientKey(dhPackageChar) << endl;
+        cout << "Base: " << stringHandler.getClientBase(dhPackageChar) << endl;
+        cout << "Modulus: " << stringHandler.getClientModulus(dhPackageChar) << endl;
+        cout << "Client IV: " << stringHandler.getDHIvClient(dhPackageChar) << endl;
+        cout << "Session Key: " << keyManager.getSessionKey() << endl;
+        cout << "***********************************\n" << endl;
+    }
+
+    return true;
 }
 
 string Arduino::sendEncryptedMessage(char message[], int size) {
@@ -330,4 +359,17 @@ string Arduino::sendEncryptedMessage(char message[], int size) {
 
 
 
+}
+
+bool Arduino::checkDoneServer(char buffer[])
+{
+    /* Pega os 4 primeiros caracteres do buffer recebido para verificar
+    se é um DONE. */
+    char buffTest[5];
+    buffTest[4] = '\0';
+    for (int i = 0; i < 4; i++) {
+        buffTest[i] = buffer[i];
+    }
+
+    return (strcmp(buffTest, DONE_MESSAGE) == 0);
 }

@@ -36,6 +36,7 @@ uint8_t* IotAuth::decryptAES(uint8_t ciphertext[], uint8_t key[], uint8_t iv[], 
     com ambas as chaves. Essa struct é definida em "settings.h". */
 RSAKeyPair IotAuth::generateRSAKeyPair()
 {
+    sleep(1);
     srand(time(NULL));
     int p, p2, n, phi, e, d;
 
@@ -129,17 +130,20 @@ string IotAuth::decryptRSAPublicKey(int cipher[], PublicRSAKey publicKey, int si
 string IotAuth::decryptRSAPrivateKey(int cipher[], PrivateRSAKey privateKey, int size)
 {
     char plain[size];
-    memset(plain, 0, sizeof(plain));
+    memset(plain, '\0', sizeof(plain));
     rsa.decodifica(plain, cipher, privateKey.e, privateKey.n, size);
 
-    string output (plain);
+    string output = "";
+    for (int i = 0; i < sizeof(plain); i++) {
+        output += plain[i];
+    }
+    
     return output;
 }
 
 /*  Gera um número aleatório menor que um dado limite superior. */
 int IotAuth::randomNumber(int upperBound)
 {
-    sleep(2);
     srand(time(NULL));
     return rand() % upperBound;
 }
@@ -147,11 +151,13 @@ int IotAuth::randomNumber(int upperBound)
 /*  Retorna um valor aleatório para ser usado como IV. */
 int IotAuth::generateIV()
 {
+    sleep(1);
     return randomNumber(100);
 }
 
 FDR* IotAuth::generateFDR()
 {
+    sleep(1);
     char _operator = '+';
     int _operand = randomNumber(100);
     FDR* fdr = new FDR(_operator, _operand);

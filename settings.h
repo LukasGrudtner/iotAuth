@@ -2,6 +2,8 @@
 #define SETTINGS_H
 
 /* Definição de alguns atributos utilizados na comunicação */
+#define VERBOSE true
+#define VERBOSE_2 true
 #define DEFAULT_PORT 8080
 #define SPACER '#'
 #define SPACER_S "#"
@@ -11,7 +13,6 @@
 #define HELLO_ACK_CHAR '#'
 #define DONE_ACK "!"
 #define DONE_ACK_CHAR '!'
-#define FDRb "+7"
 
 /* Definição do tipo "byte" utilizado. */
 typedef unsigned char byte;

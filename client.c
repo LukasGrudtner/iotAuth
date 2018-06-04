@@ -56,10 +56,8 @@ int main(int argc, char *argv[]){
 
     while(1){
 
-       printf("\n*** Bem vindo ao cliente ***\n");
-
        if (!arduino.clientHello) {
-           printf("########## ENTER para enviar um HELLO ao Server #####\n");
+           printf("########## ENTER para enviar um HELLO ao Server ##########\n");
            fgets(envia,556,stdin);
 
            char* message = arduino.sendClientHello();
@@ -67,12 +65,26 @@ int main(int argc, char *argv[]){
 
            while (!arduino.clientHello) {
                recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-               arduino.receiveServerHello(recebe);
+               if (!arduino.checkDoneServer(recebe)) {
+                   arduino.receiveServerHello(recebe);
+               } else {
+                   arduino.done();
+                   char *message = arduino.sendClientDone();
+
+                   cout << "Sent: " << message << endl;
+                   sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+
+                   cout << "Waiting ACK to end the connection...\n" << endl;
+
+                   recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+                   arduino.receiveServerDone(recebe);
+               }
+
 
            }
        }
 
-       if (arduino.clientHello && !arduino.receivedRSAKey) {
+       else if (arduino.clientHello && !arduino.receivedRSAKey) {
            printf("########## ENTER para enviar a chave RSA ao Server ##########\n");
            fgets(envia, 556, stdin);
 
@@ -86,8 +98,11 @@ int main(int argc, char *argv[]){
                if (!validIV) {
                    arduino.done();
                    char *message = arduino.sendClientDone();
-                   cout << "Message: " << message << endl;
+
+                   cout << "Sent: " << message << endl;
                    sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+
+                   cout << "Waiting ACK to end the connection...\n" << endl;
 
                    recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
                    arduino.receiveServerDone(recebe);
@@ -95,35 +110,45 @@ int main(int argc, char *argv[]){
            }
        }
 
-       if (arduino.receivedRSAKey && !arduino.receivedDHKey) {
+       else if (arduino.receivedRSAKey && !arduino.receivedDHKey) {
            printf("########## ENTER para enviar a chave DH ao Server ##########\n");
            fgets(envia, 556, stdin);
 
            string message = arduino.sendDiffieHellmanKey();
-           char messageChar[message.length()];
-           memset(messageChar, '\0', sizeof(messageChar));
+           char messageChar[message.length()+1];
+           messageChar[message.length()] = '\0';
+           // memset(messageChar, '\0', sizeof(messageChar));
            strncpy(messageChar, message.c_str(), sizeof(messageChar));
-
-           cout << "Size Message Char: " << strlen(messageChar) << endl;
 
            sendto(meuSocket,messageChar,strlen(messageChar),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
            while (!arduino.receivedDHKey && !arduino.clientDone) {
                recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-               bool validIV = arduino.receiveRSAKey(recebe);
 
-               if (!validIV) {
+               if (!arduino.checkDoneServer(recebe)) {
+                   bool validHash = arduino.receiveDiffieHellmanKey(recebe);
+
+                   if (!validHash) {
+                       arduino.done();
+                       char *message = arduino.sendClientDone();
+                       sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+
+                       cout << "Waiting ACK..." << endl;
+
+                       recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+                       arduino.receiveServerDone(recebe);
+                   }
+               } else {
                    arduino.done();
-                   char *message = arduino.sendClientDone();
-                   sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+                   char *message = arduino.sendClientACKDone();
 
-                   recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-                   arduino.receiveServerDone(recebe);
+                   cout << "Conexão terminada." << message << endl;
+                   sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
                }
            }
        }
 
-       if (arduino.receivedRSAKey && arduino.receivedDHKey){
+       else if (arduino.receivedRSAKey && arduino.receivedDHKey){
            cout << "Envio de dados criptografados com AES." << endl << endl;
 
            printf("########## Escreva uma mensagem para o servidor ##########\n");
@@ -134,7 +159,7 @@ int main(int argc, char *argv[]){
            while (strcmp(envia, "\n") != 0) {
 
                string encryptedMessage = arduino.sendEncryptedMessage(envia, sizeof(envia));
-               cout << "Sent: " << encryptedMessage << endl;
+               cout << "Sent" << endl << encryptedMessage << endl << endl;
 
                char encryptedMessageChar[encryptedMessage.length()];
                memset(encryptedMessageChar, '\0', sizeof(encryptedMessageChar));
@@ -146,29 +171,6 @@ int main(int argc, char *argv[]){
            }
        }
 
-
-
-
-       // /* PASSO 1: Envio de HELLO. */
-       // char a[] = "HELLO\n";
-       // sendto(meuSocket, a, sizeof(a),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
-
-       // /* PASSO 3: Envio do pacote RSA (Chave pública, iv, FDR). */
-       // RSAKeyPair keys = iotAuth.generateRSAKeyPair();
-       // RSAExchange RSAExchangeStruct = {keys.publicRSAKey, 0, 111, '+', 100};
-       // sendto(meuSocket, (RSAExchange*)&RSAExchangeStruct, sizeof(RSAExchangeStruct),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
-
-       /* PASSO 5:
-            (DH, g, p, iv, F(iv)) -> HASH,                              }   ->  Cifrado com a chave
-            (DH, g, p, iv, F(iv)) -> Cifrado com chave privada de A     }   ->  pública de B
-        */
-
-
-       // sendto(meuSocket,envia,strlen(envia),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
-       // tam_cliente=sizeof(struct sockaddr_in);
-       // recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-
-       // printf("Recebi:%s",recebe);
        memset(envia, 0, sizeof(envia));
        memset(recebe, 0, sizeof(recebe));
     }
