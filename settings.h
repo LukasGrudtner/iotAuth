@@ -3,7 +3,7 @@
 
 /* Definição de alguns atributos utilizados na comunicação */
 #define VERBOSE true
-#define VERBOSE_2 true
+#define VERBOSE_2 false
 #define DEFAULT_PORT 8080
 #define SPACER '#'
 #define SPACER_S "#"

@@ -31,6 +31,7 @@ class IotAuth
         FDR* generateFDR();
 
         string hash(char message[]);
+        bool isHashValid(string message, string hash);
 
         string encryptRSAPublicKey(string plain, PublicRSAKey publicKey, int size);
         string encryptRSAPrivateKey(string plain, PrivateRSAKey privateKey, int size);

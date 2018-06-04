@@ -62,8 +62,7 @@ RSAKeyPair IotAuth::generateRSAKeyPair()
     return keys;
 }
 
-/*  Realiza o hash do parâmetro message e armazena no array (hash) (retorno por
-    parâmetro) */
+/*  Realiza o hash do parâmetro message */
 string IotAuth::hash(char message[])
 {
     return sha512(message);
@@ -137,7 +136,7 @@ string IotAuth::decryptRSAPrivateKey(int cipher[], PrivateRSAKey privateKey, int
     for (int i = 0; i < sizeof(plain); i++) {
         output += plain[i];
     }
-    
+
     return output;
 }
 
@@ -163,4 +162,14 @@ FDR* IotAuth::generateFDR()
     FDR* fdr = new FDR(_operator, _operand);
 
     return fdr;
+}
+
+bool IotAuth::isHashValid(string message, string hash) {
+    char messageArray[message.length()];
+    memset(messageArray, '\0', sizeof(messageArray));
+    strncpy(messageArray, message.c_str(), sizeof(messageArray));
+
+    string hash2 = this->hash(messageArray);
+
+    return hash == hash2;
 }

@@ -56,11 +56,9 @@ bool receiveClientDone(char buffer[])
 
 char* sendServerDone()
 {
-    cout << "**************DONE SERVER****************" << endl;
     string done (DONE_MESSAGE);
     char *message = (char*)malloc(4);
     strncpy(message, done.c_str(), 4);
-    cout << "**************************************\n" << endl;
     return message;
 }
 
@@ -206,35 +204,18 @@ bool receiveDiffieHellmanKey(char buffer[])
     /* Decodifica o pacote recebido do cliente. */
     string encryptedPackage (buffer);
 
-    if (VERBOSE_2) {
-        cout << "Client Data Received" << endl << buffer << endl << endl;
-    }
-
     int decryptedPackageInt[utils.countMarks(encryptedPackage)+1];
     utils.RSAToIntArray(decryptedPackageInt, encryptedPackage, (utils.countMarks(encryptedPackage)+1));
-
-    printf("teste\n");
 
     /* Decodifica o pacote e converte para um array de char. */
     string decryptedPackageString = iotAuth.decryptRSAPrivateKey(decryptedPackageInt, keyManager->getMyPrivateKey(), utils.countMarks(encryptedPackage)+1);
 
-    cout << "Used Key: (" << keyManager->getMyPrivateKey().e << ", " << keyManager->getMyPrivateKey().n << ")" << endl;
-    cout << "Decrypted Data" << endl << decryptedPackageString << endl << endl;
-
     /* Recupera o pacote com os dados Diffie-Hellman do Client. */
     string dhPackage = getPackage(decryptedPackageString);
-
-    printf("teste3\n");
 
     /***** HASH *****/
     /* Recupera o hash cifrado com a chave Privada do Server. */
     string encryptedHash = getHashEncrypted(decryptedPackageString);
-
-    printf("teste4\n");
-
-    if (VERBOSE_2) {
-        cout << "Client Encrypted Hash" << endl << encryptedHash << endl << endl;
-    }
 
     int encryptedHashInt[128];
     utils.RSAToIntArray(encryptedHashInt, encryptedHash, 128);
@@ -242,41 +223,54 @@ bool receiveDiffieHellmanKey(char buffer[])
     /* Decifra o HASH com a chave pública do Server. */
     string decryptedHashString = iotAuth.decryptRSAPublicKey(encryptedHashInt, keyManager->getPartnerPublicKey(), 128);
 
-    /***** HASH *****/
+    if (iotAuth.isHashValid(dhPackage, decryptedHashString)) {
 
-    /* Recebe chave Diffie-Hellman e IV. */
+        /* Recebe chave Diffie-Hellman e IV. */
+        char dhPackageChar[dhPackage.length()];
+        strncpy(dhPackageChar, dhPackage.c_str(), sizeof(dhPackageChar));
 
-    char dhPackageChar[dhPackage.length()];
-    strncpy(dhPackageChar, dhPackage.c_str(), sizeof(dhPackageChar));
+        keyManager->setBase(StringHandler.getClientBase(dhPackageChar));
+        keyManager->setModulus(StringHandler.getClientModulus(dhPackageChar));
+        keyManager->setSessionKey(keyManager->getDiffieHellmanKey(StringHandler.getDHClientKey(dhPackageChar)));
+        int clientIV = StringHandler.getDHIvClient(dhPackageChar);
+        int answeredFdr = StringHandler.getDHExchangeAnsweredFDR(dhPackageChar);
 
-    keyManager->setBase(StringHandler.getClientBase(dhPackageChar));
-    keyManager->setModulus(StringHandler.getClientModulus(dhPackageChar));
-    keyManager->setSessionKey(keyManager->getDiffieHellmanKey(StringHandler.getDHClientKey(dhPackageChar)));
-    int clientIV = StringHandler.getDHIvClient(dhPackageChar);
-    int answeredFdr = StringHandler.getDHExchangeAnsweredFDR(dhPackageChar);
-
-    if (VERBOSE) {
-        printf("\n*******CLIENT DH KEY RECEIVED******\n");
-        cout << "Client Decrypted HASH: " << decryptedHashString << endl << endl;
-        cout << "Diffie-Hellman Key: " << StringHandler.getDHClientKey(dhPackageChar) << endl;
-        cout << "Base: " << StringHandler.getClientBase(dhPackageChar) << endl;
-        cout << "Modulus: " << StringHandler.getClientModulus(dhPackageChar) << endl;
-        cout << "Client IV: " << clientIV << endl;
-        cout << "Session Key: " << keyManager->getSessionKey() << endl;
-        cout << "Answered FDR: " << answeredFdr << endl;
-    }
-
-    if (checkAnsweredFDR(answeredFdr)) {
-        RECEIVED_DH_KEY = true;
         if (VERBOSE) {
-            cout << "Answered FDR ACCEPTED!" << endl;
+            printf("\n*******CLIENT DH KEY RECEIVED******\n");
+
+            cout << "Hash is valid!" << endl << endl;
+
+            if (VERBOSE_2) {
+                cout << "Client Encrypted Data" << endl << buffer << endl << endl;
+                cout << "Client Encrypted Hash" << endl << encryptedHash << endl << endl;
+            }
+
+            cout << "Client Decrypted HASH: " << decryptedHashString << endl << endl;
+            cout << "Diffie-Hellman Key: " << StringHandler.getDHClientKey(dhPackageChar) << endl;
+            cout << "Base: " << StringHandler.getClientBase(dhPackageChar) << endl;
+            cout << "Modulus: " << StringHandler.getClientModulus(dhPackageChar) << endl;
+            cout << "Client IV: " << clientIV << endl;
+            cout << "Session Key: " << keyManager->getSessionKey() << endl;
+            cout << "Answered FDR: " << answeredFdr << endl;
         }
-        return true;
+
+        if (checkAnsweredFDR(answeredFdr)) {
+            RECEIVED_DH_KEY = true;
+            if (VERBOSE) {
+                cout << "Answered FDR ACCEPTED!" << endl;
+                cout << "**************************************\n" << endl;
+            }
+            return true;
+        } else {
+            if (VERBOSE) {
+                cout << "Answered FDR REJECTED!" << endl;
+                cout << "ENDING CONECTION..." << endl;
+                cout << "**************************************\n" << endl;
+            }
+            return false;
+        }
     } else {
-        if (VERBOSE) {
-            cout << "Answered FDR REJECTED!" << endl;
-            cout << "ENDING CONECTION..." << endl;
-        }
+        cout << "Hash is invalid!" << endl << endl;
         return false;
     }
 }
@@ -320,7 +314,7 @@ string sendDiffieHellmanKey()
         printf("*********SEND SERVER DH KEY********\n\n");
 
         cout << "Server Hash: " << hash << endl << endl;
-        cout << "Server Package: " << sendString << endl << endl;
+        cout << "Server Package: " << sendString << endl;
         cout << "              (A | g | p | iv | ansFdr)" << endl;
 
         if (VERBOSE_2) {
