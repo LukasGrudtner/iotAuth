@@ -270,7 +270,10 @@ bool receiveDiffieHellmanKey(char buffer[])
             return false;
         }
     } else {
-        cout << "Hash is invalid!" << endl << endl;
+        if (VERBOSE) {
+            cout << "Hash is invalid!" << endl << endl;
+        }
+        
         return false;
     }
 }

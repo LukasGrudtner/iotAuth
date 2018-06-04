@@ -298,45 +298,50 @@ bool Arduino::receiveDiffieHellmanKey(char message[])
     /* Recupera o hash cifrado com a chave Privada do Server. */
     string encryptedHash = getHashEncrypted(decryptedPackageString);
 
-    // cout << "Server Encrypted HASH: " << encryptedHash << endl << endl;
-
     int encryptedHashInt[128];
     utils.RSAToIntArray(encryptedHashInt, encryptedHash, 128);
 
     /* Decifra o HASH com a chave pública do Server. */
     string decryptedHashString = iotAuth.decryptRSAPublicKey(encryptedHashInt, keyManager.getPartnerPublicKey(), 128);
 
+    if (iotAuth.isHashValid(dhPackage, decryptedHashString)) {
 
-    /***** HASH *****/
+        /* Recebe chave Diffie-Hellman e IV. */
+        char dhPackageChar[dhPackage.length()];
+        strncpy(dhPackageChar, dhPackage.c_str(), sizeof(dhPackageChar));
+        keyManager.setBase(stringHandler.getClientBase(dhPackageChar));
+        keyManager.setModulus(stringHandler.getClientModulus(dhPackageChar));
+        keyManager.setSessionKey(keyManager.getDiffieHellmanKey(stringHandler.getDHClientKey(dhPackageChar)));
+        int ivClient = stringHandler.getDHIvClient(dhPackageChar);
 
-    /* Recebe chave Diffie-Hellman e IV. */
-    char dhPackageChar[dhPackage.length()];
-    strncpy(dhPackageChar, dhPackage.c_str(), sizeof(dhPackageChar));
-    keyManager.setBase(stringHandler.getClientBase(dhPackageChar));
-    keyManager.setModulus(stringHandler.getClientModulus(dhPackageChar));
-    keyManager.setSessionKey(keyManager.getDiffieHellmanKey(stringHandler.getDHClientKey(dhPackageChar)));
-    int ivClient = stringHandler.getDHIvClient(dhPackageChar);
+        receivedDHKey = true;
 
-    receivedDHKey = true;
+        if (VERBOSE) {
+            printf("\n*******SERVER DH KEY RECEIVED******\n");
 
-    if (VERBOSE) {
-        printf("\n*******SERVER DH KEY RECEIVED******\n");
+            if (VERBOSE_2) {
+                cout << "Server Encrypted Data" << endl << encryptedPackage << endl << endl;
+                cout << "Server Encrypted Hash" << endl << encryptedHash << endl << endl;
+            }
 
-        if (VERBOSE_2) {
-            cout << "Server Encrypted Data" << endl << encryptedPackage << endl << endl;
-            cout << "Server Encrypted Hash" << endl << encryptedHash << endl << endl;
+            cout << "Server Decrypted Hash: " << decryptedHashString << endl << endl;
+            cout << "Diffie-Hellman Key: " << stringHandler.getDHClientKey(dhPackageChar) << endl;
+            cout << "Base: " << stringHandler.getClientBase(dhPackageChar) << endl;
+            cout << "Modulus: " << stringHandler.getClientModulus(dhPackageChar) << endl;
+            cout << "Client IV: " << stringHandler.getDHIvClient(dhPackageChar) << endl;
+            cout << "Session Key: " << keyManager.getSessionKey() << endl;
+            cout << "***********************************\n" << endl;
         }
 
-        cout << "Server Decrypted Hash: " << decryptedHashString << endl << endl;
-        cout << "Diffie-Hellman Key: " << stringHandler.getDHClientKey(dhPackageChar) << endl;
-        cout << "Base: " << stringHandler.getClientBase(dhPackageChar) << endl;
-        cout << "Modulus: " << stringHandler.getClientModulus(dhPackageChar) << endl;
-        cout << "Client IV: " << stringHandler.getDHIvClient(dhPackageChar) << endl;
-        cout << "Session Key: " << keyManager.getSessionKey() << endl;
-        cout << "***********************************\n" << endl;
+        return true;
+    } else {
+        if (VERBOSE) {
+            cout << "Hash is invalid!" << endl << endl;
+        }
+
+        return false;
     }
 
-    return true;
 }
 
 string Arduino::sendEncryptedMessage(char message[], int size) {
