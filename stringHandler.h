@@ -18,7 +18,7 @@ class StringHandler
         int getClientBase(char buffer[]);
         int getClientModulus(char buffer[]);
         int getDHIvClient(char buffer[]);
-        PublicRSAKey getPartnerPublicKey(char buffer[]);
+        RSAKey getPartnerPublicKey(char buffer[]);
         int getRSAExchangeAnswerFdr(char buffer[]);
         int getRSAExchangeIv(char buffer[]);
         FDR* getRSAExchangeFdr(char buffer[]);

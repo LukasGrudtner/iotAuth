@@ -17,51 +17,43 @@
 /* Definição do tipo "byte" utilizado. */
 typedef unsigned char byte;
 
-/* Definição da struct de chave privada. */
-typedef struct private_rsa_key
+/* Definição da struct de chave RSA. */
+typedef struct rsa_key
 {
-    int e;
-    int n;
-} PrivateRSAKey;
+    int d, n;
+} RSAKey;
 
-/* Definição da struct de chave pública. */
-typedef struct public_rsa_key
-{
-    int d;
-    int n;
-} PublicRSAKey;
-
-/* Definição da struct que representa o par de chaves RSA. */
+/* Definição da struct que contém o par de chaves RSA. */
 typedef struct rsa_key_pair
 {
-    PublicRSAKey publicRSAKey;
-    PrivateRSAKey privateRSAKey;
+    RSAKey publicKey;
+    RSAKey privateKey;
 } RSAKeyPair;
 
-/* Definição da struct que represneta o pacote de dados trocados no passo RSA. */
-typedef struct rsaExchange
-{
-    PublicRSAKey publicKey;
-    unsigned long int answerFdr;
-    unsigned long int iv;
-    char operatorFdr;
-    unsigned long int operandFdr;
-} RSAExchange;
-
-typedef struct dhPackage
-{
-    byte *sessionKey;
-    long int g;
-    long int p;
-    long int iv;
-    long int Fiv;
-} DHPackage;
-
-typedef struct dhExchange
-{
-    char hash[128];
-    byte encryptedDHPackage[sizeof(DHPackage)];
-} DHExchange;
+// /* Definição da struct que represneta o pacote de dados trocados no passo RSA. */
+// typedef struct rsaExchange
+// {
+//     PublicRSAKey publicKey;
+//     unsigned long int answerFdr;
+//     unsigned long int iv;
+//     char operatorFdr;
+//     unsigned long int operandFdr;
+// } RSAExchange;
+//
+// typedef struct dhPackage
+// {
+//     byte *sessionKey;
+//     long int g;
+//     long int p;
+//     long int iv;
+//     long int Fiv;
+// } DHPackage;
+//
+// typedef struct dhExchange
+// {
+//     char hash[128];
+//     byte encryptedDHPackage[sizeof(DHPackage)];
+// } DHExchange;
 
 
 #endif

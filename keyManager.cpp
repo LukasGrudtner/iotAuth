@@ -5,7 +5,7 @@
 */
 KeyManager::KeyManager()
 {
-    
+
 }
 
 /*  getDiffieHellmanKey()
@@ -31,23 +31,23 @@ int KeyManager::getDiffieHellmanKey(int base)
 /*  getServerPublicKey()
     Retorna a chave pública do servidor armazenada no objeto.
 */
-PublicRSAKey KeyManager::getMyPublicKey()
+RSAKey KeyManager::getMyPublicKey()
 {
-    return rsaKeys.publicRSAKey;
+    return rsaKeys.publicKey;
 }
 
 /*  getServerPrivateKey()
     Retorna a chave privada do servidor armazenada no objeto.
 */
-PrivateRSAKey KeyManager::getMyPrivateKey()
+RSAKey KeyManager::getMyPrivateKey()
 {
-    return rsaKeys.privateRSAKey;
+    return rsaKeys.privateKey;
 }
 
 /*  getClientPublicKey()
     Retorna a chave pública do cliente armazenada no objeto.
 */
-PublicRSAKey KeyManager::getPartnerPublicKey()
+RSAKey KeyManager::getPartnerPublicKey()
 {
     return partnerPublicKey;
 }
@@ -55,7 +55,7 @@ PublicRSAKey KeyManager::getPartnerPublicKey()
 /*  setClientPublicKey()
     Armazena a chave pública do cliente no objeto.
 */
-void KeyManager::setPartnerPublicKey(PublicRSAKey publicKey)
+void KeyManager::setPartnerPublicKey(RSAKey publicKey)
 {
     partnerPublicKey = publicKey;
 }

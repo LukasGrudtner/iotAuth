@@ -38,10 +38,9 @@ int StringHandler::getDHIvClient(char buffer[])
 /*  getClientPublicKey()
     Retorna a chave pública do cliente contida no buffer recebido por parâmetro.
 */
-PublicRSAKey StringHandler::getPartnerPublicKey(char buffer[])
+RSAKey StringHandler::getPartnerPublicKey(char buffer[])
 {
-    // cout << "get partner public key: (" << stoi(getData(buffer, 0)) << ", " << stoi(getData(buffer, 1)) << ")" << endl;
-    PublicRSAKey publicKey = {std::stoi(getData(buffer, 0)), std::stoi(getData(buffer, 1))};
+    RSAKey publicKey = {std::stoi(getData(buffer, 0)), std::stoi(getData(buffer, 1))};
     return publicKey;
 }
 
@@ -79,7 +78,7 @@ std::string StringHandler::getData(char buffer[], int position)
 {
     char buffer_aux[strlen(buffer)];
     memset(buffer_aux, '\0', sizeof(buffer_aux));
-    
+
     int cont = 0;
     int current_spacer = 0;
 

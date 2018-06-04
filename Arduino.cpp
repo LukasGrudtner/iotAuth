@@ -13,11 +13,9 @@ char* Arduino::sendClientHello()
 
 char* Arduino::sendClientDone()
 {
-    // cout << "\n**************DONE CLIENT****************" << endl;
     string done (DONE_MESSAGE);
     char *message = (char*)malloc(4);
     strncpy(message, done.c_str(), 4);
-    // cout << "**************************************\n" << endl;
     return message;
 }
 
@@ -100,7 +98,7 @@ char* Arduino::sendRSAKey()
         cout << "************SEND RSA CLIENT***********" << endl;
         cout << "Generated RSA Key: {(" << keyManager.getMyPublicKey().d
              << ", " << keyManager.getMyPublicKey().n << "), ("
-             << keyManager.getMyPrivateKey().e << ", "
+             << keyManager.getMyPrivateKey().d << ", "
              << keyManager.getMyPrivateKey().n << ")}" << endl;
         cout << "My IV: " << keyManager.getMyIV() << endl;
         cout << "My FDR: " << stringHandler.FdrToString(keyManager.getMyFDR()) << endl;
@@ -124,14 +122,11 @@ int Arduino::calculateFDRValue(int iv, FDR* fdr)
 bool Arduino::checkAnsweredFDR(int answeredFdr)
 {
     int answer = calculateFDRValue(keyManager.getMyIV(), keyManager.getMyFDR());
-
     return answer == answeredFdr;
 }
 
 bool Arduino::receiveRSAKey(char buffer[])
 {
-
-
     /*  Armazena a chave pública do servidor obtida, passando como parâmetro
         uma chamada à função getPartnerPublicKey do StringHandler, que extrai
         a chave pública do servidor do buffer (recebido do server).
@@ -171,7 +166,7 @@ bool Arduino::receiveRSAKey(char buffer[])
     }
 }
 
-/* Remove pacote da mensagem*/
+/* Extrai o hash encriptado da mensagem. */
 string Arduino::getHashEncrypted(string package)
 {
     /*  Pega todos os caracteres anteriores ao símbolo "*", coloca-os em uma
@@ -187,15 +182,9 @@ string Arduino::getHashEncrypted(string package)
 
     while (package.at(i) != '!') {
         resultado += package.at(i);
-        // printf(" %c", package.at(i));
         i++;
     }
     resultado += package.at(i);
-
-    // for (int j = i; j < package.length(); j++) {
-    //     resultado += package.at(j);
-    //     printf(" %c", package.at(j));
-    // }
 
     return resultado;
 }
@@ -229,7 +218,7 @@ string Arduino::sendDiffieHellmanKey()
     string hash = iotAuth.hash(messageArray);
 
     /* Encripta o hash utilizando a chave privada do cliente */
-    string hashEncryptedString = iotAuth.encryptRSAPrivateKey(hash, keyManager.getMyPrivateKey(), hash.length());
+    string hashEncryptedString = iotAuth.encryptRSA(hash, keyManager.getMyPrivateKey(), hash.length());
     hashEncryptedString += "!";
 
 
@@ -244,7 +233,7 @@ string Arduino::sendDiffieHellmanKey()
     strncpy(sendDataArray, sendData.c_str(), sizeof(sendDataArray));
 
     /* Encripta o sendDataArray utilizando a chave pública do servidor. */
-    string sendDataEncrypted = iotAuth.encryptRSAPublicKey(sendData,
+    string sendDataEncrypted = iotAuth.encryptRSA(sendData,
                 keyManager.getPartnerPublicKey(), sendData.length());
 
     sendDataEncrypted += "!";
@@ -289,7 +278,7 @@ bool Arduino::receiveDiffieHellmanKey(char message[])
     utils.RSAToIntArray(decryptedPackageInt, message, encryptedPackage.length());
 
     /* Decodifica o pacote e converte para um array de char. */
-    string decryptedPackageString = iotAuth.decryptRSAPrivateKey(decryptedPackageInt, keyManager.getMyPrivateKey(), encryptedPackage.length());
+    string decryptedPackageString = iotAuth.decryptRSA(decryptedPackageInt, keyManager.getMyPrivateKey(), encryptedPackage.length());
 
     /* Recupera o pacote com os dados Diffie-Hellman do Client. */
     string dhPackage = getPackage(decryptedPackageString);
@@ -302,7 +291,7 @@ bool Arduino::receiveDiffieHellmanKey(char message[])
     utils.RSAToIntArray(encryptedHashInt, encryptedHash, 128);
 
     /* Decifra o HASH com a chave pública do Server. */
-    string decryptedHashString = iotAuth.decryptRSAPublicKey(encryptedHashInt, keyManager.getPartnerPublicKey(), 128);
+    string decryptedHashString = iotAuth.decryptRSA(encryptedHashInt, keyManager.getPartnerPublicKey(), 128);
 
     if (iotAuth.isHashValid(dhPackage, decryptedHashString)) {
 
