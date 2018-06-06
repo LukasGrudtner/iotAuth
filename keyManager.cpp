@@ -134,6 +134,7 @@ int KeyManager::getModulus()
     return modulus;
 }
 
+/* Seta o expoente. */
 void KeyManager::setExponent(int _exponent)
 {
     exponent = _exponent;

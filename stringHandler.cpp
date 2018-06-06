@@ -143,6 +143,7 @@ FDR* StringHandler::getRSAExchangeFdr(char buffer[])
     return (f);
 }
 
+/* Converte o FDR em uma String. */
 string StringHandler::FdrToString(FDR* fdr)
 {
     string result = fdr->getOperator() + to_string(fdr->getOperand());

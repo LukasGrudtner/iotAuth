@@ -23,9 +23,6 @@ class IotAuth
         uint8_t* encryptAES(uint8_t plaintext[], uint8_t key[], uint8_t iv[], int size);
         uint8_t* decryptAES(uint8_t ciphertext[], uint8_t key[], uint8_t iv[], int size);
 
-        // void encryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size);
-        // void decryptHEX(byte plain[], int plain_size, char cipherHex[], int cipherHex_size);
-
         RSAKeyPair generateRSAKeyPair();
         int generateIV();
         FDR* generateFDR();

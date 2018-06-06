@@ -56,89 +56,69 @@ int main(int argc, char *argv[]){
 
     while(1){
 
+        /* Se ainda não foi enviado um HELLO, inicia o pedido de conexão. */
        if (!arduino.clientHello) {
            printf("########## ENTER para enviar um HELLO ao Server ##########\n");
            fgets(envia,556,stdin);
 
+           /* Recupera a mensagem de pedido de conexão e a envia ao Servidor. */
            char* message = arduino.sendClientHello();
            sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
+           /* Enquanto o Cliente não receber uma confirmação: */
            while (!arduino.clientHello) {
                recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+
+               /* Se a mensagem do Servidor não for um DONE: */
                if (!arduino.checkDoneServer(recebe)) {
+                   /* Prossegue com o recebimento da confirmação. */
                    arduino.receiveServerHello(recebe);
-               } else {
+
+               } else { /* Se o Servidor pediu fim de conexão: */
+                   /* Inicia o fim da conexão. */
                    arduino.done();
-                   char *message = arduino.sendClientDone();
+
+                   /* Envia uma confirmação ao pedido de fim de conexão. */
+                   char *message = arduino.sendClientACKDone();
 
                    cout << "Sent: " << message << endl;
                    sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
-
-                   cout << "Waiting ACK to end the connection...\n" << endl;
-
-                   recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-                   arduino.receiveServerDone(recebe);
                }
-
-
            }
        }
 
+       /* Se a conexão já foi estabelecida, mas ainda não houve a troca de chaves RSA: */
        else if (arduino.clientHello && !arduino.receivedRSAKey) {
            printf("########## ENTER para enviar a chave RSA ao Server ##########\n");
            fgets(envia, 556, stdin);
 
+           /* Recupera a mensagem com a chave para enviar ao Servidor. */
            char* message = arduino.sendRSAKey();
            sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
+           /* Enquanto não ocorre a troca de chaves RSA e nem um DONE do Servidor: */
            while (!arduino.receivedRSAKey && !arduino.clientDone) {
                recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-               bool validIV = arduino.receiveRSAKey(recebe);
 
-               if (!validIV) {
-                   arduino.done();
-                   char *message = arduino.sendClientDone();
-
-                   cout << "Sent: " << message << endl;
-                   sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
-
-                   cout << "Waiting ACK to end the connection...\n" << endl;
-
-                   recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-                   arduino.receiveServerDone(recebe);
-               }
-           }
-       }
-
-       else if (arduino.receivedRSAKey && !arduino.receivedDHKey) {
-           printf("########## ENTER para enviar a chave DH ao Server ##########\n");
-           fgets(envia, 556, stdin);
-
-           string message = arduino.sendDiffieHellmanKey();
-           char messageChar[message.length()+1];
-           messageChar[message.length()] = '\0';
-           // memset(messageChar, '\0', sizeof(messageChar));
-           strncpy(messageChar, message.c_str(), sizeof(messageChar));
-
-           sendto(meuSocket,messageChar,strlen(messageChar),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
-
-           while (!arduino.receivedDHKey && !arduino.clientDone) {
-               recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-
+               /* Se a mensagem do Servidor não for um DONE: */
                if (!arduino.checkDoneServer(recebe)) {
-                   bool validHash = arduino.receiveDiffieHellmanKey(recebe);
+               /* Processa a mensagem vinda do Servidor. */
+                   bool validIV = arduino.receiveRSAKey(recebe);
 
-                   if (!validHash) {
+                   /* Se o IV não for válido, envia pedido de fim de conexão. */
+                   if (!validIV) {
                        arduino.done();
                        char *message = arduino.sendClientDone();
+
+                       cout << "Sent: " << message << endl;
                        sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
-                       cout << "Waiting ACK..." << endl;
+                       cout << "Waiting ACK to end the connection...\n" << endl;
 
                        recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
                        arduino.receiveServerDone(recebe);
                    }
-               } else {
+               } else { /* Se o Servidor pediu fim de conexão, envia uma confirmação e termina a conexão. */
                    arduino.done();
                    char *message = arduino.sendClientACKDone();
 
@@ -148,31 +128,81 @@ int main(int argc, char *argv[]){
            }
        }
 
+       /* Se a troca de chaves RSA já ocorreu, porém a troca Diffie-Hellman ainda não: */
+       else if (arduino.receivedRSAKey && !arduino.receivedDHKey) {
+           printf("########## ENTER para enviar a chave DH ao Server ##########\n");
+           fgets(envia, 556, stdin);
+
+           /* Recupera a mensagem com a chave Diffie-Hellman para enviar ao Servidor. */
+           string message = arduino.sendDiffieHellmanKey();
+           char messageChar[message.length()+1];
+           messageChar[message.length()] = '\0';
+           memset(messageChar, '\0', sizeof(messageChar));
+           strncpy(messageChar, message.c_str(), sizeof(messageChar));
+
+           sendto(meuSocket,messageChar,strlen(messageChar),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+
+           /* Enquanto não receber a chave Diffie-Helmann ou um DONE do Servidor: */
+           while (!arduino.receivedDHKey && !arduino.clientDone) {
+               recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+
+               /* Se a mensagem do Servidor não for um DONE: */
+               if (!arduino.checkDoneServer(recebe)) {
+                   /* Processa a mensagem do Servidor. */
+                   bool validHash = arduino.receiveDiffieHellmanKey(recebe);
+
+                   /* Se o Hash não for válido, realiza o término da conexão. */
+                   if (!validHash) {
+                       arduino.done();
+                       /* Envia um pedido de fim de conexão e aguarda confirmação do Servidor. */
+                       char *message = arduino.sendClientDone();
+                       sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+
+                       cout << "Waiting ACK..." << endl;
+
+                       recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+                       arduino.receiveServerDone(recebe);
+                   }
+               } else { /* Se o Servidor pediu fim de conexão, envia uma confirmação e termina a conexão. */
+                   arduino.done();
+                   char *message = arduino.sendClientACKDone();
+
+                   cout << "Conexão terminada." << message << endl;
+                   sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+               }
+           }
+       }
+
+       /* Se a troca de chaves RSA e Diffie-Hellman já ocorreram: */
        else if (arduino.receivedRSAKey && arduino.receivedDHKey){
            cout << "Envio de dados criptografados com AES." << endl << endl;
 
            printf("########## Escreva uma mensagem para o servidor ##########\n");
            printf("------------- Linha em branco para finalizar -------------\n");
+           /* Captura a mensagem digitada no terminal para a criptografia. */
            fgets(envia, 665, stdin);
 
-
+           /* Enquanto o usuário não digitar um 'Enter': */
            while (strcmp(envia, "\n") != 0) {
 
+               /* Encripta a mensagem digitada pelo usuário. */
                string encryptedMessage = arduino.sendEncryptedMessage(envia, sizeof(envia));
                cout << "Sent" << endl << encryptedMessage << endl << endl;
 
+               /* Converte a string em um array de char. */
                char encryptedMessageChar[encryptedMessage.length()];
                memset(encryptedMessageChar, '\0', sizeof(encryptedMessageChar));
                strncpy(encryptedMessageChar, encryptedMessage.c_str(), sizeof(encryptedMessageChar));
 
+               /* Envia a mensagem cifrada ao Servidor. */
                sendto(meuSocket,encryptedMessageChar,strlen(encryptedMessageChar),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
-               // memset(envia, '\0', sizeof(envia));
+               memset(envia, '\0', sizeof(envia));
                fgets(envia, 665, stdin);
            }
        }
 
-       memset(envia, 0, sizeof(envia));
-       memset(recebe, 0, sizeof(recebe));
+       memset(envia, '\0', sizeof(envia));
+       memset(recebe, '\0', sizeof(recebe));
     }
     close(meuSocket);
 }

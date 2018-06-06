@@ -85,8 +85,6 @@ void Utils::RSAToIntArray(int intArray[], string encrypted, int size)
 {
     int k = 0;
     int i = 0;
-    // cout << "Size of Encrypted: " << encrypted.length() << endl;
-    // cout << "Encrypted: " << encrypted << endl << endl;
 
     while (encrypted.at(i) != '!') {
 
@@ -96,16 +94,12 @@ void Utils::RSAToIntArray(int intArray[], string encrypted, int size)
             i++;
         }
 
-        // cout << "Numb: " << numb << endl;
-
         if (encrypted.at(i) == '.')
             i++;
 
         intArray[k] = stoi(numb);
         k++;
     }
-
-    // cout << "i: " << i << endl;
 }
 
 /* Retorna o tamanho de um array de ints. */
@@ -122,6 +116,7 @@ int Utils::intArraySize(int array[])
     return size;
 }
 
+/* Conta o número de marcações (.) na string encriptada com RSA. */
 int Utils::countMarks(string encrypted) {
     int marks = 0;
     for (int i = 0; i < encrypted.length(); i++) {
@@ -132,6 +127,7 @@ int Utils::countMarks(string encrypted) {
     return marks;
 }
 
+/* Converte uma string hexadecimal em um array de chars. */
 void Utils::hexStringToCharArray(string hexString, int sizeHexString, char charArray[])
 {
     char hexStringChar[sizeHexString];
@@ -143,6 +139,7 @@ void Utils::hexStringToCharArray(string hexString, int sizeHexString, char charA
     ByteToChar(byteArray, charArray, sizeHexString/2);
 }
 
+/* Converte um array de char em um array de uint8_t. */
 void Utils::charToUint8_t(char charArray[], uint8_t byteArray[], int size)
 {
     for (int i = 0; i < size; i++) {

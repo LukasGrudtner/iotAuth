@@ -118,6 +118,7 @@ int IotAuth::generateIV()
     return randomNumber(100);
 }
 
+/* Gera um FDR aleatório. */
 FDR* IotAuth::generateFDR()
 {
     sleep(1);
@@ -128,6 +129,7 @@ FDR* IotAuth::generateFDR()
     return fdr;
 }
 
+/* Verifica se o HASH dado é idêntico ao HASH da mensagem. */
 bool IotAuth::isHashValid(string message, string hash) {
     char messageArray[message.length()];
     memset(messageArray, '\0', sizeof(messageArray));
