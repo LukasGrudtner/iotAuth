@@ -1,7 +1,7 @@
 #ifndef FDR_H
 #define FDR_H
 
-#include "settings.h"
+// #include "settings.h"
 
 class FDR
 {
@@ -14,8 +14,8 @@ class FDR
         void setOperand(int operand);
 
     private:
-        char _operator;
-        int _operand;
+        char _operator = '+';
+        int _operand = 0;
 };
 
 #endif

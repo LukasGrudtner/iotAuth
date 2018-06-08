@@ -1,6 +1,8 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
+#include "fdr.h"
+
 /* Definição de alguns atributos utilizados na comunicação */
 #define VERBOSE true
 #define VERBOSE_2 false

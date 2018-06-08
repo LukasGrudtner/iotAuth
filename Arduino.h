@@ -6,6 +6,7 @@
 #include "stringHandler.h"
 #include "settings.h"
 #include "utils.h"
+#include "RSAKeyExchange.h"
 
 using namespace std;
 
@@ -44,9 +45,11 @@ class Arduino
         bool receiveServerDone(char buffer[]);
 
         /* Realiza o envio da chave RSA para o Server. */
-        char* sendRSAKey();
+        // char* sendRSAKey();
+        RSAKeyExchange sendRSAKey();
+
         /* Recebe a chave RSA do Server. */
-        bool receiveRSAKey(char message[]);
+        bool receiveRSAKey(RSAKeyExchange *keyExchange);
 
         /* Realiza o envio da chave Diffie-Hellman para o Server. */
         string sendDiffieHellmanKey();

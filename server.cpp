@@ -14,6 +14,7 @@
 #include "settings.h"
 #include "stringHandler.h"
 #include "iotAuth.h"
+#include "RSAKeyExchange.h"
 
 using namespace std;
 
@@ -144,7 +145,7 @@ void processClientHello(char buffer[], int socket, struct sockaddr* client, int 
 }
 
 /* Processa a troca de chaves RSA. */
-void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, int size)
+void processRSAKeyExchange(RSAKeyExchange *rsaReceived, int socket, struct sockaddr* client, int size)
 {
     /* Realiza a geração das chaves pública e privada (RSA). */
     keyManager->setRSAKeyPair(iotAuth.generateRSAKeyPair());
@@ -156,16 +157,16 @@ void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, i
     keyManager->setMyFDR(iotAuth.generateFDR());
 
     /* Recebe chave pública do cliente e o IV */
-    keyManager->setPartnerPublicKey(StringHandler.getPartnerPublicKey(buffer));
-    FDR* partnerFDR = StringHandler.getRSAExchangeFdr(buffer);
+    keyManager->setPartnerPublicKey(rsaReceived->getPublicKey());
 
-    int partnerIV = StringHandler.getRSAExchangeIv(buffer);
+    FDR partnerFDR = rsaReceived->getFDR();
+    int partnerIV = rsaReceived->getIV();
 
     RECEIVED_RSA_KEY = true;
 
     if (VERBOSE) {
-        printf("******CLIENT RSA KEY RECEIVED******\n");
-        cout << "Received: "                << buffer                               << endl;
+        printf("******RECEIVED CLIENT RSA KEY******\n");
+        cout << "Received: "                << rsaReceived->toString()              << endl;
         cout << "Generated RSA Key: {("     << keyManager->getMyPublicKey().d       << ", "
                                             << keyManager->getMyPublicKey().n       << "), ";
         cout << "("                         << keyManager->getMyPrivateKey().d      << ", "
@@ -176,37 +177,37 @@ void processRSAKeyExchange(char buffer[], int socket, struct sockaddr* client, i
         cout << "Client RSA Public Key: ("  << keyManager->getPartnerPublicKey().d  << ", "
                                             << keyManager->getPartnerPublicKey().n  << ")" << endl;
         cout << "Client IV: "               << partnerIV                            << endl;
-        cout << "Client FDR: "              << StringHandler.FdrToString(partnerFDR) << endl;
-        cout << "Client FDR Answer: "       << calculateFDRValue(partnerIV, partnerFDR) << endl;
+        cout << "Client FDR: "              << StringHandler.FdrToString(&partnerFDR) << endl;
+        cout << "Client FDR Answer: "       << calculateFDRValue(partnerIV, &partnerFDR) << endl;
         printf("***********************************\n\n");
     }
 
     /* Envia a chave pública do server e o IV */
-    string sendString;
-    string spacer (SPACER_S);
-    int answerFdr = calculateFDRValue(partnerIV, partnerFDR);
+    int answerFdr = calculateFDRValue(partnerIV, &partnerFDR);
+    RSAKey publicKey = rsaReceived->getPublicKey();
+    int iv = keyManager->getMyIV();
 
-    sendString = to_string(keyManager->getMyPublicKey().d)  + spacer +
-                 to_string(keyManager->getMyPublicKey().n)  + spacer +
-                 to_string(answerFdr)                       + spacer +
-                 to_string(keyManager->getMyIV())           + spacer +
-                 StringHandler.FdrToString(keyManager->getMyFDR()) + spacer;
+    /* Derreferenciando um ponteiro: obtém o valor armazenado na posição indicada pelo ponteiro, e não o endereço na memória. */
+    FDR fdr = *keyManager->getMyFDR();
 
-    char sendBuffer[sendString.length()];
-    strcpy(sendBuffer, sendString.c_str());
+    RSAKeyExchange rsaSent;
+    rsaSent.setPublicKey(publicKey);
+    rsaSent.setAnswerFDR(answerFdr);
+    rsaSent.setIV(iv);
+    rsaSent.setFDR(fdr);
 
     if (VERBOSE) {
-        printf("*******SEND SERVER RSA KEY*********\n");
+        printf("*******SENT SERVER RSA KEY*********\n");
         cout << "Server RSA Public Key: (" << keyManager->getMyPublicKey().d
                   << ", " << keyManager->getMyPublicKey().n << ")" << endl;
         cout << "Answer FDR (Client): " << answerFdr << endl;
         cout << "My IV: " << keyManager->getMyIV() << endl;
         cout << "My FDR: " << StringHandler.FdrToString(keyManager->getMyFDR()) << endl;
-        cout << "Sent Message: " << sendBuffer << endl;
+        cout << "Sent: " << rsaSent.toString() << endl;
         cout << "***********************************\n" << endl;
     }
 
-    int sended = sendto(socket, sendBuffer, strlen(sendBuffer), 0, client, size);
+    int sended = sendto(socket, (RSAKeyExchange*)&rsaSent, sizeof(rsaSent), 0, client, size);
 }
 
 /* Realiza o recebimento da chave Diffie-Hellman. */
@@ -399,9 +400,10 @@ int main(int argc, char *argv[]){
     while(1){
 
        tam_cliente=sizeof(struct sockaddr_in);
-
        memset(buffer, 0, sizeof(buffer));
-       recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
+
+       // memset(buffer, 0, sizeof(buffer));
+       // recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
 
        /* Pega os 4 primeiros caracteres do buffer recebido para verificar
        se é um DONE. */
@@ -414,22 +416,34 @@ int main(int argc, char *argv[]){
        /* Aguarda o recebimento do HELLO do Client. */
        /* HELLO */
        if (!CLIENT_HELLO) {
+
+           recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
            processClientHello(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+
+           memset(buffer, 0, sizeof(buffer));
          /* Se a mensagem recebida do Client for um DONE: */
          /* DONE */
         } else if (strcmp(buffTest, DONE_MESSAGE) == 0) {
+            recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
 
            done();
            sendto(meuSocket,DONE_ACK,strlen(DONE_ACK),0,(struct sockaddr*)&cliente,sizeof(struct sockaddr_in));
            cout << "CONECTION TERMINATED.\n" << endl;
 
+           memset(buffer, 0, sizeof(buffer));
+
            /* Se já recebeu um CLIENT_HELLO, mas a troca de chaves RSA ainda não ocorreu: */
            /* CLIENT_PUBLIC_KEY (D) # CLIENT_PUBLIC_KEY (N) # ANSWER FDR # IV # FDR */
        } else if (CLIENT_HELLO && !RECEIVED_RSA_KEY) {
-           processRSAKeyExchange(buffer, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+           RSAKeyExchange* keyExchange = (RSAKeyExchange*)malloc(sizeof(RSAKeyExchange));
+           recvfrom(meuSocket, keyExchange, sizeof(*keyExchange), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
+
+           processRSAKeyExchange(keyExchange, meuSocket, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
            /* Se já realizou a troa de chaves RSA, mas ainda não realizou a troca de chaves DH: */
            /* DH_KEY_CLIENT # BASE # MODULUS # CLIENT_IV */
        } else if (RECEIVED_RSA_KEY && !RECEIVED_DH_KEY) {
+           recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
+
            bool valid = receiveDiffieHellmanKey(buffer);
            /* Se o hash recebido for válido, continua com o envio da chave Diffie-Hellman. */
            if (valid) {
@@ -437,6 +451,8 @@ int main(int argc, char *argv[]){
                char messageArray[message.length()];
                strncpy(messageArray, message.c_str(), sizeof(messageArray));
                sendto(meuSocket, messageArray, sizeof(messageArray), 0, (struct sockaddr*)&cliente, sizeof(struct sockaddr_in));
+
+            memset(buffer, 0, sizeof(buffer));
         /* Senão, termina conexão. */
            } else {
                done();
@@ -445,11 +461,16 @@ int main(int argc, char *argv[]){
 
                recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
                receiveClientDone(buffer);
+               memset(buffer, 0, sizeof(buffer));
            }
            /* Aqui, todos as chaves foram trocadas, então ocorre a troca dos dados cifrados com AES. */
        } else if(RECEIVED_RSA_KEY && RECEIVED_DH_KEY) {
            cout << "Envio de dados criptografados com AES." << endl << endl;
+           recvfrom(meuSocket, buffer, sizeof(buffer), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
+
            receiveEncryptedMessage(buffer);
+
+           memset(buffer, 0, sizeof(buffer));
        }
 
        memset(buffer, '\0', sizeof(buffer));

@@ -93,37 +93,31 @@ int main(int argc, char *argv[]){
            fgets(envia, 556, stdin);
 
            /* Recupera a mensagem com a chave para enviar ao Servidor. */
-           char* message = arduino.sendRSAKey();
-           sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+           // char* message = arduino.sendRSAKey();
+           RSAKeyExchange keyExchange = arduino.sendRSAKey();
+           sendto(meuSocket, (RSAKeyExchange*)&keyExchange, sizeof(keyExchange),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+           // sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
            /* Enquanto não ocorre a troca de chaves RSA e nem um DONE do Servidor: */
            while (!arduino.receivedRSAKey && !arduino.clientDone) {
-               recvfrom(meuSocket,recebe,1480,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+               RSAKeyExchange* keyExchange = (RSAKeyExchange*)malloc(sizeof(RSAKeyExchange));
+               recvfrom(meuSocket, keyExchange, sizeof(*keyExchange), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
 
-               /* Se a mensagem do Servidor não for um DONE: */
-               if (!arduino.checkDoneServer(recebe)) {
                /* Processa a mensagem vinda do Servidor. */
-                   bool validIV = arduino.receiveRSAKey(recebe);
+               bool validIV = arduino.receiveRSAKey(keyExchange);
 
-                   /* Se o IV não for válido, envia pedido de fim de conexão. */
-                   if (!validIV) {
-                       arduino.done();
-                       char *message = arduino.sendClientDone();
-
-                       cout << "Sent: " << message << endl;
-                       sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
-
-                       cout << "Waiting ACK to end the connection...\n" << endl;
-
-                       recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-                       arduino.receiveServerDone(recebe);
-                   }
-               } else { /* Se o Servidor pediu fim de conexão, envia uma confirmação e termina a conexão. */
+               /* Se o IV não for válido, envia pedido de fim de conexão. */
+               if (!validIV) {
                    arduino.done();
-                   char *message = arduino.sendClientACKDone();
+                   char *message = arduino.sendClientDone();
 
-                   cout << "Conexão terminada." << message << endl;
+                   cout << "Sent: " << message << endl;
                    sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+
+                   cout << "Waiting ACK to end the connection...\n" << endl;
+
+                   recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+                   arduino.receiveServerDone(recebe);
                }
            }
        }

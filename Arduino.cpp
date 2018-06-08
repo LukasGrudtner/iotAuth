@@ -68,8 +68,7 @@ bool Arduino::receiveServerDone(char buffer[])
     return false;
 }
 
-/* Realiza o envio da chave RSA para o Servidor. */
-char* Arduino::sendRSAKey()
+RSAKeyExchange Arduino::sendRSAKey()
 {
     /* Gera um par de chaves RSA e o armazena no keyManager. */
     keyManager.setRSAKeyPair(iotAuth.generateRSAKeyPair());
@@ -84,20 +83,18 @@ char* Arduino::sendRSAKey()
         Chave Pública (D) + # + Chave Pública (N) + # + Resposta do DR + # +
         IV + # + Função Desafio Resposta
     */
-    string spacer (SPACER_S);
-    string sendData = "";
-    string answerFdr = "null";
-    sendData =  to_string(keyManager.getMyPublicKey().d)    + spacer +
-                to_string(keyManager.getMyPublicKey().n)    + spacer +
-                answerFdr                                   + spacer +
-                to_string(keyManager.getMyIV())             + spacer +
-                stringHandler.FdrToString(keyManager.getMyFDR());
 
-    /*  Converte a string para um array de char (message), e retorna este
-        array.
-    */
-    char* message = (char*)malloc(sendData.length());
-    strcpy(message, sendData.c_str());
+    int answerFdr = 0;
+    RSAKey publicKey = keyManager.getMyPublicKey();
+    int iv = keyManager.getMyIV();
+    /* Derreferenciando um ponteiro: obtém o valor armazenado na posição indicada pelo ponteiro, e não o endereço na memória. */
+    FDR fdr = *keyManager.getMyFDR();
+
+    RSAKeyExchange rsaSent;
+    rsaSent.setPublicKey(publicKey);
+    rsaSent.setAnswerFDR(answerFdr);
+    rsaSent.setIV(iv);
+    rsaSent.setFDR(fdr);
 
     if (VERBOSE) {
         cout << "************SEND RSA CLIENT***********" << endl;
@@ -107,11 +104,11 @@ char* Arduino::sendRSAKey()
              << keyManager.getMyPrivateKey().n << ")}" << endl;
         cout << "My IV: " << keyManager.getMyIV() << endl;
         cout << "My FDR: " << stringHandler.FdrToString(keyManager.getMyFDR()) << endl;
-        cout << "Sent: " << message << endl;
+        cout << "Sent: " << rsaSent.toString() << endl;
         cout << "**************************************\n" << endl;
     }
 
-    return message;
+    return rsaSent;
 }
 
 /* Calcula a resposta do FDR recebido por parâmetro. */
@@ -133,27 +130,27 @@ bool Arduino::checkAnsweredFDR(int answeredFdr)
 }
 
 /* Realiza o recebimento da chave RSA vinda do Servidor. */
-bool Arduino::receiveRSAKey(char buffer[])
+bool Arduino::receiveRSAKey(RSAKeyExchange *rsaReceived)
 {
     /*  Armazena a chave pública do servidor obtida, passando como parâmetro
         uma chamada à função getPartnerPublicKey do StringHandler, que extrai
         a chave pública do servidor do buffer (recebido do server).
     */
-    keyManager.setPartnerPublicKey(stringHandler.getPartnerPublicKey(buffer));
+    keyManager.setPartnerPublicKey(rsaReceived->getPublicKey());
 
-    int answeredFdr = stringHandler.getRSAExchangeAnswerFdr(buffer);
-    int partnerIV   = stringHandler.getRSAExchangeIv(buffer);
-    FDR* partnerFdr = stringHandler.getRSAExchangeFdr(buffer);
-    answerFDR       = calculateFDRValue(partnerIV, partnerFdr);
+    int answeredFdr = rsaReceived->getAnswerFDR();
+    int partnerIV   = rsaReceived->getIV();
+    FDR partnerFdr  = rsaReceived->getFDR();
+    answerFDR       = calculateFDRValue(partnerIV, &partnerFdr);
 
     if (VERBOSE) {
         cout << "*********RECEIVED RSA SERVER**********" << endl;
-        cout << "Received: " << buffer << endl;
-        cout << "RSA Server Public Key: (" <<stringHandler.getPartnerPublicKey(buffer).d <<
-                ", " << stringHandler.getPartnerPublicKey(buffer).n << ")" << endl;
+        cout << "Received: " << rsaReceived->toString() << endl;
+        cout << "RSA Server Public Key: (" << rsaReceived->getPublicKey().d <<
+                ", " << rsaReceived->getPublicKey().n << ")" << endl;
         cout << "Answered FDR: " << answeredFdr << endl;
         cout << "Server IV: " << partnerIV << endl;
-        cout << "Server FDR: " << partnerFdr->getOperator() << partnerFdr->getOperand() << endl;
+        cout << "Server FDR: " << partnerFdr.getOperator() << partnerFdr.getOperand() << endl;
         cout << "Server FDR Answer: " << answerFDR << endl;
     }
 
