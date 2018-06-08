@@ -57,7 +57,7 @@ class Arduino
         int* sendDiffieHellmanKey();
 
         /* Recebe a chave Diffie-Hellman do Server. */
-        bool receiveDiffieHellmanKey(char message[]);
+        bool receiveDiffieHellmanKey(int* encryptedDHExchange);
 
         /* Realiza o envio da mensagem cifrada para o Servidor. */
         string sendEncryptedMessage(char message[], int size);

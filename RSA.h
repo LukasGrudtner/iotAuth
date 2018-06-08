@@ -13,7 +13,7 @@ class RSA
 {
     public:
 
-        void decodifica(char message[], int mensagemC[], int d, int n, int quant);
+        void decodifica(byte message[], int mensagemC[], int d, int n, int quant);
         // int *codifica(char *mensagem, long e, long n, int quant);
         void codifica(int encrypted[], char *mensagem, int e, int n, int quant);
         void codifica(int encrypted[], byte *mensagem, int e, int n, int quant);

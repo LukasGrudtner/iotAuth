@@ -199,7 +199,7 @@ void RSA::codifica(int encrypted[], byte *mensagem, int e, int n, int quant){
 }
 
 //Decodifica um vetor de inteiros em uma string de caracteres usando o resto da divisão de a^d por n para cada inteiro
-void RSA::decodifica(char message[], int mensagemC[], int d, int n, int quant){
+void RSA::decodifica(byte message[], int mensagemC[], int d, int n, int quant){
 
 	int i;
 

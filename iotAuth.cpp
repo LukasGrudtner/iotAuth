@@ -118,18 +118,19 @@ int* IotAuth::encryptRSA(byte plain[], RSAKey rsaKey, int size)
 
 /* Realiza a decifragem RSA utilizando uma chave RSA fornecida por parâmetro */
 /* RSAKey é uma struct definida em "settings.h" */
-string IotAuth::decryptRSA(int cipher[], RSAKey rsaKey, int size)
+byte* IotAuth::decryptRSA(int cipher[], RSAKey rsaKey, int size)
 {
-    char plain[size];
-    memset(plain, '\0', sizeof(plain));
+    byte* plain = (byte*)malloc(size);
+    memset(plain, 0, sizeof(plain));
     rsa.decodifica(plain, cipher, rsaKey.d, rsaKey.n, size);
 
-    string output = "";
-    for (int i = 0; i < sizeof(plain); i++) {
-        output += plain[i];
-    }
-
-    return output;
+    // string output = "";
+    // for (int i = 0; i < sizeof(plain); i++) {
+    //     output += plain[i];
+    // }
+    //
+    // return output;
+    return plain;
 }
 
 /*  Gera um número aleatório menor que um dado limite superior. */

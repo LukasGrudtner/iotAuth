@@ -216,7 +216,7 @@ int* Arduino::sendDiffieHellmanKey()
     /* Realiza o cálculo do HASH do pacote obtido acima. */
     char hashArray[128];
     char messageArray[diffieHellmanPackage.toString().length()];
-    memset(hashArray, 0, sizeof(hashArray));
+    memset(hashArray, '\0', sizeof(hashArray));
 
     /* Converte o pacote (string) para um array de char (messageArray). */
     strncpy(messageArray, diffieHellmanPackage.toString().c_str(), sizeof(messageArray));
@@ -226,36 +226,66 @@ int* Arduino::sendDiffieHellmanKey()
 
     /* Encripta o hash utilizando a chave privada do cliente */
     int* encryptedHash = iotAuth.encryptRSA(hash, keyManager.getMyPrivateKey(), hash.length());
-    cout << "EncryptedHash" << endl;
-    for (int i = 0; i < 128; i++) {
-        cout << encryptedHash[i] << " : ";
-    }
+
+    // cout << "EncryptedHash" << endl;
+    // for (int i = 0; i < 128; i++) {
+    //     cout << encryptedHash[i] << ":";
+    // }
 
     /**************************************************************************/
 
     /* Prepara o pacote completo que será enviado ao servidor. */
-    /* Transforma a struct 'teste' em um array de bytes. */
-    array<byte, sizeof(diffieHellmanPackage)> array_bytes = utils.to_bytes(diffieHellmanPackage);
-    byte* dhPackage = (byte*)malloc(array_bytes.size() * sizeof(byte));
-    copy(array_bytes.begin(), array_bytes.end(), dhPackage);
+    /* Transforma a struct 'diffieHellmanPackage' em um array de bytes. */
+    byte* dhPackageBytes = (byte*)malloc(sizeof(DiffieHellmanPackage));
+    utils.ObjectToBytes(diffieHellmanPackage, dhPackageBytes, sizeof(DiffieHellmanPackage));
 
     DHKeyExchange* dhSent = new DHKeyExchange();
     dhSent->setEncryptedHash(encryptedHash);
-    dhSent->setDiffieHellmanPackage(dhPackage);
+    dhSent->setDiffieHellmanPackage(dhPackageBytes);
 
     /* Converte o objeto dhSent em um array de bytes. */
-    array<byte, sizeof(*dhSent)> array_bytes2 = utils.to_bytes(*dhSent);
-    byte dhSentBytes[array_bytes2.size()];
-    copy(array_bytes2.begin(), array_bytes2.end(), dhSentBytes);
+    byte* dhSentBytes = (byte*)malloc(sizeof(DHKeyExchange));
+    utils.ObjectToBytes(*dhSent, dhSentBytes, sizeof(DHKeyExchange));
 
-    int size = array_bytes2.size();
+    // cout << "DecryptedMessage" << endl;
+    // for (int i = 0; i < sizeof(DHKeyExchange); i++) {
+    //     cout << (int)dhSentBytes[i] << ":";
+    // }
 
-    cout << "DH SENT CHAR" << endl;
-    for (int i = 0; i < sizeof(dhSentBytes); i++) {
-        cout << (int)dhSentBytes[i] << ":";
-    }
 
-    int* encryptedMessage = iotAuth.encryptRSA(dhSentBytes, keyManager.getPartnerPublicKey(), sizeof(dhSentBytes));
+    int* encryptedMessage = iotAuth.encryptRSA(dhSentBytes, keyManager.getPartnerPublicKey(), sizeof(DHKeyExchange));
+
+    // /* TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE  */
+    // byte* aByte = (byte*)malloc(sizeof(DHKeyExchange));
+    // utils.ObjectToBytes(*dhSent, aByte, sizeof(DHKeyExchange));
+    //
+    // cout << "TEST STRUCT: " << dhSent->getEncryptedHash()[0] << endl;
+    //
+    // cout << "TEST DEC BYTE: " << endl;
+    // for (int i = 0; i < sizeof(DHKeyExchange); i++) {
+    //     cout << (int)aByte[i] << ", ";
+    // }
+    //
+    // int* enc = iotAuth.encryptRSA(aByte, keyManager.getMyPublicKey(), sizeof(DHKeyExchange));
+    //
+    // cout << "TEST ENC BYTE: " << endl;
+    // for (int i = 0; i < sizeof(DHKeyExchange); i++) {
+    //     cout << (int)enc[i] << ", ";
+    // }
+    //
+    // byte* dec = iotAuth.decryptRSA(enc, keyManager.getMyPrivateKey(), sizeof(DHKeyExchange));
+    //
+    // cout << "TEST DEC BYTE: " << endl;
+    // for (int i = 0; i < sizeof(DHKeyExchange); i++) {
+    //     cout << (int)dec[i] << ", ";
+    // }
+    //
+    // DHKeyExchange b;
+    // utils.BytesToObject(dec, b, sizeof(DHKeyExchange));
+    //
+    // cout << "TEST STRUCT: " << b.getEncryptedHash()[0] << endl;
+    //
+    // /* TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE  */
 
     if (VERBOSE) {
         cout << "************SEND DH CLIENT************" << endl;
@@ -264,12 +294,10 @@ int* Arduino::sendDiffieHellmanKey()
         cout << "**************************************" << endl << endl;
     }
 
-    cout << endl << "EncryptedMessage" << endl;
-    for (int i = 0; i < sizeof(dhSentBytes); i++) {
-        cout << encryptedMessage[i] << ":";
-    }
-
-    cout << "EncryptMessage: " << sizeof(dhSentBytes) << endl;
+    // cout << endl << "EncryptedMessage" << endl;
+    // for (int i = 0; i < sizeof(DHKeyExchange); i++) {
+    //     cout << encryptedMessage[i] << ":";
+    // }
 
     return encryptedMessage;
 }
@@ -290,72 +318,89 @@ string Arduino::getPackage(string package)
 }
 
 /* Realiza o recebimento da chave Diffie-Hellman vinda do Servidor. */
-bool Arduino::receiveDiffieHellmanKey(char message[])
+bool Arduino::receiveDiffieHellmanKey(int* encryptedDHExchange)
 {
-    /* Converte o array de char (message) em uma string. */
-    string encryptedPackage (message);
+    /* Decifra a mensagem com a chave privada do Cliente e a coloca em um array de bytes. */
+    byte *decryptedMessage = iotAuth.decryptRSA(encryptedDHExchange, keyManager.getMyPrivateKey(), sizeof(DHKeyExchange));
 
-    /* Cria um vetor de int para acomodar o valor RSA encriptado, e converte
-        o array de char (message) neste vetor de inteiros. */
-    int decryptedPackageInt[utils.countMarks(encryptedPackage)+1];
-    utils.RSAToIntArray(decryptedPackageInt, message, encryptedPackage.length());
-
-    /* Decodifica a string. */
-    string decryptedString = iotAuth.decryptRSA(decryptedPackageInt, keyManager.getMyPrivateKey(), encryptedPackage.length());
-
-    /* Recupera o pacote com os dados Diffie-Hellman do Client. */
-    string dhPackage = getPackage(decryptedString);
-
-    /***** HASH *****/
-    /* Recupera o hash cifrado com a chave Privada do Server. */
-    string encryptedHash = getHashEncrypted(decryptedString);
-
-    /* Cria um vetor de int para acomodar o valor RSA encriptado, e converte
-        a string (encryptedHash) neste vetor de inteiros. */
-    int encryptedHashInt[128];
-    utils.RSAToIntArray(encryptedHashInt, encryptedHash, 128);
-
-    /* Decifra o HASH com a chave pública do Server. */
-    string decryptedHashString = iotAuth.decryptRSA(encryptedHashInt, keyManager.getPartnerPublicKey(), 128);
-
-    /* Se o hash for válido, prossegue com o recebimento.
-        Se não, termina a conexão. */
-    if (iotAuth.isHashValid(dhPackage, decryptedHashString)) {
-
-        /* Recebe chave Diffie-Hellman e IV. */
-        char dhPackageChar[dhPackage.length()];
-        strncpy(dhPackageChar, dhPackage.c_str(), sizeof(dhPackageChar));
-        keyManager.setBase(stringHandler.getClientBase(dhPackageChar));
-        keyManager.setModulus(stringHandler.getClientModulus(dhPackageChar));
-        keyManager.setSessionKey(keyManager.getDiffieHellmanKey(stringHandler.getDHClientKey(dhPackageChar)));
-        int ivClient = stringHandler.getDHIvClient(dhPackageChar);
-
-        receivedDHKey = true;
-
-        if (VERBOSE) {
-            printf("\n*******SERVER DH KEY RECEIVED******\n");
-
-            if (VERBOSE_2) {
-                cout << "Server Encrypted Data" << endl << encryptedPackage << endl << endl;
-                cout << "Server Encrypted Hash" << endl << encryptedHash << endl << endl;
-            }
-
-            cout << "Server Decrypted Hash: "   << decryptedHashString                              << endl << endl;
-            cout << "Diffie-Hellman Key: "      << stringHandler.getDHClientKey(dhPackageChar)      << endl;
-            cout << "Base: "                    << stringHandler.getClientBase(dhPackageChar)       << endl;
-            cout << "Modulus: "                 << stringHandler.getClientModulus(dhPackageChar)    << endl;
-            cout << "Client IV: "               << stringHandler.getDHIvClient(dhPackageChar)       << endl;
-            cout << "Session Key: "             << keyManager.getSessionKey()                       << endl;
-            cout << "***********************************\n"                                         << endl;
-        }
-
-        return true;
-    } else {
-        if (VERBOSE) {
-            cout << "Hash is invalid!" << endl << endl;
-        }
-        return false;
+    cout            << "Encrypted Data" << endl;
+    for (int i = 0; i < sizeof(DHKeyExchange); i++) {
+        cout << encryptedDHExchange[i] << ":";
     }
+    cout << encryptedDHExchange[127] << endl << endl;
+
+    /* Converte o array de bytes de volta na struct DHKeyExchange*/
+   DHKeyExchange encryptedDHReceived;
+   utils.BytesToObject(decryptedMessage, encryptedDHReceived, sizeof(DHKeyExchange));
+
+   /* Extrai o HASH encriptado */
+   int *encryptedHash = encryptedDHReceived.getEncryptedHash();
+
+   /* Decifra o HASH com a chave pública do Servidor. */
+   byte *decryptedHash = iotAuth.decryptRSA(encryptedHash, keyManager.getPartnerPublicKey(), 128);
+   char aux;
+   string decryptedHashString = "";
+   for (int i = 0; i < 128; i++) {
+       aux = decryptedHash[i];
+       decryptedHashString += aux;
+   }
+
+   cout << "Decrypted Hash: " << decryptedHashString << endl;
+
+   /* Recupera o pacote com os dados Diffie-Hellman do Servidor. */
+   byte* dhPackageBytes = encryptedDHReceived.getDiffieHellmanPackage();
+   DiffieHellmanPackage dhPackage;
+   utils.BytesToObject(dhPackageBytes, dhPackage, sizeof(DiffieHellmanPackage));
+
+   /* Se o hash for válido, continua com o recebimento. */
+   if (iotAuth.isHashValid(dhPackage.toString(), decryptedHashString)) {
+
+       /* Armazena os valores Diffie-Hellman no KeyManager. */
+       keyManager.setBase(dhPackage.getBase());
+       keyManager.setModulus(dhPackage.getModulus());
+       keyManager.setSessionKey(keyManager.getDiffieHellmanKey(dhPackage.getResult()));
+       int clientIV = dhPackage.getIV();
+       int answeredFdr = dhPackage.getAnswerFDR();
+
+       receivedDHKey = true;
+
+       if (VERBOSE) {
+           printf("\n*******SERVER DH KEY RECEIVED******\n");
+
+           cout << "Hash is valid!" << endl << endl;
+
+           if (VERBOSE_2) {
+               cout << "Server Encrypted Data" << endl;
+               for (int i = 0; i < sizeof(DHKeyExchange)-1; i++) {
+                   cout << encryptedDHExchange[i] << ":";
+               }
+               cout << encryptedDHExchange[sizeof(DHKeyExchange)-1] << endl << endl;
+
+               cout << "Server Encrypted Hash" << endl;
+               for (int i = 0; i < 127; i++) {
+                   cout << encryptedHash[i] << ":";
+               }
+               cout << encryptedHash[127] << endl << endl;
+           }
+
+           cout << "Server Decrypted HASH: "   << decryptedHashString          << endl << endl;
+           cout << "Diffie-Hellman Key: "      << dhPackage.getResult()        << endl;
+           cout << "Base: "                    << dhPackage.getBase()          << endl;
+           cout << "Modulus: "                 << dhPackage.getModulus()       << endl;
+           cout << "Client IV: "               << clientIV                     << endl;
+           cout << "Session Key: "             << keyManager.getSessionKey()  << endl;
+           cout << "Answered FDR: "            << answeredFdr                  << endl;
+       }
+
+       return true;
+
+   /* Se não, retorna falso e irá ocorrer o término da conexão. */
+   } else {
+       if (VERBOSE) {
+           cout << "Hash is invalid!" << endl << endl;
+       }
+       return false;
+   }
 
 }
 

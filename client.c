@@ -128,43 +128,28 @@ int main(int argc, char *argv[]){
            fgets(envia, 556, stdin);
 
            /* Recupera a mensagem com a chave Diffie-Hellman para enviar ao Servidor. */
-           // string message = arduino.sendDiffieHellmanKey();
-           // char messageChar[message.length()+1];
-           // messageChar[message.length()] = '\0';
-           // memset(messageChar, '\0', sizeof(messageChar));
-           // strncpy(messageChar, message.c_str(), sizeof(messageChar));
-
            int *encryptedMessage = arduino.sendDiffieHellmanKey();
-
            sendto(meuSocket,(int*)encryptedMessage,sizeof(DHKeyExchange)*sizeof(int),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
            /* Enquanto não receber a chave Diffie-Helmann ou um DONE do Servidor: */
            while (!arduino.receivedDHKey && !arduino.clientDone) {
-               recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+               int *encryptedDHExchange = (int*)malloc(sizeof(DHKeyExchange)*sizeof(int));
+               recvfrom(meuSocket, encryptedDHExchange, sizeof(DHKeyExchange)*sizeof(int), MSG_WAITALL, (struct sockaddr*)&cliente, &tam_cliente);
 
-               /* Se a mensagem do Servidor não for um DONE: */
-               if (!arduino.checkDoneServer(recebe)) {
-                   /* Processa a mensagem do Servidor. */
-                   bool validHash = arduino.receiveDiffieHellmanKey(recebe);
+               /* Processa a mensagem do Servidor. */
+               bool validHash = arduino.receiveDiffieHellmanKey(encryptedDHExchange);
 
-                   /* Se o Hash não for válido, realiza o término da conexão. */
-                   if (!validHash) {
-                       arduino.done();
-                       /* Envia um pedido de fim de conexão e aguarda confirmação do Servidor. */
-                       char *message = arduino.sendClientDone();
-                       sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
-
-                       cout << "Waiting ACK..." << endl;
-
-                       recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
-                       arduino.receiveServerDone(recebe);
-                   }
-               } else { /* Se o Servidor pediu fim de conexão, envia uma confirmação e termina a conexão. */
+               /* Se o Hash não for válido, realiza o término da conexão. */
+               if (!validHash) {
                    arduino.done();
-                   char *message = arduino.sendClientACKDone();
-
-                   cout << "Conexão terminada." << message << endl;
+                   /* Envia um pedido de fim de conexão e aguarda confirmação do Servidor. */
+                   char *message = arduino.sendClientDone();
                    sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+
+                   cout << "Waiting ACK..." << endl;
+
+                   recvfrom(meuSocket,recebe,10000,MSG_WAITALL,(struct sockaddr*)&cliente,&tam_cliente);
+                   arduino.receiveServerDone(recebe);
                }
            }
        }
