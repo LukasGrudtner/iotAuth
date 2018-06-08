@@ -32,16 +32,6 @@ typedef struct rsa_key_pair
     RSAKey privateKey;
 } RSAKeyPair;
 
-// /* Definição da struct que represneta o pacote de dados trocados no passo RSA. */
-// typedef struct rsaExchange
-// {
-//     PublicRSAKey publicKey;
-//     unsigned long int answerFdr;
-//     unsigned long int iv;
-//     char operatorFdr;
-//     unsigned long int operandFdr;
-// } RSAExchange;
-//
 // typedef struct dhPackage
 // {
 //     byte *sessionKey;

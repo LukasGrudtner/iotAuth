@@ -140,6 +140,11 @@ void KeyManager::setExponent(int _exponent)
     exponent = _exponent;
 }
 
+int KeyManager::getExponent()
+{
+    return exponent;
+}
+
 /*  setMyIV()
     Armazena o valor do atributo 'IV' da entidade no objeto.
 */

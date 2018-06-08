@@ -128,13 +128,15 @@ int main(int argc, char *argv[]){
            fgets(envia, 556, stdin);
 
            /* Recupera a mensagem com a chave Diffie-Hellman para enviar ao Servidor. */
-           string message = arduino.sendDiffieHellmanKey();
-           char messageChar[message.length()+1];
-           messageChar[message.length()] = '\0';
-           memset(messageChar, '\0', sizeof(messageChar));
-           strncpy(messageChar, message.c_str(), sizeof(messageChar));
+           // string message = arduino.sendDiffieHellmanKey();
+           // char messageChar[message.length()+1];
+           // messageChar[message.length()] = '\0';
+           // memset(messageChar, '\0', sizeof(messageChar));
+           // strncpy(messageChar, message.c_str(), sizeof(messageChar));
 
-           sendto(meuSocket,messageChar,strlen(messageChar),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
+           int *encryptedMessage = arduino.sendDiffieHellmanKey();
+
+           sendto(meuSocket,(int*)encryptedMessage,sizeof(DHKeyExchange)*sizeof(int),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
            /* Enquanto não receber a chave Diffie-Helmann ou um DONE do Servidor: */
            while (!arduino.receivedDHKey && !arduino.clientDone) {

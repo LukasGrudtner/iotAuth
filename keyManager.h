@@ -26,6 +26,7 @@ class KeyManager
         int getBase();
         int getModulus();
         int getMyIV();
+        int getExponent();
         FDR* getMyFDR();
         void setMyFDR(FDR* _fdr);
 

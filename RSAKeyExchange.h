@@ -6,7 +6,8 @@
 #include <stdio.h>
 #include <string>
 
-class RSAKeyExchange {
+class RSAKeyExchange
+{
 
     public:
         RSAKeyExchange();

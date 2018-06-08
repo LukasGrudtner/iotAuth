@@ -186,6 +186,18 @@ void RSA::codifica(int encrypted[], char *mensagem, int e, int n, int quant){
 	}
 }
 
+//Codifica uma string de caracteres usando o resto da divisão de a^e por n para cada caractere, para a é utilizado o código da tabela ASCII
+void RSA::codifica(int encrypted[], byte *mensagem, int e, int n, int quant){
+
+	int i;
+	int VALOR;
+	for(i = 0; i < quant; i++){
+		VALOR = potencia((int)mensagem[i], e, n);
+		// ESSE VALOR QUE TEM QUE CONVERTER PARA HEXADECIMAL
+		encrypted[i] = VALOR;
+	}
+}
+
 //Decodifica um vetor de inteiros em uma string de caracteres usando o resto da divisão de a^d por n para cada inteiro
 void RSA::decodifica(char message[], int mensagemC[], int d, int n, int quant){
 

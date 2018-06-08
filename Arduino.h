@@ -7,6 +7,8 @@
 #include "settings.h"
 #include "utils.h"
 #include "RSAKeyExchange.h"
+#include "DHKeyExchange.h"
+#include "DiffieHellmanPackage.h"
 
 using namespace std;
 
@@ -52,7 +54,7 @@ class Arduino
         bool receiveRSAKey(RSAKeyExchange *keyExchange);
 
         /* Realiza o envio da chave Diffie-Hellman para o Server. */
-        string sendDiffieHellmanKey();
+        int* sendDiffieHellmanKey();
 
         /* Recebe a chave Diffie-Hellman do Server. */
         bool receiveDiffieHellmanKey(char message[]);

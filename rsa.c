@@ -183,6 +183,23 @@ int *codifica(char *mensagem, long long e, long long n, int quant){
 	return mensagemC;
 }
 
+//Codifica uma string de caracteres usando o resto da divisão de a^e por n para cada caractere, para a é utilizado o código da tabela ASCII
+int *codifica(byte *mensagem, long long e, long long n, int quant){
+
+	long long i;
+	int *mensagemC;
+	long VALOR;
+	mensagemC = malloc(quant * sizeof(long long));
+	for(i = 0; i < quant; i++){
+		VALOR = potencia((int)mensagem[i], e, n);
+		// ESSE VALOR QUE TEM QUE CONVERTER PARA HEXADECIMAL
+		mensagemC[i] = VALOR;
+	}
+
+	//Retorna um vetor de long longeiros
+	return mensagemC;
+}
+
 //Decodifica um vetor de inteiros em uma string de caracteres usando o resto da divisão de a^d por n para cada inteiro
 char *decodifica(int *mensagemC, long long d, long long n, int quant){
 

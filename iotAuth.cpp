@@ -68,24 +68,52 @@ string IotAuth::hash(char message[])
     return sha512(message);
 }
 
+// /* Realiza a cifragem RSA utilizando uma chave RSA fornecida por parâmetro. */
+// string IotAuth::encryptRSA(string plain, RSAKey rsaKey, int size)
+// {
+//     char plainChar[plain.length()];
+//     strncpy(plainChar, plain.c_str(), sizeof(plainChar));
+//
+//     int mensagemC[size];
+//     rsa.codifica(mensagemC, plainChar, rsaKey.d, rsaKey.n, sizeof(plainChar));
+//
+//     /* Converte o array de integer para uma string formatada. */
+//     string encrypted = "";
+//     for (int i = 0; i < size; i++) {
+//         encrypted += to_string(mensagemC[i]);
+//         if (i < (size-1))
+//             encrypted += ".";
+//     }
+//
+//     return encrypted;
+// }
+
 /* Realiza a cifragem RSA utilizando uma chave RSA fornecida por parâmetro. */
-string IotAuth::encryptRSA(string plain, RSAKey rsaKey, int size)
+int* IotAuth::encryptRSA(string plain, RSAKey rsaKey, int size)
 {
     char plainChar[plain.length()];
     strncpy(plainChar, plain.c_str(), sizeof(plainChar));
 
-    int mensagemC[size];
+    int* mensagemC = (int*)malloc(size*sizeof(int));
     rsa.codifica(mensagemC, plainChar, rsaKey.d, rsaKey.n, sizeof(plainChar));
 
-    /* Converte o array de integer para uma string formatada. */
-    string encrypted = "";
-    for (int i = 0; i < size; i++) {
-        encrypted += to_string(mensagemC[i]);
-        if (i < (size-1))
-            encrypted += ".";
-    }
+    // /* Converte o array de integer para uma string formatada. */
+    // string encrypted = "";
+    // for (int i = 0; i < size; i++) {
+    //     encrypted += to_string(mensagemC[i]);
+    //     if (i < (size-1))
+    //         encrypted += ".";
+    // }
 
-    return encrypted;
+    return mensagemC;
+}
+
+int* IotAuth::encryptRSA(byte plain[], RSAKey rsaKey, int size)
+{
+    int* mensagemC = (int*)malloc(size*sizeof(int));
+    rsa.codifica(mensagemC, plain, rsaKey.d, rsaKey.n, size);
+
+    return mensagemC;
 }
 
 /* Realiza a decifragem RSA utilizando uma chave RSA fornecida por parâmetro */

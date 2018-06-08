@@ -30,7 +30,9 @@ class IotAuth
         string hash(char message[]);
         bool isHashValid(string message, string hash);
 
-        string encryptRSA(string plain, RSAKey rsaKey, int size);
+        // string encryptRSA(string plain, RSAKey rsaKey, int size);
+        int* encryptRSA(string plain, RSAKey rsaKey, int size);
+        int* encryptRSA(byte plain[], RSAKey rsaKey, int size);
         string decryptRSA(int cipher[], RSAKey rsaKey, int size);
 
     private:
