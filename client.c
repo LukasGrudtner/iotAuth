@@ -93,7 +93,7 @@ int main(int argc, char *argv[]){
            fgets(envia, 556, stdin);
 
            /* Recupera a mensagem com a chave para enviar ao Servidor. */
-           // char* message = arduino.sendRSAKey();
+           // char *message = arduino.sendClientDone();
            RSAKeyExchange keyExchange = arduino.sendRSAKey();
            sendto(meuSocket, (RSAKeyExchange*)&keyExchange, sizeof(keyExchange),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
            // sendto(meuSocket,message,strlen(message),0,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
