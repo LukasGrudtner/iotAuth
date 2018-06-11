@@ -103,7 +103,7 @@ RSAKeyExchange Arduino::sendRSAKey()
              << keyManager.getMyPrivateKey().d << ", "
              << keyManager.getMyPrivateKey().n << ")}" << endl;
         cout << "My IV: " << keyManager.getMyIV() << endl;
-        cout << "My FDR: " << stringHandler.FdrToString(keyManager.getMyFDR()) << endl;
+        cout << "My FDR: " << keyManager.getMyFDR()->toString() << endl;
         cout << "Sent: " << rsaSent.toString() << endl;
         cout << "**************************************\n" << endl;
     }

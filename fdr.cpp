@@ -43,3 +43,12 @@ void FDR::setOperand(int operand)
 {
     _operand = operand;
 }
+
+/*  toString()
+    Retorna uma representação da FDR em formato String.
+*/
+std::string FDR::toString()
+{
+    std::string result = _operator + std::to_string(_operand);
+    return result;
+}

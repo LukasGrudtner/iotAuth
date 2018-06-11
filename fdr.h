@@ -1,7 +1,7 @@
 #ifndef FDR_H
 #define FDR_H
 
-// #include "settings.h"
+#include <string>
 
 class FDR
 {
@@ -12,6 +12,8 @@ class FDR
         int getOperand();
         void setOperator(char op);
         void setOperand(int operand);
+
+        std::string toString();
 
     private:
         char _operator = '+';

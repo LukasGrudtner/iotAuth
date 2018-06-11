@@ -9,25 +9,33 @@ class KeyManager
 {
     public:
         KeyManager();
+
+        /* Getters */
         int getDiffieHellmanKey();
         int getDiffieHellmanKey(int base);
+
         RSAKey getMyPublicKey();
         RSAKey getMyPrivateKey();
-        void setRSAKeyPair(RSAKeyPair keys);
         RSAKey getPartnerPublicKey();
-        void setPartnerPublicKey(RSAKey publicKey);
-        void setSessionKey(int _sessionKey);
+
         int getSessionKey();
+        int getBase();
+        int getModulus();
+        int getMyIV();
+        int getExponent();
+
+        FDR* getMyFDR();
+
+        /* Setters */
+        void setRSAKeyPair(RSAKeyPair keys);
+        void setPartnerPublicKey(RSAKey publicKey);
+
+        void setSessionKey(int _sessionKey);
         void setBase(int base);
         void setModulus(int modulus);
         void setExponent(int exponent);
         void setMyIV(int _myIV);
 
-        int getBase();
-        int getModulus();
-        int getMyIV();
-        int getExponent();
-        FDR* getMyFDR();
         void setMyFDR(FDR* _fdr);
 
     private:
@@ -36,8 +44,8 @@ class KeyManager
         int modulus = 0; // p
 
         int sessionKey;
-        RSAKeyPair rsaKeys;
 
+        RSAKeyPair rsaKeys;
         RSAKey partnerPublicKey;
 
         int myIV = 0;
