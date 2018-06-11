@@ -3,7 +3,6 @@
 
 #include "iotAuth.h"
 #include "keyManager.h"
-#include "stringHandler.h"
 #include "settings.h"
 #include "utils.h"
 #include "RSAKeyExchange.h"
@@ -73,7 +72,6 @@ class Arduino
         IotAuth iotAuth;
         KeyManager keyManager;
 
-        StringHandler stringHandler;
         Utils utils;
 
         /*  Retorna toda a string anterior ao símbolo "*".

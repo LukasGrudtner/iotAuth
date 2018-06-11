@@ -198,6 +198,13 @@ string Arduino::getHashEncrypted(string package)
 /* Realiza o envio da chave Diffie-Hellman para o Servidor. */
 int* Arduino::sendDiffieHellmanKey()
 {
+    sleep(1);
+    int a = iotAuth.randomNumber(3)+2;
+    sleep(1);
+    int g = iotAuth.randomNumber(100);
+    sleep(1);
+    int p = iotAuth.randomNumber(100);
+
     /* Seta o expoente no KeyManager. */
     keyManager.setExponent(a);
 
@@ -213,24 +220,11 @@ int* Arduino::sendDiffieHellmanKey()
     diffieHellmanPackage.setAnswerFDR(answerFDR);
 
     /**************************************************************************/
-    /* Realiza o cálculo do HASH do pacote obtido acima. */
-    char hashArray[128];
-    char messageArray[diffieHellmanPackage.toString().length()];
-    memset(hashArray, '\0', sizeof(hashArray));
-
-    /* Converte o pacote (string) para um array de char (messageArray). */
-    strncpy(messageArray, diffieHellmanPackage.toString().c_str(), sizeof(messageArray));
-
     /* Extrai o hash */
-    string hash = iotAuth.hash(messageArray);
+    string hash = iotAuth.hash(diffieHellmanPackage.toString());
 
     /* Encripta o hash utilizando a chave privada do cliente */
     int* encryptedHash = iotAuth.encryptRSA(hash, keyManager.getMyPrivateKey(), hash.length());
-
-    // cout << "EncryptedHash" << endl;
-    // for (int i = 0; i < 128; i++) {
-    //     cout << encryptedHash[i] << ":";
-    // }
 
     /**************************************************************************/
 
@@ -247,57 +241,15 @@ int* Arduino::sendDiffieHellmanKey()
     byte* dhSentBytes = (byte*)malloc(sizeof(DHKeyExchange));
     utils.ObjectToBytes(*dhSent, dhSentBytes, sizeof(DHKeyExchange));
 
-    // cout << "DecryptedMessage" << endl;
-    // for (int i = 0; i < sizeof(DHKeyExchange); i++) {
-    //     cout << (int)dhSentBytes[i] << ":";
-    // }
-
-
     int* encryptedMessage = iotAuth.encryptRSA(dhSentBytes, keyManager.getPartnerPublicKey(), sizeof(DHKeyExchange));
-
-    // /* TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE  */
-    // byte* aByte = (byte*)malloc(sizeof(DHKeyExchange));
-    // utils.ObjectToBytes(*dhSent, aByte, sizeof(DHKeyExchange));
-    //
-    // cout << "TEST STRUCT: " << dhSent->getEncryptedHash()[0] << endl;
-    //
-    // cout << "TEST DEC BYTE: " << endl;
-    // for (int i = 0; i < sizeof(DHKeyExchange); i++) {
-    //     cout << (int)aByte[i] << ", ";
-    // }
-    //
-    // int* enc = iotAuth.encryptRSA(aByte, keyManager.getMyPublicKey(), sizeof(DHKeyExchange));
-    //
-    // cout << "TEST ENC BYTE: " << endl;
-    // for (int i = 0; i < sizeof(DHKeyExchange); i++) {
-    //     cout << (int)enc[i] << ", ";
-    // }
-    //
-    // byte* dec = iotAuth.decryptRSA(enc, keyManager.getMyPrivateKey(), sizeof(DHKeyExchange));
-    //
-    // cout << "TEST DEC BYTE: " << endl;
-    // for (int i = 0; i < sizeof(DHKeyExchange); i++) {
-    //     cout << (int)dec[i] << ", ";
-    // }
-    //
-    // DHKeyExchange b;
-    // utils.BytesToObject(dec, b, sizeof(DHKeyExchange));
-    //
-    // cout << "TEST STRUCT: " << b.getEncryptedHash()[0] << endl;
-    //
-    // /* TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE TESTE  */
 
     if (VERBOSE) {
         cout << "************SEND DH CLIENT************" << endl;
         cout << "Client Hash: " << hash << endl << endl;
+        cout << "a: " << a << endl << "g: " << g << endl << "p: " << p << endl;
         cout << "Client Package: " << diffieHellmanPackage.toString() << endl;
         cout << "**************************************" << endl << endl;
     }
-
-    // cout << endl << "EncryptedMessage" << endl;
-    // for (int i = 0; i < sizeof(DHKeyExchange); i++) {
-    //     cout << encryptedMessage[i] << ":";
-    // }
 
     return encryptedMessage;
 }
@@ -412,9 +364,18 @@ string Arduino::sendEncryptedMessage(char message[], int size) {
     memset(plaintext, '\0', size);
 
     /* Inicialização da chave e do IV. */
-    uint8_t key[] = { 0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe, 0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
-                      0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7, 0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4 };
-    uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+    // uint8_t key[] = { 0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe, 0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
+    //                   0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7, 0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4 };
+    uint8_t key[32];
+    for (int i = 0; i < 32; i++) {
+        key[i] = keyManager.getSessionKey();
+    }
+
+    // uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+    uint8_t iv[16];
+    for (int i = 0; i < 16; i++) {
+        iv[i] = keyManager.getSessionKey();
+    }
 
     /* Converte o array de char (message) para uint8_t. */
     utils.charToUint8_t(message, plaintext, size);

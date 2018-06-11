@@ -32,20 +32,19 @@ typedef struct rsa_key_pair
     RSAKey privateKey;
 } RSAKeyPair;
 
-// typedef struct dhPackage
-// {
-//     byte *sessionKey;
-//     long int g;
-//     long int p;
-//     long int iv;
-//     long int Fiv;
-// } DHPackage;
-//
-// typedef struct dhExchange
-// {
-//     char hash[128];
-//     byte encryptedDHPackage[sizeof(DHPackage)];
-// } DHExchange;
-
+/* Definição de todos os possíveis estados da FSM:
+    HELLO   :   Aguardando pedido de início de conexão.
+    DONE    :   Envia pedido de término de conexão.
+    RFT     :   Envia confirmação de término de conexão.        :   Request for Termination
+    WDC     :   Aguardando confirmação para término de conexão. :   Waiting Done Confirmation
+    RRSA    :   Estado de recepção de chaves RSA;
+    SRSA    :   Estado de envio de chaves RSA.
+    RDH     :   Estado de recepção de chaves Diffie-Hellman.
+    SDH     :   Estado de envio de chaves Diffie-Hellman.
+    DT      :   Estado de transferência de dados cifrados.
+*/
+typedef enum {
+    HELLO, DONE, RFT, WDC, RRSA, SRSA, RDH, SDH, DT
+} States;
 
 #endif

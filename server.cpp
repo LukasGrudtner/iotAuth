@@ -12,7 +12,6 @@
 #include <vector>
 #include "keyManager.h"
 #include "settings.h"
-#include "stringHandler.h"
 #include "iotAuth.h"
 #include "RSAKeyExchange.h"
 #include "DiffieHellmanPackage.h"
@@ -20,25 +19,7 @@
 
 using namespace std;
 
-/* Definição de todos os possíveis estados da FSM:
-    HELLO   :   Aguardando pedido de início de conexão.
-    DONE    :   Envia pedido de término de conexão.
-    RFT     :   Envia confirmação de término de conexão.        :   Request for Termination
-    WDC     :   Aguardando confirmação para término de conexão. :   Waiting Done Confirmation
-    RRSA    :   Estado de recepção de chaves RSA;
-    SRSA    :   Estado de envio de chaves RSA.
-    RDH     :   Estado de recepção de chaves Diffie-Hellman.
-    SDH     :   Estado de envio de chaves Diffie-Hellman.
-    DT      :   Estado de transferência de dados cifrados.
-*/
-typedef enum {
-    HELLO, DONE, RFT, WDC, RRSA, SRSA, RDH, SDH, DT
-} States;
-
-int EXPONENT            = 3;
-
 KeyManager* keyManager;
-StringHandler StringHandler;
 FDR partnerFDR;
 IotAuth iotAuth;
 Utils utils;
@@ -286,6 +267,8 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
     if (iotAuth.isHashValid(dhPackage.toString(), decryptedHashString)) {
 
         /* Armazena os valores Diffie-Hellman no KeyManager. */
+        sleep(1);
+        keyManager->setExponent(iotAuth.randomNumber(3)+2);
         keyManager->setBase(dhPackage.getBase());
         keyManager->setModulus(dhPackage.getModulus());
         keyManager->setSessionKey(keyManager->getDiffieHellmanKey(dhPackage.getResult()));
@@ -313,6 +296,7 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 
             cout << "Client Decrypted HASH: "   << decryptedHashString          << endl << endl;
             cout << "Diffie-Hellman Key: "      << dhPackage.getResult()        << endl;
+            cout << "Exponent: "                << keyManager->getExponent()    << endl;
             cout << "Base: "                    << dhPackage.getBase()          << endl;
             cout << "Modulus: "                 << dhPackage.getModulus()       << endl;
             cout << "Client IV: "               << clientIV                     << endl;
@@ -354,11 +338,11 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 {
     /******************** Criação do Pacote Diffie-Hellman ********************/
-
     DiffieHellmanPackage diffieHellmanPackage;
     diffieHellmanPackage.setResult(keyManager->getDiffieHellmanKey());
     diffieHellmanPackage.setBase(keyManager->getBase());
     diffieHellmanPackage.setModulus(keyManager->getModulus());
+
     diffieHellmanPackage.setIV(keyManager->getMyIV());
     diffieHellmanPackage.setAnswerFDR(calculateFDRValue(keyManager->getMyIV(), keyManager->getMyFDR()));
 
@@ -368,15 +352,8 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
     utils.ObjectToBytes(diffieHellmanPackage, dhPackageBytes, sizeof(DiffieHellmanPackage));
 
     /***************************** Geração do HASH ****************************/
-    char hashArray[128];
-    char messageArray[diffieHellmanPackage.toString().length()];
-    memset(hashArray, '\0', sizeof(hashArray));
-
-    /* Converte o pacote (string) para um array de char (messageArray). */
-    strncpy(messageArray, diffieHellmanPackage.toString().c_str(), sizeof(messageArray));
-
     /* Extrai o hash. */
-    string hash = iotAuth.hash(messageArray);
+    string hash = iotAuth.hash(diffieHellmanPackage.toString());
 
     /* Encripta o hash utilizando a chave privada do Servidor. */
     int* encryptedHash = iotAuth.encryptRSA(hash, keyManager->getMyPrivateKey(), hash.length());
@@ -452,9 +429,18 @@ void dt(States *state, int socket, struct sockaddr *client, socklen_t size)
         memset(plaintext, '\0', encryptedMessage.length());
 
         /* Inicialização da chave e iv. */
-        uint8_t key[] = { 0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe, 0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
-                          0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7, 0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4 };
-        uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+        // uint8_t key[] = { 0x60, 0x3d, 0xeb, 0x10, 0x15, 0xca, 0x71, 0xbe, 0x2b, 0x73, 0xae, 0xf0, 0x85, 0x7d, 0x77, 0x81,
+        //                   0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7, 0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4 };
+        uint8_t key[32];
+        for (int i = 0; i < 32; i++) {
+            key[i] = keyManager->getSessionKey();
+        }
+
+        // uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
+        uint8_t iv[16];
+        for (int i = 0; i < 16; i++) {
+            iv[i] = keyManager->getSessionKey();
+        }
 
         /* Converte a mensagem recebida (HEXA) para o array de char ciphertextChar. */
         utils.hexStringToCharArray(encryptedMessage, encryptedMessage.length(), ciphertextChar);
@@ -528,7 +514,6 @@ void stateMachine(int socket, struct sockaddr *client, socklen_t size)
 
 int main(int argc, char *argv[]){
     keyManager = new KeyManager();
-    keyManager->setExponent(EXPONENT);
 
     struct sockaddr_in cliente, servidor;
     int meuSocket,enviei=0;

@@ -63,30 +63,10 @@ RSAKeyPair IotAuth::generateRSAKeyPair()
 }
 
 /*  Realiza o hash do parâmetro message */
-string IotAuth::hash(char message[])
+string IotAuth::hash(string message)
 {
     return sha512(message);
 }
-
-// /* Realiza a cifragem RSA utilizando uma chave RSA fornecida por parâmetro. */
-// string IotAuth::encryptRSA(string plain, RSAKey rsaKey, int size)
-// {
-//     char plainChar[plain.length()];
-//     strncpy(plainChar, plain.c_str(), sizeof(plainChar));
-//
-//     int mensagemC[size];
-//     rsa.codifica(mensagemC, plainChar, rsaKey.d, rsaKey.n, sizeof(plainChar));
-//
-//     /* Converte o array de integer para uma string formatada. */
-//     string encrypted = "";
-//     for (int i = 0; i < size; i++) {
-//         encrypted += to_string(mensagemC[i]);
-//         if (i < (size-1))
-//             encrypted += ".";
-//     }
-//
-//     return encrypted;
-// }
 
 /* Realiza a cifragem RSA utilizando uma chave RSA fornecida por parâmetro. */
 int* IotAuth::encryptRSA(string plain, RSAKey rsaKey, int size)
@@ -96,14 +76,6 @@ int* IotAuth::encryptRSA(string plain, RSAKey rsaKey, int size)
 
     int* mensagemC = (int*)malloc(size*sizeof(int));
     rsa.codifica(mensagemC, plainChar, rsaKey.d, rsaKey.n, sizeof(plainChar));
-
-    // /* Converte o array de integer para uma string formatada. */
-    // string encrypted = "";
-    // for (int i = 0; i < size; i++) {
-    //     encrypted += to_string(mensagemC[i]);
-    //     if (i < (size-1))
-    //         encrypted += ".";
-    // }
 
     return mensagemC;
 }
@@ -124,12 +96,6 @@ byte* IotAuth::decryptRSA(int cipher[], RSAKey rsaKey, int size)
     memset(plain, 0, sizeof(plain));
     rsa.decodifica(plain, cipher, rsaKey.d, rsaKey.n, size);
 
-    // string output = "";
-    // for (int i = 0; i < sizeof(plain); i++) {
-    //     output += plain[i];
-    // }
-    //
-    // return output;
     return plain;
 }
 
@@ -160,11 +126,8 @@ FDR* IotAuth::generateFDR()
 
 /* Verifica se o HASH dado é idêntico ao HASH da mensagem. */
 bool IotAuth::isHashValid(string message, string hash) {
-    char messageArray[message.length()];
-    memset(messageArray, '\0', sizeof(messageArray));
-    strncpy(messageArray, message.c_str(), sizeof(messageArray));
-
-    string hash2 = this->hash(messageArray);
+    string hash2 = this->hash(message);
+    cout << "Hash: " << hash2 << endl;
 
     return hash == hash2;
 }

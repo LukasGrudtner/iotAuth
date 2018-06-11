@@ -27,7 +27,9 @@ class IotAuth
         int generateIV();
         FDR* generateFDR();
 
-        string hash(char message[]);
+        int randomNumber(int upperBound);
+
+        string hash(string message);
         bool isHashValid(string message, string hash);
 
         // string encryptRSA(string plain, RSAKey rsaKey, int size);
@@ -36,8 +38,6 @@ class IotAuth
         byte* decryptRSA(int cipher[], RSAKey rsaKey, int size);
 
     private:
-
-        int randomNumber(int upperBound);
 
         Utils utils;
         AES aes;
