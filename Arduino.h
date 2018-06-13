@@ -21,25 +21,35 @@ class Arduino
 {
     public:
 
-        int a = 2;
-        int g = 23;
-        int p = 86;
-
         /* Resposta do FDR do servidor recebido no passo RSA Key Exchange e
         enviado no passo DH Key Exchange. */
         int answerFDR = 0;;
 
-        bool clientHello    = false;
-        bool clientDone     = false;
-        bool receivedRSAKey = false;
-        bool receivedDHKey  = false;
-
         void stateMachine(int socket, struct sockaddr *client, socklen_t size);
+
+        /*  Waiting Done Confirmation
+            Verifica se a mensagem vinda do Cliente é uma confirmação do pedido de
+            fim de conexão enviado pelo Servidor (DONE_ACK).
+            Em caso positivo, altera o estado para HELLO, senão, mantém em WDC. 7
+        */
+        void wdc(States *state, int socket, struct sockaddr *client, socklen_t size);
+
+        /*  Request for Termination
+            Envia uma confirmação (DONE_ACK) para o pedido de término de conexão
+            vindo do Cliente, e seta o estado para HELLO.
+        */
+        void rft(States *state, int socket, struct sockaddr *client, socklen_t size);
 
         /*  Hello
             Envia um pedido de início de conexão (HELLO) para o Servidor
         */
         void hello(States *state, int socket, struct sockaddr *client, socklen_t size);
+
+        /*  Done
+            Envia um pedido de término de conexão ao Cliente, e seta o estado atual
+            para WDC (Waiting Done Confirmation).
+        */
+        void done(States *state, int socket, struct sockaddr *client, socklen_t size);
 
         /*  Send RSA
             Realiza o envio da chave RSA para o Servidor.
@@ -66,23 +76,8 @@ class Arduino
         */
         void dt(States *state, int socket, struct sockaddr *client, socklen_t size);
 
-        /* Envia Client Done para o Server. */
-        char* sendClientDone();
-
-        /* Envia a confirmação do pedido de fim de conexão do Servidor. */
-        char* sendClientACKDone();
-
-        /* Recebe o Server Done. */
-        bool receiveServerDone(char buffer[]);
-
         /* Realiza o envio da mensagem cifrada para o Servidor. */
-        string sendEncryptedMessage(char message[], int size);
-
-        /* Realiza o envio do Done para o Server. */
-        void done();
-
-        /* Verifica se a mensagem vinda do servidor é um DONE. */
-        bool checkDoneServer(char buffer[]);
+        string encryptMessage(char message[], int size);
 
     private:
 

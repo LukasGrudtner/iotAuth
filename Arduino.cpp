@@ -9,50 +9,109 @@ void Arduino::stateMachine(int socket, struct sockaddr *server, socklen_t size)
 
     switch (state) {
 
-        // /* Waiting Done Confirmation */
-        // case WDC:
-        //     wdc(&state, socket, server, size);
-        //     break;
-        //
-        // /* Request For Termination */
-        // case RFT:
-        //     rft(&state, socket, server, size);
-        //     break;
-        //
-        // /* Done */
-        // case DONE:
-        //     done(&state, socket, server, size);
-        //     break;
+        /* Waiting Done Confirmation */
+        case WDC:
+        {
+            cout << "WAITING DONE CONFIRMATION" << endl;
+            wdc(&state, socket, server, size);
+            break;
+        }
+
+        /* Request For Termination */
+        case RFT:
+        {
+            cout << "REQUEST FOR TERMINATION RECEIVED" << endl;
+            rft(&state, socket, server, size);
+            break;
+        }
+
+        /* Done */
+        case DONE:
+        {
+            cout << "SEND DONE" << endl;
+            done(&state, socket, server, size);
+            break;
+        }
 
         /* Hello */
         case HELLO:
+        {
             hello(&state, socket, server, size);
             break;
+        }
 
         /* Receive RSA */
         case RRSA:
+        {
+            cout << "RECEIVE RSA KEY" << endl;
             rrsa(&state, socket, server, size);
             break;
+        }
 
         /* Send RSA */
         case SRSA:
+        {
+            cout << "SEND RSA KEY" << endl;
             srsa(&state, socket, server, size);
             break;
+        }
 
         /* Receive Diffie-Hellman */
         case RDH:
+        {
+            cout << "RECEIVE DIFFIE HELLMAN KEY" << endl;
             rdh(&state, socket, server, size);
             break;
+        }
 
         /* Send Diffie-Hellman */
         case SDH:
+        {
+            cout << "SEND DIFFIE HELLMAN KEY" << endl;
             sdh(&state, socket, server, size);
             break;
+        }
 
         /* Data Transfer */
         case DT:
+        {
+            cout << "SEND ENCRYPTED DATA" << endl;
             dt(&state, socket, server, size);
             break;
+        }
+    }
+}
+
+/*  Waiting Done Confirmation
+    Verifica se a mensagem vinda do Cliente é uma confirmação do pedido de
+    fim de conexão enviado pelo Servidor (DONE_ACK).
+    Em caso positivo, altera o estado para HELLO, senão, mantém em WDC. 7
+*/
+void Arduino::wdc(States *state, int socket, struct sockaddr *server, socklen_t size)
+{
+    char message[64];
+    recvfrom(socket, message, sizeof(message), 0, server, &size);
+
+    if (message[0] == DONE_ACK_CHAR) {
+        *state = HELLO;
+    } else {
+        *state = WDC;
+    }
+}
+
+/*  Request for Termination
+    Envia uma confirmação (DONE_ACK) para o pedido de término de conexão
+    vindo do Cliente, e seta o estado para HELLO.
+*/
+void Arduino::rft(States *state, int socket, struct sockaddr *server, socklen_t size)
+{
+    sendto(socket, DONE_ACK, strlen(DONE_ACK), 0, server, size);
+    *state = HELLO;
+
+    if (VERBOSE) {
+        printf("\n*******DONE CLIENT AND SERVER******\n");
+        printf("Done Client and Server Successful!\n");
+        printf("***********************************\n\n");
     }
 }
 
@@ -76,7 +135,7 @@ void Arduino::hello(States *state, int socket, struct sockaddr *server, socklen_
     if (received[0] == HELLO_ACK_CHAR) {
         *state = SRSA;
         if (VERBOSE) {
-            printf("\n******HELLO CLIENT AND SERVER******\n");
+            printf("******HELLO CLIENT AND SERVER******\n");
             printf("Hello Client and Server Successful!\n");
             printf("***********************************\n\n");
         }
@@ -85,12 +144,21 @@ void Arduino::hello(States *state, int socket, struct sockaddr *server, socklen_
     }
 }
 
+/*  Done
+    Envia um pedido de término de conexão ao Cliente, e seta o estado atual
+    para WDC (Waiting Done Confirmation).
+*/
+void Arduino::done(States *state, int socket, struct sockaddr *server, socklen_t size)
+{
+    sendto(socket, DONE_MESSAGE, strlen(DONE_MESSAGE), 0, server, size);
+    *state = WDC;
+}
+
 /*  Send RSA
     Realiza o envio da chave RSA para o Servidor.
 */
 void Arduino::srsa(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
-    cout << "SEND RSA KEY" << endl;
     /* Gera um par de chaves RSA e o armazena no keyManager. */
     keyManager.setRSAKeyPair(iotAuth.generateRSAKeyPair());
 
@@ -135,7 +203,6 @@ void Arduino::srsa(States *state, int socket, struct sockaddr *server, socklen_t
 */
 void Arduino::rrsa(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
-    cout << "RECEIVE RSA KEY" << endl;
     RSAKeyExchange* rsaReceived = (RSAKeyExchange*)malloc(sizeof(RSAKeyExchange));
     recvfrom(socket, rsaReceived, sizeof(RSAKeyExchange), 0, server, &size);
 
@@ -163,7 +230,6 @@ void Arduino::rrsa(States *state, int socket, struct sockaddr *server, socklen_t
 
     /* Verifica se a resposta do FDR é válida. */
     if (checkAnsweredFDR(answeredFdr)) {
-        receivedRSAKey = true;
         if (VERBOSE) {
             cout << "Answered FDR ACCEPTED!" << endl;
             cout << "**************************************\n" << endl;
@@ -184,8 +250,6 @@ void Arduino::rrsa(States *state, int socket, struct sockaddr *server, socklen_t
 */
 void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
-    cout << "SEND DIFFIE-HELLMAN KEY" << endl;
-
     /* Gera os valores Diffie-Hellman. */
     sleep(1);
     int a = iotAuth.randomNumber(3)+2;
@@ -249,8 +313,6 @@ void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t 
 */
 void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
-    cout << "RECEIVE DIFFIE-HELLMAN KEY" << endl;
-
     int *encryptedDHExchange = (int*)malloc(sizeof(DHKeyExchange)*sizeof(int));
     recvfrom(socket, encryptedDHExchange, sizeof(DHKeyExchange)*sizeof(int), 0, server, &size);
 
@@ -347,7 +409,7 @@ void Arduino::dt(States *state, int socket, struct sockaddr *server, socklen_t s
     while (strcmp(envia, "\n") != 0) {
 
         /* Encripta a mensagem digitada pelo usuário. */
-        string encryptedMessage = sendEncryptedMessage(envia, sizeof(envia));
+        string encryptedMessage = encryptMessage(envia, sizeof(envia));
         cout << "Sent" << endl << encryptedMessage << endl << endl;
 
         /* Converte a string em um array de char. */
@@ -360,48 +422,6 @@ void Arduino::dt(States *state, int socket, struct sockaddr *server, socklen_t s
         memset(envia, '\0', sizeof(envia));
         fgets(envia, 665, stdin);
     }
-}
-
-
-/* Envia um pedido de fim de conexão para o Servidor. */
-char* Arduino::sendClientDone()
-{
-    string done (DONE_MESSAGE);
-    char *message = (char*)malloc(4);
-    strncpy(message, done.c_str(), 4);
-    return message;
-}
-
-/* Envia um ACK para o pedido de fim de conexão vindo do Servidor. */
-char* Arduino::sendClientACKDone()
-{
-    string doneACK (DONE_ACK);
-    char *message = (char*)malloc(1);
-    strncpy(message, doneACK.c_str(), 1);
-
-    return message;
-}
-
-/* Seta as variáveis de controle para o estado de fim de conexão. */
-void Arduino::done()
-{
-    clientHello     = false;
-    receivedRSAKey  = false;
-    receivedDHKey   = false;
-}
-
-/* Verifica se o Servidor confirmou o pedido de fim de conexão. */
-bool Arduino::receiveServerDone(char buffer[])
-{
-    cout << "*************DONE SERVER**************" << endl;
-    if (buffer[0] == DONE_ACK_CHAR) {
-        clientDone = true;
-        cout << "Server Done: Successful" << endl;
-        cout << "**************************************\n" << endl;
-        return true;
-    }
-
-    return false;
 }
 
 /* Calcula a resposta do FDR recebido por parâmetro. */
@@ -423,7 +443,7 @@ bool Arduino::checkAnsweredFDR(int answeredFdr)
 }
 
 /* Realiza o envio da mensagem encriptada. */
-string Arduino::sendEncryptedMessage(char message[], int size) {
+string Arduino::encryptMessage(char message[], int size) {
 
     /* Inicialização do vetor plaintext. */
     uint8_t plaintext[size];
@@ -450,18 +470,4 @@ string Arduino::sendEncryptedMessage(char message[], int size) {
     uint8_t *encrypted = iotAuth.encryptAES(plaintext, key, iv, size);
 
     return (utils.Uint8_t_to_Hex_String(encrypted, size));
-}
-
-/* Verifica se a mensagem recebida do Servidor é um DONE. */
-bool Arduino::checkDoneServer(char buffer[])
-{
-    /* Pega os 4 primeiros caracteres do buffer recebido para verificar
-    se é um DONE. */
-    char buffTest[5];
-    buffTest[4] = '\0';
-    for (int i = 0; i < 4; i++) {
-        buffTest[i] = buffer[i];
-    }
-
-    return (strcmp(buffTest, DONE_MESSAGE) == 0);
 }

@@ -146,7 +146,7 @@ void hello(States *state, int socket, struct sockaddr *client, socklen_t size)
 */
 void done(States *state, int socket, struct sockaddr *client, socklen_t size)
 {
-    sendto(socket, DONE_ACK, strlen(DONE_ACK), 0, client, size);
+    sendto(socket, DONE_MESSAGE, strlen(DONE_MESSAGE), 0, client, size);
     *state = WDC;
 }
 
@@ -467,48 +467,75 @@ void stateMachine(int socket, struct sockaddr *client, socklen_t size)
 
         /* Waiting Done Confirmation */
         case WDC:
+        {
+            cout << "WAITING DONE CONFIRMATION" << endl;
             wdc(&state, socket, client, size);
             break;
+        }
 
         /* Request For Termination */
         case RFT:
+        {
+            cout << "REQUEST FOR TERMINATION RECEIVED" << endl;
             rft(&state, socket, client, size);
             break;
+        }
 
         /* Done */
         case DONE:
+        {
+            cout << "SEND DONE" << endl;
             done(&state, socket, client, size);
             break;
+        }
 
         /* Hello */
         case HELLO:
+        {
+            cout << "RECEIVE HELLO" << endl;
             hello(&state, socket, client, size);
             break;
+        }
 
         /* Receive RSA */
         case RRSA:
+        {
+            cout << "RECEIVE RSA KEY" << endl;
             rrsa(&state, socket, client, size);
             break;
+        }
 
         /* Send RSA */
         case SRSA:
+        {
+            cout << "SEND RSA KEY" << endl;
             srsa(&state, socket, client, size);
             break;
+        }
 
         /* Receive Diffie-Hellman */
         case RDH:
+        {
+            cout << "RECEIVE DIFFIE HELLMAN KEY" << endl;
             rdh(&state, socket, client, size);
             break;
+        }
 
         /* Send Diffie-Hellman */
         case SDH:
+        {
+            cout << "SEND DIFFIE HELLMAN KEY" << endl;
             sdh(&state, socket, client, size);
             break;
+        }
 
         /* Data Transfer */
         case DT:
+        {
+            cout << "RECEIVE ENCRYPTED DATA" << endl;
             dt(&state, socket, client, size);
             break;
+        }
     }
 }
 
