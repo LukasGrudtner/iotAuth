@@ -1,203 +1,178 @@
 #include "Arduino.h"
 
-/* Envia um Hello para o Servidor. */
-char* Arduino::sendClientHello()
+/*  State Machine
+    Realiza o controle do estado atual da FSM.
+*/
+void Arduino::stateMachine(int socket, struct sockaddr *server, socklen_t size)
 {
-    cout << "************HELLO CLIENT**************" << endl;
-    string hello (HELLO_MESSAGE);
-    char *message;
-    strncpy(message, hello.c_str(), hello.length());
-    cout << "Client Hello: Successful" << endl;
-    cout << "**************************************\n" << endl;
-    return message;
-}
+    static States state = HELLO;
 
-/* Envia um pedido de fim de conexão para o Servidor. */
-char* Arduino::sendClientDone()
-{
-    string done (DONE_MESSAGE);
-    char *message = (char*)malloc(4);
-    strncpy(message, done.c_str(), 4);
-    return message;
-}
+    switch (state) {
 
-/* Envia um ACK para o pedido de fim de conexão vindo do Servidor. */
-char* Arduino::sendClientACKDone()
-{
-    string doneACK (DONE_ACK);
-    char *message = (char*)malloc(1);
-    strncpy(message, doneACK.c_str(), 1);
+        // /* Waiting Done Confirmation */
+        // case WDC:
+        //     wdc(&state, socket, server, size);
+        //     break;
+        //
+        // /* Request For Termination */
+        // case RFT:
+        //     rft(&state, socket, server, size);
+        //     break;
+        //
+        // /* Done */
+        // case DONE:
+        //     done(&state, socket, server, size);
+        //     break;
 
-    return message;
-}
+        /* Hello */
+        case HELLO:
+            hello(&state, socket, server, size);
+            break;
 
-/* Seta as variáveis de controle para o estado de fim de conexão. */
-void Arduino::done()
-{
-    clientHello     = false;
-    receivedRSAKey  = false;
-    receivedDHKey   = false;
-}
+        /* Receive RSA */
+        case RRSA:
+            rrsa(&state, socket, server, size);
+            break;
 
-/* Verifica se o Servidor confirmou o pedido de início de conexão. */
-bool Arduino::receiveServerHello(char buffer[])
-{
-    cout << "************HELLO SERVER**************" << endl;
-    if (buffer[0] == HELLO_ACK_CHAR) {
-        clientHello = true;
-        clientDone = false;
-        cout << "Server Hello: Successful" << endl;
-        cout << "**************************************\n" << endl;
-        return true;
-    }
+        /* Send RSA */
+        case SRSA:
+            srsa(&state, socket, server, size);
+            break;
 
-    return false;
-}
+        /* Receive Diffie-Hellman */
+        case RDH:
+            rdh(&state, socket, server, size);
+            break;
 
-/* Verifica se o Servidor confirmou o pedido de fim de conexão. */
-bool Arduino::receiveServerDone(char buffer[])
-{
-    cout << "*************DONE SERVER**************" << endl;
-    if (buffer[0] == DONE_ACK_CHAR) {
-        clientDone = true;
-        cout << "Server Done: Successful" << endl;
-        cout << "**************************************\n" << endl;
-        return true;
-    }
+        /* Send Diffie-Hellman */
+        case SDH:
+            sdh(&state, socket, server, size);
+            break;
 
-    return false;
-}
-
-RSAKeyExchange Arduino::sendRSAKey()
-{
-    /* Gera um par de chaves RSA e o armazena no keyManager. */
-    keyManager.setRSAKeyPair(iotAuth.generateRSAKeyPair());
-
-    /* Gera um valor de IV e o armazena no KeyManager. */
-    keyManager.setMyIV(iotAuth.generateIV());
-
-    /* Gera uma Função Desafio-Resposta e o armazena no KeyManager. */
-    keyManager.setMyFDR(iotAuth.generateFDR());
-
-    /* Organiza os dados que serão enviados para o Server:
-        Chave Pública (D) + # + Chave Pública (N) + # + Resposta do DR + # +
-        IV + # + Função Desafio Resposta
-    */
-
-    int answerFdr = 0;
-    RSAKey publicKey = keyManager.getMyPublicKey();
-    int iv = keyManager.getMyIV();
-    /* Derreferenciando um ponteiro: obtém o valor armazenado na posição indicada pelo ponteiro, e não o endereço na memória. */
-    FDR fdr = *keyManager.getMyFDR();
-
-    RSAKeyExchange rsaSent;
-    rsaSent.setPublicKey(publicKey);
-    rsaSent.setAnswerFDR(answerFdr);
-    rsaSent.setIV(iv);
-    rsaSent.setFDR(fdr);
-
-    if (VERBOSE) {
-        cout << "************SEND RSA CLIENT***********" << endl;
-        cout << "Generated RSA Key: {(" << keyManager.getMyPublicKey().d
-             << ", " << keyManager.getMyPublicKey().n << "), ("
-             << keyManager.getMyPrivateKey().d << ", "
-             << keyManager.getMyPrivateKey().n << ")}" << endl;
-        cout << "My IV: " << keyManager.getMyIV() << endl;
-        cout << "My FDR: " << keyManager.getMyFDR()->toString() << endl;
-        cout << "Sent: " << rsaSent.toString() << endl;
-        cout << "**************************************\n" << endl;
-    }
-
-    return rsaSent;
-}
-
-/* Calcula a resposta do FDR recebido por parâmetro. */
-int Arduino::calculateFDRValue(int iv, FDR* fdr)
-{
-    int result = 0;
-    if (fdr->getOperator() == '+') {
-        result = iv+fdr->getOperand();
-    }
-
-    return result;
-}
-
-/* Verifica se a resposta do FDR é válida. */
-bool Arduino::checkAnsweredFDR(int answeredFdr)
-{
-    int answer = calculateFDRValue(keyManager.getMyIV(), keyManager.getMyFDR());
-    return answer == answeredFdr;
-}
-
-/* Realiza o recebimento da chave RSA vinda do Servidor. */
-bool Arduino::receiveRSAKey(RSAKeyExchange *rsaReceived)
-{
-    /*  Armazena a chave pública do servidor obtida, passando como parâmetro
-        uma chamada à função getPartnerPublicKey do StringHandler, que extrai
-        a chave pública do servidor do buffer (recebido do server).
-    */
-    keyManager.setPartnerPublicKey(rsaReceived->getPublicKey());
-
-    int answeredFdr = rsaReceived->getAnswerFDR();
-    int partnerIV   = rsaReceived->getIV();
-    FDR partnerFdr  = rsaReceived->getFDR();
-    answerFDR       = calculateFDRValue(partnerIV, &partnerFdr);
-
-    if (VERBOSE) {
-        cout << "*********RECEIVED RSA SERVER**********" << endl;
-        cout << "Received: " << rsaReceived->toString() << endl;
-        cout << "RSA Server Public Key: (" << rsaReceived->getPublicKey().d <<
-                ", " << rsaReceived->getPublicKey().n << ")" << endl;
-        cout << "Answered FDR: " << answeredFdr << endl;
-        cout << "Server IV: " << partnerIV << endl;
-        cout << "Server FDR: " << partnerFdr.getOperator() << partnerFdr.getOperand() << endl;
-        cout << "Server FDR Answer: " << answerFDR << endl;
-    }
-
-    /* Verifica se a resposta do FDR é válida. */
-    if (checkAnsweredFDR(answeredFdr)) {
-        receivedRSAKey = true;
-        if (VERBOSE) {
-            cout << "Answered FDR ACCEPTED!" << endl;
-            cout << "**************************************\n" << endl;
-        }
-        return true;
-    } else {
-        if (VERBOSE) {
-            cout << "Answered FDR REJECTED!" << endl;
-            cout << "ENDING CONECTION..." << endl;
-            cout << "**************************************\n" << endl;
-        }
-        return false;
+        /* Data Transfer */
+        case DT:
+            dt(&state, socket, server, size);
+            break;
     }
 }
 
-/* Extrai o hash encriptado da mensagem. */
-string Arduino::getHashEncrypted(string package)
+void Arduino::dt(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
-    /*  Pega todos os caracteres anteriores ao símbolo "*", coloca-os em uma
-        string e a retorna. Esta string é o HASH encriptado recebido do server.
-    */
-    string resultado = "";
-    int i = 0;
+    char envia[666];
+    cout << "Envio de dados criptografados com AES." << endl << endl;
 
-    while (package.at(i) != '*') {
-        i++;
+    printf("########## Escreva uma mensagem para o servidor ##########\n");
+    printf("------------- Linha em branco para finalizar -------------\n");
+    /* Captura a mensagem digitada no terminal para a criptografia. */
+    fgets(envia, 666, stdin);
+
+    /* Enquanto o usuário não digitar um 'Enter': */
+    while (strcmp(envia, "\n") != 0) {
+
+        /* Encripta a mensagem digitada pelo usuário. */
+        string encryptedMessage = sendEncryptedMessage(envia, sizeof(envia));
+        cout << "Sent" << endl << encryptedMessage << endl << endl;
+
+        /* Converte a string em um array de char. */
+        char encryptedMessageChar[encryptedMessage.length()];
+        memset(encryptedMessageChar, '\0', sizeof(encryptedMessageChar));
+        strncpy(encryptedMessageChar, encryptedMessage.c_str(), sizeof(encryptedMessageChar));
+
+        /* Envia a mensagem cifrada ao Servidor. */
+        sendto(socket, encryptedMessageChar, strlen(encryptedMessageChar), 0, server, size);
+        memset(envia, '\0', sizeof(envia));
+        fgets(envia, 665, stdin);
     }
-    i++;
-
-    while (package.at(i) != '!') {
-        resultado += package.at(i);
-        i++;
-    }
-    resultado += package.at(i);
-
-    return resultado;
 }
 
-/* Realiza o envio da chave Diffie-Hellman para o Servidor. */
-int* Arduino::sendDiffieHellmanKey()
+void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
+    cout << "RECEIVE DIFFIE-HELLMAN KEY" << endl;
+
+    int *encryptedDHExchange = (int*)malloc(sizeof(DHKeyExchange)*sizeof(int));
+    recvfrom(socket, encryptedDHExchange, sizeof(DHKeyExchange)*sizeof(int), 0, server, &size);
+
+    /* Decifra a mensagem com a chave privada do Cliente e a coloca em um array de bytes. */
+    byte *decryptedMessage = iotAuth.decryptRSA(encryptedDHExchange, keyManager.getMyPrivateKey(), sizeof(DHKeyExchange));
+
+    /* Converte o array de bytes de volta na struct DHKeyExchange*/
+   DHKeyExchange encryptedDHReceived;
+   utils.BytesToObject(decryptedMessage, encryptedDHReceived, sizeof(DHKeyExchange));
+
+   /* Extrai o HASH encriptado */
+   int *encryptedHash = encryptedDHReceived.getEncryptedHash();
+
+   /* Decifra o HASH com a chave pública do Servidor. */
+   byte *decryptedHash = iotAuth.decryptRSA(encryptedHash, keyManager.getPartnerPublicKey(), 128);
+   char aux;
+   string decryptedHashString = "";
+   for (int i = 0; i < 128; i++) {
+       aux = decryptedHash[i];
+       decryptedHashString += aux;
+   }
+
+   cout << "Decrypted Hash: " << decryptedHashString << endl;
+
+   /* Recupera o pacote com os dados Diffie-Hellman do Servidor. */
+   byte* dhPackageBytes = encryptedDHReceived.getDiffieHellmanPackage();
+   DiffieHellmanPackage dhPackage;
+   utils.BytesToObject(dhPackageBytes, dhPackage, sizeof(DiffieHellmanPackage));
+
+   /* Se o hash for válido, continua com o recebimento. */
+   if (iotAuth.isHashValid(dhPackage.toString(), decryptedHashString)) {
+
+       /* Armazena os valores Diffie-Hellman no KeyManager. */
+       keyManager.setBase(dhPackage.getBase());
+       keyManager.setModulus(dhPackage.getModulus());
+       keyManager.setSessionKey(keyManager.getDiffieHellmanKey(dhPackage.getResult()));
+       int clientIV = dhPackage.getIV();
+       int answeredFdr = dhPackage.getAnswerFDR();
+
+       *state = DT;
+
+       if (VERBOSE) {
+           printf("\n*******SERVER DH KEY RECEIVED******\n");
+
+           cout << "Hash is valid!" << endl << endl;
+
+           if (VERBOSE_2) {
+               cout << "Server Encrypted Data" << endl;
+               for (int i = 0; i < sizeof(DHKeyExchange)-1; i++) {
+                   cout << encryptedDHExchange[i] << ":";
+               }
+               cout << encryptedDHExchange[sizeof(DHKeyExchange)-1] << endl << endl;
+
+               cout << "Server Encrypted Hash" << endl;
+               for (int i = 0; i < 127; i++) {
+                   cout << encryptedHash[i] << ":";
+               }
+               cout << encryptedHash[127] << endl << endl;
+           }
+
+           cout << "Server Decrypted HASH: "   << decryptedHashString          << endl << endl;
+           cout << "Diffie-Hellman Key: "      << dhPackage.getResult()        << endl;
+           cout << "Base: "                    << dhPackage.getBase()          << endl;
+           cout << "Modulus: "                 << dhPackage.getModulus()       << endl;
+           cout << "Client IV: "               << clientIV                     << endl;
+           cout << "Session Key: "             << keyManager.getSessionKey()  << endl;
+           cout << "Answered FDR: "            << answeredFdr                  << endl;
+           printf("***********************************\n");
+       }
+
+   /* Se não, altera o estado para DONE e realiza o término da conexão. */
+   } else {
+       if (VERBOSE) {
+           cout << "Hash is invalid!" << endl << endl;
+       }
+       *state = DONE;
+   }
+}
+
+void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t size)
+{
+    cout << "SEND DIFFIE-HELLMAN KEY" << endl;
+
+    /* Gera os valores Diffie-Hellman. */
     sleep(1);
     int a = iotAuth.randomNumber(3)+2;
     sleep(1);
@@ -251,109 +226,181 @@ int* Arduino::sendDiffieHellmanKey()
         cout << "**************************************" << endl << endl;
     }
 
-    return encryptedMessage;
+    sendto(socket,(int*)encryptedMessage, sizeof(DHKeyExchange)*sizeof(int), 0, server, size);
+    *state = RDH;
 }
 
-/* Extrai o pacote (dados Diffie-Hellman) da string recebida por parâmetro. */
-string Arduino::getPackage(string package)
+void Arduino::rrsa(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
-    /*  Retorna o pacote recebido do servidor. */
-    string resultado = "";
-    int i = 0;
+    cout << "RECEIVE RSA KEY" << endl;
+    RSAKeyExchange* rsaReceived = (RSAKeyExchange*)malloc(sizeof(RSAKeyExchange));
+    recvfrom(socket, rsaReceived, sizeof(RSAKeyExchange), 0, server, &size);
 
-    while (package.at(i) != '*') {
-        resultado += package.at(i);
-        i++;
+    /*  Armazena a chave pública do servidor obtida, passando como parâmetro
+        uma chamada à função getPartnerPublicKey do StringHandler, que extrai
+        a chave pública do servidor do buffer (recebido do server).
+    */
+    keyManager.setPartnerPublicKey(rsaReceived->getPublicKey());
+
+    int answeredFdr = rsaReceived->getAnswerFDR();
+    int partnerIV   = rsaReceived->getIV();
+    FDR partnerFdr  = rsaReceived->getFDR();
+    answerFDR       = calculateFDRValue(partnerIV, &partnerFdr);
+
+    if (VERBOSE) {
+        cout << "*********RECEIVED RSA SERVER**********" << endl;
+        cout << "Received: " << rsaReceived->toString() << endl;
+        cout << "RSA Server Public Key: (" << rsaReceived->getPublicKey().d <<
+                ", " << rsaReceived->getPublicKey().n << ")" << endl;
+        cout << "Answered FDR: " << answeredFdr << endl;
+        cout << "Server IV: " << partnerIV << endl;
+        cout << "Server FDR: " << partnerFdr.getOperator() << partnerFdr.getOperand() << endl;
+        cout << "Server FDR Answer: " << answerFDR << endl;
     }
 
-    return resultado;
+    /* Verifica se a resposta do FDR é válida. */
+    if (checkAnsweredFDR(answeredFdr)) {
+        receivedRSAKey = true;
+        if (VERBOSE) {
+            cout << "Answered FDR ACCEPTED!" << endl;
+            cout << "**************************************\n" << endl;
+        }
+        *state = SDH;
+    } else {
+        if (VERBOSE) {
+            cout << "Answered FDR REJECTED!" << endl;
+            cout << "ENDING CONECTION..." << endl;
+            cout << "**************************************\n" << endl;
+        }
+        *state = DONE;
+    }
 }
 
-/* Realiza o recebimento da chave Diffie-Hellman vinda do Servidor. */
-bool Arduino::receiveDiffieHellmanKey(int* encryptedDHExchange)
+void Arduino::srsa(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
-    /* Decifra a mensagem com a chave privada do Cliente e a coloca em um array de bytes. */
-    byte *decryptedMessage = iotAuth.decryptRSA(encryptedDHExchange, keyManager.getMyPrivateKey(), sizeof(DHKeyExchange));
+    cout << "SEND RSA KEY" << endl;
+    /* Gera um par de chaves RSA e o armazena no keyManager. */
+    keyManager.setRSAKeyPair(iotAuth.generateRSAKeyPair());
 
-    cout            << "Encrypted Data" << endl;
-    for (int i = 0; i < sizeof(DHKeyExchange); i++) {
-        cout << encryptedDHExchange[i] << ":";
+    /* Gera um valor de IV e o armazena no KeyManager. */
+    keyManager.setMyIV(iotAuth.generateIV());
+
+    /* Gera uma Função Desafio-Resposta e o armazena no KeyManager. */
+    keyManager.setMyFDR(iotAuth.generateFDR());
+
+    int answerFdr = 0;
+    RSAKey publicKey = keyManager.getMyPublicKey();
+    int iv = keyManager.getMyIV();
+
+    /* Derreferenciando um ponteiro: obtém o valor armazenado na posição indicada pelo ponteiro, e não o endereço na memória. */
+    FDR fdr = *keyManager.getMyFDR();
+
+    RSAKeyExchange rsaSent;
+    rsaSent.setPublicKey(publicKey);
+    rsaSent.setAnswerFDR(answerFdr);
+    rsaSent.setIV(iv);
+    rsaSent.setFDR(fdr);
+
+    if (VERBOSE) {
+        cout << "************SEND RSA CLIENT***********" << endl;
+        cout << "Generated RSA Key: {(" << keyManager.getMyPublicKey().d
+             << ", " << keyManager.getMyPublicKey().n << "), ("
+             << keyManager.getMyPrivateKey().d << ", "
+             << keyManager.getMyPrivateKey().n << ")}" << endl;
+        cout << "My IV: " << keyManager.getMyIV() << endl;
+        cout << "My FDR: " << keyManager.getMyFDR()->toString() << endl;
+        cout << "Sent: " << rsaSent.toString() << endl;
+        cout << "**************************************\n" << endl;
     }
-    cout << encryptedDHExchange[127] << endl << endl;
 
-    /* Converte o array de bytes de volta na struct DHKeyExchange*/
-   DHKeyExchange encryptedDHReceived;
-   utils.BytesToObject(decryptedMessage, encryptedDHReceived, sizeof(DHKeyExchange));
+    int sended = sendto(socket, (RSAKeyExchange*)&rsaSent, sizeof(rsaSent), 0, server, size);
 
-   /* Extrai o HASH encriptado */
-   int *encryptedHash = encryptedDHReceived.getEncryptedHash();
+    *state = RRSA;
+}
 
-   /* Decifra o HASH com a chave pública do Servidor. */
-   byte *decryptedHash = iotAuth.decryptRSA(encryptedHash, keyManager.getPartnerPublicKey(), 128);
-   char aux;
-   string decryptedHashString = "";
-   for (int i = 0; i < 128; i++) {
-       aux = decryptedHash[i];
-       decryptedHashString += aux;
-   }
+void Arduino::hello(States *state, int socket, struct sockaddr *server, socklen_t size)
+{
+    cout << "SEND HELLO" << endl;
 
-   cout << "Decrypted Hash: " << decryptedHashString << endl;
+    string hello (HELLO_MESSAGE);
+    char *message;
+    strncpy(message, hello.c_str(), hello.length());
 
-   /* Recupera o pacote com os dados Diffie-Hellman do Servidor. */
-   byte* dhPackageBytes = encryptedDHReceived.getDiffieHellmanPackage();
-   DiffieHellmanPackage dhPackage;
-   utils.BytesToObject(dhPackageBytes, dhPackage, sizeof(DiffieHellmanPackage));
+    sendto(socket, message, strlen(message), 0, server, size);
 
-   /* Se o hash for válido, continua com o recebimento. */
-   if (iotAuth.isHashValid(dhPackage.toString(), decryptedHashString)) {
+    char received[64];
+    recvfrom(socket, received, sizeof(received), 0, server, &size);
 
-       /* Armazena os valores Diffie-Hellman no KeyManager. */
-       keyManager.setBase(dhPackage.getBase());
-       keyManager.setModulus(dhPackage.getModulus());
-       keyManager.setSessionKey(keyManager.getDiffieHellmanKey(dhPackage.getResult()));
-       int clientIV = dhPackage.getIV();
-       int answeredFdr = dhPackage.getAnswerFDR();
+    /* Verifica se a mensagem recebida é um HELLO. */
+    if (received[0] == HELLO_ACK_CHAR) {
+        *state = SRSA;
+        if (VERBOSE) {
+            printf("\n******HELLO CLIENT AND SERVER******\n");
+            printf("Hello Client and Server Successful!\n");
+            printf("***********************************\n\n");
+        }
+    } else {
+        *state = HELLO;
+    }
+}
 
-       receivedDHKey = true;
+/* Envia um pedido de fim de conexão para o Servidor. */
+char* Arduino::sendClientDone()
+{
+    string done (DONE_MESSAGE);
+    char *message = (char*)malloc(4);
+    strncpy(message, done.c_str(), 4);
+    return message;
+}
 
-       if (VERBOSE) {
-           printf("\n*******SERVER DH KEY RECEIVED******\n");
+/* Envia um ACK para o pedido de fim de conexão vindo do Servidor. */
+char* Arduino::sendClientACKDone()
+{
+    string doneACK (DONE_ACK);
+    char *message = (char*)malloc(1);
+    strncpy(message, doneACK.c_str(), 1);
 
-           cout << "Hash is valid!" << endl << endl;
+    return message;
+}
 
-           if (VERBOSE_2) {
-               cout << "Server Encrypted Data" << endl;
-               for (int i = 0; i < sizeof(DHKeyExchange)-1; i++) {
-                   cout << encryptedDHExchange[i] << ":";
-               }
-               cout << encryptedDHExchange[sizeof(DHKeyExchange)-1] << endl << endl;
+/* Seta as variáveis de controle para o estado de fim de conexão. */
+void Arduino::done()
+{
+    clientHello     = false;
+    receivedRSAKey  = false;
+    receivedDHKey   = false;
+}
 
-               cout << "Server Encrypted Hash" << endl;
-               for (int i = 0; i < 127; i++) {
-                   cout << encryptedHash[i] << ":";
-               }
-               cout << encryptedHash[127] << endl << endl;
-           }
+/* Verifica se o Servidor confirmou o pedido de fim de conexão. */
+bool Arduino::receiveServerDone(char buffer[])
+{
+    cout << "*************DONE SERVER**************" << endl;
+    if (buffer[0] == DONE_ACK_CHAR) {
+        clientDone = true;
+        cout << "Server Done: Successful" << endl;
+        cout << "**************************************\n" << endl;
+        return true;
+    }
 
-           cout << "Server Decrypted HASH: "   << decryptedHashString          << endl << endl;
-           cout << "Diffie-Hellman Key: "      << dhPackage.getResult()        << endl;
-           cout << "Base: "                    << dhPackage.getBase()          << endl;
-           cout << "Modulus: "                 << dhPackage.getModulus()       << endl;
-           cout << "Client IV: "               << clientIV                     << endl;
-           cout << "Session Key: "             << keyManager.getSessionKey()  << endl;
-           cout << "Answered FDR: "            << answeredFdr                  << endl;
-       }
+    return false;
+}
 
-       return true;
+/* Calcula a resposta do FDR recebido por parâmetro. */
+int Arduino::calculateFDRValue(int iv, FDR* fdr)
+{
+    int result = 0;
+    if (fdr->getOperator() == '+') {
+        result = iv+fdr->getOperand();
+    }
 
-   /* Se não, retorna falso e irá ocorrer o término da conexão. */
-   } else {
-       if (VERBOSE) {
-           cout << "Hash is invalid!" << endl << endl;
-       }
-       return false;
-   }
+    return result;
+}
 
+/* Verifica se a resposta do FDR é válida. */
+bool Arduino::checkAnsweredFDR(int answeredFdr)
+{
+    int answer = calculateFDRValue(keyManager.getMyIV(), keyManager.getMyFDR());
+    return answer == answeredFdr;
 }
 
 /* Realiza o envio da mensagem encriptada. */

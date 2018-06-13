@@ -5,6 +5,10 @@
 #include "keyManager.h"
 #include "settings.h"
 #include "utils.h"
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
 #include "RSAKeyExchange.h"
 #include "DHKeyExchange.h"
 #include "DiffieHellmanPackage.h"
@@ -29,6 +33,14 @@ class Arduino
         bool clientDone     = false;
         bool receivedRSAKey = false;
         bool receivedDHKey  = false;
+
+        void stateMachine(int socket, struct sockaddr *client, socklen_t size);
+        void hello(States *state, int socket, struct sockaddr *client, socklen_t size);
+        void srsa(States *state, int socket, struct sockaddr *client, socklen_t size);
+        void rrsa(States *state, int socket, struct sockaddr *client, socklen_t size);
+        void sdh(States *state, int socket, struct sockaddr *client, socklen_t size);
+        void rdh(States *state, int socket, struct sockaddr *client, socklen_t size);
+        void dt(States *state, int socket, struct sockaddr *client, socklen_t size);
 
         /* Envia Client Hello para o Server. */
         char* sendClientHello();
