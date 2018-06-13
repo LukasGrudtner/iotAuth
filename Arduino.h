@@ -76,7 +76,9 @@ class Arduino
         */
         void dt(States *state, int socket, struct sockaddr *client, socklen_t size);
 
-        /* Realiza o envio da mensagem cifrada para o Servidor. */
+        /*  Encrypt Message
+            Encripta a mensagem utilizando a chave de sessão.
+        */
         string encryptMessage(char message[], int size);
 
     private:
@@ -86,10 +88,13 @@ class Arduino
 
         Utils utils;
 
-        /*  Verifica se a resposta do FDR fornecida pelo Servidor é válida. */
+        /*  Check Answered FDR
+            Verifica a validade da resposta da FDR gerada pelo Servidor.
+        */
         bool checkAnsweredFDR(int answeredFdr);
 
-        /* Calcula a resposta do FDR. */
+        /*  Calculate FDR Value
+            Calcula a resposta de uma dada FDR. */
         int calculateFDRValue(int iv, FDR* fdr);
 };
 

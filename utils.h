@@ -21,6 +21,9 @@ class Utils
 
     public:
 
+        /*  Object to Bytes
+            Converte um objeto qualquer para um array de bytes.
+        */
         template<typename T>
         void ObjectToBytes(T& object, byte byteArray[], int size)
         {
@@ -29,6 +32,9 @@ class Utils
             copy(array_bytes.begin(), array_bytes.end(), byteArray);
         }
 
+        /*  Bytes to Object
+            Converte um array de bytes em sua representação como objeto.
+        */
         template<typename T>
         void BytesToObject(byte byteArray[], T& object, int size)
         {
@@ -39,19 +45,50 @@ class Utils
             object = from_bytes(array_bytes, object);
         }
 
-
+        /*  Char to Uint_8t
+            Converte um array de chars para um array de uint8_t.
+        */
         void CharToUint8_t(char charArray[], uint8_t byteArray[], int size);
-        void HexStringToCharArray(string hexString, int sizeHexString, char charArray[]);
+
+        /*  Uint8_t to Hex String
+        Converte um array de uint8_t em uma string codificada em hexadecimal.
+        */
         string Uint8_tToHexString(uint8_t i[], int quant);
+
+        /*  Hex String to Char Array
+            Converte uma string codificada em hexadecimal para um array de chars.
+        */
+        void HexStringToCharArray(string hexString, int sizeHexString, char charArray[]);
+
+        /*  Byte Array to Hex String
+            Converte um array de bytes em uma string codificada em hexadecimal.
+        */
         int ByteArrayToHexString(uint8_t *byte_array, int byte_array_len, char *hexstr, int hexstr_len);
+
+        /*  Hex String to Byte Array
+            Converte uma string codificada em hexadecimal para um array de bytes.
+        */
         void HexStringToByteArray(char *hexstr, int hexstr_len, uint8_t *byte_array, int byte_array_len);
+
+        /*  Char to Byte
+            Converte um array de chars para um array de bytes.
+        */
         void CharToByte(unsigned char* chars, byte* bytes, unsigned int count);
+
+        /*  Byte to Char
+            Converte um array de bytes para um array de char.
+        */
         void ByteToChar(byte* bytes, char* chars, unsigned int count);
 
     private:
+        /*  Função auxiliar utilizada na função 'Hex String to Byte Array'.
+            Recebe uma string codificada em hexadecimal e retorna um vetor de chars.
+        */
         std::vector<unsigned char> hex_to_bytes(std::string const& hex);
 
-        /* Converte um objeto T em um array de bytes. */
+        /*  Função auxiliar utilizada pela função 'Object to Bytes'.
+            Converte um objeto T em um array de bytes.
+        */
         template<typename T>
         array< byte, sizeof(T)> to_bytes(const T& object)
         {
@@ -64,7 +101,9 @@ class Utils
             return bytes ;
         }
 
-        /* Converte um array de bytes em um objeto T. */
+        /*  Função auxiliar utilizada pela função 'Bytes to Object'.
+            Converte um array de bytes em um objeto T.
+        */
         template<typename T>
         T& from_bytes(const array<byte, sizeof(T)> &bytes, T& object)
         {

@@ -1,7 +1,17 @@
 #include "utils.h"
 
-/*  Uint8_t_to_Hex_String
-    Converte um arrau de uint8_t para string em hexadecimal.
+/*  Char to Uint_8t
+    Converte um array de chars para um array de uint8_t.
+*/
+void Utils::CharToUint8_t(char charArray[], uint8_t byteArray[], int size)
+{
+    for (int i = 0; i < size; i++) {
+        byteArray[i] = uint8_t(charArray[i]);
+    }
+}
+
+/*  Uint8_t to Hex String
+    Converte um array de uint8_t em uma string codificada em hexadecimal.
 */
 string Utils::Uint8_tToHexString(uint8_t i[], int quant){
   string saida = "";
@@ -13,8 +23,22 @@ string Utils::Uint8_tToHexString(uint8_t i[], int quant){
   return saida;
 }
 
-/*  ByteArrayToHexString()
-    Converte um array de bytes em um array de chars em hexadecimal.
+/*  Hex String to Char Array
+    Converte uma string codificada em hexadecimal para um array de chars.
+*/
+void Utils::HexStringToCharArray(string hexString, int sizeHexString, char charArray[])
+{
+    char hexStringChar[sizeHexString];
+    strncpy(hexStringChar, hexString.c_str(), sizeHexString);
+
+    uint8_t byteArray[sizeHexString/2];
+
+    HexStringToByteArray(hexStringChar, sizeHexString, byteArray, sizeHexString/2);
+    ByteToChar(byteArray, charArray, sizeHexString/2);
+}
+
+/*  Byte Array to Hex String
+    Converte um array de bytes em uma string codificada em hexadecimal.
 */
 int Utils::ByteArrayToHexString(uint8_t *byte_array, int byte_array_len, char *hexstr, int hexstr_len)
 {
@@ -31,8 +55,8 @@ int Utils::ByteArrayToHexString(uint8_t *byte_array, int byte_array_len, char *h
     return off;
 }
 
-/*  HexStringToByteArray()
-    Converte um array de chars em hexadecimal em um array de bytes.
+/*  Hex String to Byte Array
+    Converte uma string codificada em hexadecimal para um array de bytes.
 */
 void Utils::HexStringToByteArray(char *hexstr, int hexstr_len, uint8_t *byte_array, int byte_array_len)
 {
@@ -41,9 +65,26 @@ void Utils::HexStringToByteArray(char *hexstr, int hexstr_len, uint8_t *byte_arr
     std::copy(bytes_vector.begin(), bytes_vector.end(), byte_array);
 }
 
-/*  hex_to_bytes()
-    Função interna utilizada na conversão de um string de hexadecimais para
-    um array de bytes.
+/*  Char to Byte
+    Converte um array de chars para um array de bytes.
+*/
+void Utils::CharToByte(unsigned char* chars, byte* bytes, unsigned int count)
+{
+    for(unsigned int i = 0; i < count; i++)
+        bytes[i] = (byte)chars[i];
+}
+
+/*  Byte to Char
+    Converte um array de bytes para um array de char.
+*/
+void Utils::ByteToChar(byte* bytes, char* chars, unsigned int count)
+{
+    for(unsigned int i = 0; i < count; i++)
+         chars[i] = (char)bytes[i];
+}
+
+/*  Função auxiliar utilizada na função 'Hex String to Byte Array'.
+    Recebe uma string codificada em hexadecimal e retorna um vetor de chars.
 */
 std::vector<unsigned char> Utils::hex_to_bytes(std::string const& hex)
 {
@@ -57,42 +98,4 @@ std::vector<unsigned char> Utils::hex_to_bytes(std::string const& hex)
         bytes.push_back(static_cast<unsigned char>(byte));
     }
     return bytes;
-}
-
-/*  CharToByte()
-    Realiza a conversão de chars para bytes.
-*/
-void Utils::CharToByte(unsigned char* chars, byte* bytes, unsigned int count)
-{
-    for(unsigned int i = 0; i < count; i++)
-        bytes[i] = (byte)chars[i];
-}
-
-/*  ByteToChar()
-    Realiza a conversão de bytes para chars.
-*/
-void Utils::ByteToChar(byte* bytes, char* chars, unsigned int count)
-{
-    for(unsigned int i = 0; i < count; i++)
-         chars[i] = (char)bytes[i];
-}
-
-/* Converte uma string hexadecimal em um array de chars. */
-void Utils::HexStringToCharArray(string hexString, int sizeHexString, char charArray[])
-{
-    char hexStringChar[sizeHexString];
-    strncpy(hexStringChar, hexString.c_str(), sizeHexString);
-
-    uint8_t byteArray[sizeHexString/2];
-
-    HexStringToByteArray(hexStringChar, sizeHexString, byteArray, sizeHexString/2);
-    ByteToChar(byteArray, charArray, sizeHexString/2);
-}
-
-/* Converte um array de char em um array de uint8_t. */
-void Utils::CharToUint8_t(char charArray[], uint8_t byteArray[], int size)
-{
-    for (int i = 0; i < size; i++) {
-        byteArray[i] = uint8_t(charArray[i]);
-    }
 }

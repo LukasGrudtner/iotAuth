@@ -424,7 +424,8 @@ void Arduino::dt(States *state, int socket, struct sockaddr *server, socklen_t s
     }
 }
 
-/* Calcula a resposta do FDR recebido por parâmetro. */
+/*  Calculate FDR Value
+    Calcula a resposta de uma dada FDR. */
 int Arduino::calculateFDRValue(int iv, FDR* fdr)
 {
     int result = 0;
@@ -435,14 +436,18 @@ int Arduino::calculateFDRValue(int iv, FDR* fdr)
     return result;
 }
 
-/* Verifica se a resposta do FDR é válida. */
+/*  Check Answered FDR
+    Verifica a validade da resposta da FDR gerada pelo Servidor.
+*/
 bool Arduino::checkAnsweredFDR(int answeredFdr)
 {
     int answer = calculateFDRValue(keyManager.getMyIV(), keyManager.getMyFDR());
     return answer == answeredFdr;
 }
 
-/* Realiza o envio da mensagem encriptada. */
+/*  Encrypt Message
+    Encripta a mensagem utilizando a chave de sessão.
+*/
 string Arduino::encryptMessage(char message[], int size) {
 
     /* Inicialização do vetor plaintext. */
