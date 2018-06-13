@@ -35,15 +35,36 @@ class Arduino
         bool receivedDHKey  = false;
 
         void stateMachine(int socket, struct sockaddr *client, socklen_t size);
-        void hello(States *state, int socket, struct sockaddr *client, socklen_t size);
-        void srsa(States *state, int socket, struct sockaddr *client, socklen_t size);
-        void rrsa(States *state, int socket, struct sockaddr *client, socklen_t size);
-        void sdh(States *state, int socket, struct sockaddr *client, socklen_t size);
-        void rdh(States *state, int socket, struct sockaddr *client, socklen_t size);
-        void dt(States *state, int socket, struct sockaddr *client, socklen_t size);
 
-        /* Envia Client Hello para o Server. */
-        char* sendClientHello();
+        /*  Hello
+            Envia um pedido de início de conexão (HELLO) para o Servidor
+        */
+        void hello(States *state, int socket, struct sockaddr *client, socklen_t size);
+
+        /*  Send RSA
+            Realiza o envio da chave RSA para o Servidor.
+        */
+        void srsa(States *state, int socket, struct sockaddr *client, socklen_t size);
+
+        /*  Receive RSA
+            Realiza o recebimento da chave RSA vinda do Servidor.
+        */
+        void rrsa(States *state, int socket, struct sockaddr *client, socklen_t size);
+
+        /*  Send Diffie-Hellman
+            Realiza o envio da chave Diffie-Hellman para o Servidor.
+        */
+        void sdh(States *state, int socket, struct sockaddr *client, socklen_t size);
+
+        /*  Receive Diffie-Hellman
+            Realiza o recebimento da chave Diffie-Hellman vinda do Servidor.
+        */
+        void rdh(States *state, int socket, struct sockaddr *client, socklen_t size);
+
+        /*  Data Transfer
+            Realiza a transferência de dados cifrados para o Servidor.
+        */
+        void dt(States *state, int socket, struct sockaddr *client, socklen_t size);
 
         /* Envia Client Done para o Server. */
         char* sendClientDone();
@@ -51,24 +72,8 @@ class Arduino
         /* Envia a confirmação do pedido de fim de conexão do Servidor. */
         char* sendClientACKDone();
 
-        /* Recebe o Server Hello. */
-        bool receiveServerHello(char buffer[]);
-
         /* Recebe o Server Done. */
         bool receiveServerDone(char buffer[]);
-
-        /* Realiza o envio da chave RSA para o Server. */
-        // char* sendRSAKey();
-        RSAKeyExchange sendRSAKey();
-
-        /* Recebe a chave RSA do Server. */
-        bool receiveRSAKey(RSAKeyExchange *keyExchange);
-
-        /* Realiza o envio da chave Diffie-Hellman para o Server. */
-        int* sendDiffieHellmanKey();
-
-        /* Recebe a chave Diffie-Hellman do Server. */
-        bool receiveDiffieHellmanKey(int* encryptedDHExchange);
 
         /* Realiza o envio da mensagem cifrada para o Servidor. */
         string sendEncryptedMessage(char message[], int size);
@@ -85,15 +90,6 @@ class Arduino
         KeyManager keyManager;
 
         Utils utils;
-
-        /*  Retorna toda a string anterior ao símbolo "*".
-            Essa string representa o Hash encriptado. */
-        string getHashEncrypted(string package);
-
-        /*  Retorna toda a string logo após o símbolo "*".
-            Essa string representa o pacote com os dados DH recebidos
-            do Server. */
-        string getPackage(string package);
 
         /*  Verifica se a resposta do FDR fornecida pelo Servidor é válida. */
         bool checkAnsweredFDR(int answeredFdr);

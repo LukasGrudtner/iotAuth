@@ -151,7 +151,7 @@ void done(States *state, int socket, struct sockaddr *client, socklen_t size)
 }
 
 /*  Receive RSA
-    Realiza a operação de recebimento da chave RSA vinda do Cliente.
+    Realiza o recebimento da chave RSA vinda do Cliente.
 */
 void rrsa(States *state, int socket, struct sockaddr *client, socklen_t size)
 {
@@ -195,7 +195,7 @@ void rrsa(States *state, int socket, struct sockaddr *client, socklen_t size)
 }
 
 /*  Send RSA
-    Realiza a operação de envio da chave RSA para o Cliente.
+    Realiza o envio da chave RSA para o Cliente.
 */
 void srsa(States *state, int socket, struct sockaddr *client, socklen_t size)
 {
@@ -232,7 +232,7 @@ void srsa(States *state, int socket, struct sockaddr *client, socklen_t size)
 }
 
 /*  Receive Diffie-Hellman
-    Realiza a operação de recebimento da chave Diffie-Hellman vinda do Cliente.
+    Realiza o recebimento da chave Diffie-Hellman vinda do Cliente.
 */
 int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 {
@@ -401,7 +401,7 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 }
 
 /*  Data Transfer
-    Realiza o recebimento, decifragem, cifragem e envio dos dados ao Cliente.
+    Realiza a transferência de dados cifrados para o Cliente.
 */
 void dt(States *state, int socket, struct sockaddr *client, socklen_t size)
 {
