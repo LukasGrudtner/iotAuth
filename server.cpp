@@ -443,10 +443,10 @@ void dt(States *state, int socket, struct sockaddr *client, socklen_t size)
         }
 
         /* Converte a mensagem recebida (HEXA) para o array de char ciphertextChar. */
-        utils.hexStringToCharArray(encryptedMessage, encryptedMessage.length(), ciphertextChar);
+        utils.HexStringToCharArray(encryptedMessage, encryptedMessage.length(), ciphertextChar);
 
         /* Converte ciphertextChar em um array de uint8_t (ciphertext). */
-        utils.charToUint8_t(ciphertextChar, ciphertext, encryptedMessage.length());
+        utils.CharToUint8_t(ciphertextChar, ciphertext, encryptedMessage.length());
 
         /* Decifra a mensagem em um vetor de uint8_t. */
         uint8_t *decrypted = iotAuth.decryptAES(ciphertext, key, iv, encryptedMessage.length());

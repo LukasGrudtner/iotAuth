@@ -3,11 +3,10 @@
 /*  Uint8_t_to_Hex_String
     Converte um arrau de uint8_t para string em hexadecimal.
 */
-string Utils::Uint8_t_to_Hex_String(uint8_t i[], int quant){
+string Utils::Uint8_tToHexString(uint8_t i[], int quant){
   string saida = "";
   for(int j = 0; j < quant; j++){
     char buffer [3];
-    // itoa (i[j],buffer,16);
     sprintf(buffer,"%02X",i[j]);
     saida += buffer;
   }
@@ -78,57 +77,8 @@ void Utils::ByteToChar(byte* bytes, char* chars, unsigned int count)
          chars[i] = (char)bytes[i];
 }
 
-/*  O array recebido por parâmetro (encrypted) é composto por inteiros separados
-    por um ponto (.), devido à cifragem RSA. Este método pega cada inteiro
-    separado por ponto e retorna um array com estes números. */
-void Utils::RSAToIntArray(int intArray[], string encrypted, int size)
-{
-    int k = 0;
-    int i = 0;
-
-    while (encrypted.at(i) != '!') {
-
-        string numb = "";
-        while ((encrypted.at(i) != '.') && (encrypted.at(i) != '!')) {
-            numb += encrypted.at(i);
-            i++;
-        }
-
-        if (encrypted.at(i) == '.')
-            i++;
-
-        intArray[k] = stoi(numb);
-        k++;
-    }
-}
-
-/* Retorna o tamanho de um array de ints. */
-int Utils::intArraySize(int array[])
-{
-    int size = 0;
-    int i = 0;
-
-    while (array[i] != '\0') {
-        size++;
-        i++;
-    }
-
-    return size;
-}
-
-/* Conta o número de marcações (.) na string encriptada com RSA. */
-int Utils::countMarks(string encrypted) {
-    int marks = 0;
-    for (int i = 0; i < encrypted.length(); i++) {
-        if (encrypted.at(i) == '.')
-            marks++;
-    }
-
-    return marks;
-}
-
 /* Converte uma string hexadecimal em um array de chars. */
-void Utils::hexStringToCharArray(string hexString, int sizeHexString, char charArray[])
+void Utils::HexStringToCharArray(string hexString, int sizeHexString, char charArray[])
 {
     char hexStringChar[sizeHexString];
     strncpy(hexStringChar, hexString.c_str(), sizeHexString);
@@ -140,7 +90,7 @@ void Utils::hexStringToCharArray(string hexString, int sizeHexString, char charA
 }
 
 /* Converte um array de char em um array de uint8_t. */
-void Utils::charToUint8_t(char charArray[], uint8_t byteArray[], int size)
+void Utils::CharToUint8_t(char charArray[], uint8_t byteArray[], int size)
 {
     for (int i = 0; i < size; i++) {
         byteArray[i] = uint8_t(charArray[i]);

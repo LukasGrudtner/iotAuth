@@ -464,10 +464,10 @@ string Arduino::encryptMessage(char message[], int size) {
     }
 
     /* Converte o array de char (message) para uint8_t. */
-    utils.charToUint8_t(message, plaintext, size);
+    utils.CharToUint8_t(message, plaintext, size);
 
     /* Encripta a mensagem utilizando a chave e o iv declarados anteriormente. */
     uint8_t *encrypted = iotAuth.encryptAES(plaintext, key, iv, size);
 
-    return (utils.Uint8_t_to_Hex_String(encrypted, size));
+    return (utils.Uint8_tToHexString(encrypted, size));
 }
