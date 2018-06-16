@@ -74,7 +74,7 @@ int* IotAuth::encryptRSA(string plain, RSAKey rsaKey, int size)
     char plainChar[plain.length()];
     strncpy(plainChar, plain.c_str(), sizeof(plainChar));
 
-    int* mensagemC = (int*)malloc(size*sizeof(int));
+    int* mensagemC = new int[size];
     rsa.codifica(mensagemC, plainChar, rsaKey.d, rsaKey.n, sizeof(plainChar));
 
     return mensagemC;
@@ -82,7 +82,7 @@ int* IotAuth::encryptRSA(string plain, RSAKey rsaKey, int size)
 
 int* IotAuth::encryptRSA(byte plain[], RSAKey rsaKey, int size)
 {
-    int* mensagemC = (int*)malloc(size*sizeof(int));
+    int* mensagemC = new int[size];
     rsa.codifica(mensagemC, plain, rsaKey.d, rsaKey.n, size);
 
     return mensagemC;
@@ -92,7 +92,7 @@ int* IotAuth::encryptRSA(byte plain[], RSAKey rsaKey, int size)
 /* RSAKey é uma struct definida em "settings.h" */
 byte* IotAuth::decryptRSA(int cipher[], RSAKey rsaKey, int size)
 {
-    byte* plain = (byte*)malloc(size);
+    byte* plain = new byte[size];
     memset(plain, 0, sizeof(plain));
     rsa.decodifica(plain, cipher, rsaKey.d, rsaKey.n, size);
 

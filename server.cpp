@@ -92,9 +92,9 @@ void rft(States *state, int socket, struct sockaddr *client, socklen_t size)
     *state = HELLO;
 
     if (VERBOSE) {
-        printf("\n*******DONE CLIENT AND SERVER******\n");
-        printf("Done Client and Server Successful!\n");
-        printf("***********************************\n\n");
+        cout << "\n*******DONE CLIENT AND SERVER******\n"   << endl;
+        cout << "Done Client and Server Successful!\n"      << endl;
+        cout << "***********************************\n\n"   << endl;
     }
 }
 
@@ -121,9 +121,9 @@ void hello(States *state, int socket, struct sockaddr *client, socklen_t size)
                 *state = RRSA;
 
                 if (VERBOSE) {
-                    printf("\n******HELLO CLIENT AND SERVER******\n");
-                    printf("Hello Client and Server Successful!\n");
-                    printf("***********************************\n\n");
+                    cout << "\n******HELLO CLIENT AND SERVER******\n"   << endl;
+                    cout << "Hello Client and Server Successful!\n"     << endl;
+                    cout << "***********************************\n\n"   << endl;
                 }
 
             /* Senão, continua no estado HELLO. */
@@ -131,9 +131,9 @@ void hello(States *state, int socket, struct sockaddr *client, socklen_t size)
                 *state = HELLO;
 
                 if (VERBOSE) {
-                    printf("\n******HELLO CLIENT AND SERVER******\n");
-                    printf("Hello Client and Server failed!\n");
-                    printf("***********************************\n\n");
+                    cout << "\n******HELLO CLIENT AND SERVER******\n" << endl;
+                    cout << "Hello Client and Server failed!\n" << endl;
+                    cout << "***********************************\n\n" << endl;
                 }
             }
         }
@@ -176,7 +176,7 @@ void rrsa(States *state, int socket, struct sockaddr *client, socklen_t size)
     *state = SRSA;
 
     if (VERBOSE) {
-        printf("******RECEIVED CLIENT RSA KEY******\n");
+        cout << "******RECEIVED CLIENT RSA KEY******\n" << endl;
         cout << "Received: "                << rsaReceived->toString()              << endl;
         cout << "Generated RSA Key: {("     << keyManager->getMyPublicKey().d       << ", "
                                             << keyManager->getMyPublicKey().n       << "), ";
@@ -190,7 +190,7 @@ void rrsa(States *state, int socket, struct sockaddr *client, socklen_t size)
         cout << "Client IV: "               << partnerIV                            << endl;
         cout << "Client FDR: "              << partnerFDR.toString() << endl;
         cout << "Client FDR Answer: "       << calculateFDRValue(partnerIV, &partnerFDR) << endl;
-        printf("***********************************\n\n");
+        cout << "***********************************\n\n" << endl;
     }
 }
 
@@ -216,7 +216,7 @@ void srsa(States *state, int socket, struct sockaddr *client, socklen_t size)
     rsaSent.setFDR(fdr);
 
     if (VERBOSE) {
-        printf("*******SENT SERVER RSA KEY*********\n");
+        cout << "*******SENT SERVER RSA KEY*********\n" << endl;
         cout << "Server RSA Public Key: (" << keyManager->getMyPublicKey().d
                   << ", " << keyManager->getMyPublicKey().n << ")" << endl;
         cout << "Answer FDR (Client): " << answerFdr << endl;
@@ -236,7 +236,7 @@ void srsa(States *state, int socket, struct sockaddr *client, socklen_t size)
 */
 int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 {
-    int *encryptedDHExchange = (int*)malloc(sizeof(DHKeyExchange)*sizeof(int));
+    int* encryptedDHExchange = new int[sizeof(DHKeyExchange)];
     recvfrom(socket, encryptedDHExchange, sizeof(DHKeyExchange)*sizeof(int), 0, client, &size);
 
     /* Decifra a mensagem com a chave privada do Servidor.*/
@@ -276,7 +276,7 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
         int answeredFdr = dhPackage.getAnswerFDR();
 
         if (VERBOSE) {
-            printf("\n*******CLIENT DH KEY RECEIVED******\n");
+            cout << "\n*******CLIENT DH KEY RECEIVED******\n" << endl;
 
             cout << "Hash is valid!" << endl << endl;
 
@@ -347,8 +347,7 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
     diffieHellmanPackage.setAnswerFDR(calculateFDRValue(keyManager->getMyIV(), keyManager->getMyFDR()));
 
     /***************** Serialização do Pacote Diffie-Hellman ******************/
-
-    byte* dhPackageBytes = (byte*)malloc(sizeof(DiffieHellmanPackage));
+    byte* dhPackageBytes = new byte[sizeof(DiffieHellmanPackage)];
     utils.ObjectToBytes(diffieHellmanPackage, dhPackageBytes, sizeof(DiffieHellmanPackage));
 
     /***************************** Geração do HASH ****************************/
@@ -366,7 +365,7 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 
     /********************** Serialização do Pacote Final **********************/
 
-    byte* dhSentBytes = (byte*)malloc(sizeof(DHKeyExchange));
+    byte* dhSentBytes = new byte[sizeof(DHKeyExchange)];
     utils.ObjectToBytes(*dhSent, dhSentBytes, sizeof(DHKeyExchange));
 
     /******************** Cifragem e Envio do Pacote Final ********************/
@@ -378,25 +377,25 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
     /******************************** VERBOSE *********************************/
 
     if (VERBOSE) {
-        printf("*********SEND SERVER DH KEY********\n\n");
+        cout << "*********SEND SERVER DH KEY********\n\n" << endl;
 
         cout << "Server Hash: "     << hash                                     << endl << endl;
         cout << "Server Package: "  << diffieHellmanPackage.toString()          << endl;
 
         if (VERBOSE_2) {
-            cout << endl    << "Encrypted HASH" << endl;
+            cout << endl << "Encrypted HASH" << endl;
             for (int i = 0; i < 128; i++) {
                 cout << encryptedHash[i] << ":";
             }
             cout << encryptedHash[127]  << endl << endl;
 
-            cout            << "Encrypted Data" << endl;
+            cout << "Encrypted Data" << endl;
             for (int i = 0; i < sizeof(DHKeyExchange); i++) {
                 cout << encryptedMessage[i] << ":";
             }
             cout << encryptedMessage[127] << endl << endl;
         }
-        printf("***********************************\n\n");
+        cout << "***********************************\n\n" << endl;
     }
 }
 

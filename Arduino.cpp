@@ -109,9 +109,9 @@ void Arduino::rft(States *state, int socket, struct sockaddr *server, socklen_t 
     *state = HELLO;
 
     if (VERBOSE) {
-        printf("\n*******DONE CLIENT AND SERVER******\n");
-        printf("Done Client and Server Successful!\n");
-        printf("***********************************\n\n");
+        cout << "\n*******DONE CLIENT AND SERVER******\n"   << endl;
+        cout << "Done Client and Server Successful!\n"      << endl;
+        cout << "***********************************\n\n"   << endl;
     }
 }
 
@@ -135,9 +135,9 @@ void Arduino::hello(States *state, int socket, struct sockaddr *server, socklen_
     if (received[0] == HELLO_ACK_CHAR) {
         *state = SRSA;
         if (VERBOSE) {
-            printf("******HELLO CLIENT AND SERVER******\n");
-            printf("Hello Client and Server Successful!\n");
-            printf("***********************************\n\n");
+            cout << "******HELLO CLIENT AND SERVER******\n"     << endl;
+            cout << "Hello Client and Server Successful!\n"     << endl;
+            cout << "***********************************\n\n"   << endl;
         }
     } else {
         *state = HELLO;
@@ -291,7 +291,7 @@ void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t 
     dhSent->setDiffieHellmanPackage(dhPackageBytes);
 
     /* Converte o objeto dhSent em um array de bytes. */
-    byte* dhSentBytes = (byte*)malloc(sizeof(DHKeyExchange));
+    byte* dhSentBytes = new byte[sizeof(DHKeyExchange)];
     utils.ObjectToBytes(*dhSent, dhSentBytes, sizeof(DHKeyExchange));
 
     int* encryptedMessage = iotAuth.encryptRSA(dhSentBytes, keyManager.getPartnerPublicKey(), sizeof(DHKeyExchange));
@@ -313,7 +313,7 @@ void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t 
 */
 void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
-    int *encryptedDHExchange = (int*)malloc(sizeof(DHKeyExchange)*sizeof(int));
+    int* encryptedDHExchange = new int[sizeof(DHKeyExchange)];
     recvfrom(socket, encryptedDHExchange, sizeof(DHKeyExchange)*sizeof(int), 0, server, &size);
 
     /* Decifra a mensagem com a chave privada do Cliente e a coloca em um array de bytes. */
@@ -355,7 +355,7 @@ void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t 
        *state = DT;
 
        if (VERBOSE) {
-           printf("\n*******SERVER DH KEY RECEIVED******\n");
+           cout << "\n*******SERVER DH KEY RECEIVED******\n" << endl;
 
            cout << "Hash is valid!" << endl << endl;
 
@@ -378,9 +378,9 @@ void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t 
            cout << "Base: "                    << dhPackage.getBase()          << endl;
            cout << "Modulus: "                 << dhPackage.getModulus()       << endl;
            cout << "Client IV: "               << clientIV                     << endl;
-           cout << "Session Key: "             << keyManager.getSessionKey()  << endl;
+           cout << "Session Key: "             << keyManager.getSessionKey()   << endl;
            cout << "Answered FDR: "            << answeredFdr                  << endl;
-           printf("***********************************\n");
+           cout << "***********************************\n"                     << endl;
        }
 
    /* Se não, altera o estado para DONE e realiza o término da conexão. */
