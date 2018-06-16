@@ -14,9 +14,9 @@ class KeyManager
         int getDiffieHellmanKey();
         int getDiffieHellmanKey(int base);
 
-        RSAKey getMyPublicKey();
-        RSAKey getMyPrivateKey();
-        RSAKey getPartnerPublicKey();
+        RSAKey* getMyPublicKey();
+        RSAKey* getMyPrivateKey();
+        RSAKey* getPartnerPublicKey();
 
         int getSessionKey();
         int getBase();

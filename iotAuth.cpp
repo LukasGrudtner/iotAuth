@@ -5,7 +5,7 @@
     é retornado.
 */
 
-uint8_t* IotAuth::encryptAES(uint8_t plaintext[], uint8_t key[], uint8_t iv[], int size)
+uint8_t* IotAuth::encryptAES(uint8_t* plaintext, uint8_t* key, uint8_t* iv, int size)
 {
     uint8_t *ciphertext = plaintext;
 
@@ -69,32 +69,32 @@ string IotAuth::hash(string message)
 }
 
 /* Realiza a cifragem RSA utilizando uma chave RSA fornecida por parâmetro. */
-int* IotAuth::encryptRSA(string plain, RSAKey rsaKey, int size)
+int* IotAuth::encryptRSA(string* plain, RSAKey* rsaKey, int size)
 {
-    char plainChar[plain.length()];
-    strncpy(plainChar, plain.c_str(), sizeof(plainChar));
+    char plainChar[plain->length()];
+    strncpy(plainChar, plain->c_str(), sizeof(plainChar));
 
     int* mensagemC = new int[size];
-    rsa.codifica(mensagemC, plainChar, rsaKey.d, rsaKey.n, sizeof(plainChar));
+    rsa.codifica(mensagemC, plainChar, rsaKey->d, rsaKey->n, sizeof(plainChar));
 
     return mensagemC;
 }
 
-int* IotAuth::encryptRSA(byte plain[], RSAKey rsaKey, int size)
+int* IotAuth::encryptRSA(byte plain[], RSAKey* rsaKey, int size)
 {
     int* mensagemC = new int[size];
-    rsa.codifica(mensagemC, plain, rsaKey.d, rsaKey.n, size);
+    rsa.codifica(mensagemC, plain, rsaKey->d, rsaKey->n, size);
 
     return mensagemC;
 }
 
 /* Realiza a decifragem RSA utilizando uma chave RSA fornecida por parâmetro */
 /* RSAKey é uma struct definida em "settings.h" */
-byte* IotAuth::decryptRSA(int cipher[], RSAKey rsaKey, int size)
+byte* IotAuth::decryptRSA(int cipher[], RSAKey* rsaKey, int size)
 {
     byte* plain = new byte[size];
     memset(plain, 0, sizeof(plain));
-    rsa.decodifica(plain, cipher, rsaKey.d, rsaKey.n, size);
+    rsa.decodifica(plain, cipher, rsaKey->d, rsaKey->n, size);
 
     return plain;
 }
@@ -127,7 +127,6 @@ FDR* IotAuth::generateFDR()
 /* Verifica se o HASH dado é idêntico ao HASH da mensagem. */
 bool IotAuth::isHashValid(string message, string hash) {
     string hash2 = this->hash(message);
-    cout << "Hash: " << hash2 << endl;
 
     return hash == hash2;
 }

@@ -20,8 +20,8 @@ class IotAuth
 
     public:
 
-        uint8_t* encryptAES(uint8_t plaintext[], uint8_t key[], uint8_t iv[], int size);
-        uint8_t* decryptAES(uint8_t ciphertext[], uint8_t key[], uint8_t iv[], int size);
+        uint8_t* encryptAES(uint8_t* plaintext, uint8_t* key, uint8_t* iv, int size);
+        uint8_t* decryptAES(uint8_t* ciphertext, uint8_t* key, uint8_t* iv, int size);
 
         RSAKeyPair generateRSAKeyPair();
         int generateIV();
@@ -33,9 +33,9 @@ class IotAuth
         bool isHashValid(string message, string hash);
 
         // string encryptRSA(string plain, RSAKey rsaKey, int size);
-        int* encryptRSA(string plain, RSAKey rsaKey, int size);
-        int* encryptRSA(byte plain[], RSAKey rsaKey, int size);
-        byte* decryptRSA(int cipher[], RSAKey rsaKey, int size);
+        int* encryptRSA(string* plain, RSAKey* rsaKey, int size);
+        int* encryptRSA(byte plain[], RSAKey* rsaKey, int size);
+        byte* decryptRSA(int cipher[], RSAKey* rsaKey, int size);
 
     private:
 

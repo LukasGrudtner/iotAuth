@@ -3,7 +3,7 @@
 /*  Char to Uint_8t
     Converte um array de chars para um array de uint8_t.
 */
-void Utils::CharToUint8_t(char charArray[], uint8_t byteArray[], int size)
+void Utils::CharToUint8_t(char* charArray, uint8_t* byteArray, int size)
 {
     for (int i = 0; i < size; i++) {
         byteArray[i] = uint8_t(charArray[i]);
@@ -26,10 +26,10 @@ string Utils::Uint8_tToHexString(uint8_t i[], int quant){
 /*  Hex String to Char Array
     Converte uma string codificada em hexadecimal para um array de chars.
 */
-void Utils::HexStringToCharArray(string hexString, int sizeHexString, char charArray[])
+void Utils::HexStringToCharArray(string* hexString, int sizeHexString, char* charArray)
 {
     char hexStringChar[sizeHexString];
-    strncpy(hexStringChar, hexString.c_str(), sizeHexString);
+    strncpy(hexStringChar, hexString->c_str(), sizeHexString);
 
     uint8_t byteArray[sizeHexString/2];
 

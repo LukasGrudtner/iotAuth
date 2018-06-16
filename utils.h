@@ -48,7 +48,7 @@ class Utils
         /*  Char to Uint_8t
             Converte um array de chars para um array de uint8_t.
         */
-        void CharToUint8_t(char charArray[], uint8_t byteArray[], int size);
+        void CharToUint8_t(char* charArray, uint8_t* byteArray, int size);
 
         /*  Uint8_t to Hex String
         Converte um array de uint8_t em uma string codificada em hexadecimal.
@@ -58,7 +58,7 @@ class Utils
         /*  Hex String to Char Array
             Converte uma string codificada em hexadecimal para um array de chars.
         */
-        void HexStringToCharArray(string hexString, int sizeHexString, char charArray[]);
+        void HexStringToCharArray(string* hexString, int sizeHexString, char* charArray);
 
         /*  Byte Array to Hex String
             Converte um array de bytes em uma string codificada em hexadecimal.

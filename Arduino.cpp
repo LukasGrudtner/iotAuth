@@ -109,9 +109,9 @@ void Arduino::rft(States *state, int socket, struct sockaddr *server, socklen_t 
     *state = HELLO;
 
     if (VERBOSE) {
-        cout << "\n*******DONE CLIENT AND SERVER******\n"   << endl;
-        cout << "Done Client and Server Successful!\n"      << endl;
-        cout << "***********************************\n\n"   << endl;
+        cout << "\n*******DONE CLIENT AND SERVER******"   << endl;
+        cout << "Done Client and Server Successful!"      << endl;
+        cout << "***********************************\n"   << endl;
     }
 }
 
@@ -135,9 +135,9 @@ void Arduino::hello(States *state, int socket, struct sockaddr *server, socklen_
     if (received[0] == HELLO_ACK_CHAR) {
         *state = SRSA;
         if (VERBOSE) {
-            cout << "******HELLO CLIENT AND SERVER******\n"     << endl;
-            cout << "Hello Client and Server Successful!\n"     << endl;
-            cout << "***********************************\n\n"   << endl;
+            cout << "******HELLO CLIENT AND SERVER******"     << endl;
+            cout << "Hello Client and Server Successful!"     << endl;
+            cout << "***********************************\n"   << endl;
         }
     } else {
         *state = HELLO;
@@ -355,7 +355,7 @@ void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t 
        *state = DT;
 
        if (VERBOSE) {
-           cout << "\n*******SERVER DH KEY RECEIVED******\n" << endl;
+           cout << "\n*******SERVER DH KEY RECEIVED******" << endl;
 
            cout << "Hash is valid!" << endl << endl;
 

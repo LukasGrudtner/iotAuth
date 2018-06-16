@@ -19,7 +19,7 @@
 
 using namespace std;
 
-KeyManager* keyManager;
+KeyManager keyManager;
 FDR partnerFDR;
 IotAuth iotAuth;
 Utils utils;
@@ -41,7 +41,7 @@ int calculateFDRValue(int iv, FDR* fdr)
 */
 bool checkAnsweredFDR(int answeredFdr)
 {
-    int answer = calculateFDRValue(keyManager->getMyIV(), keyManager->getMyFDR());
+    int answer = calculateFDRValue(keyManager.getMyIV(), keyManager.getMyFDR());
     return answer == answeredFdr;
 }
 
@@ -49,10 +49,11 @@ bool checkAnsweredFDR(int answeredFdr)
     Verifica se a mensagem recebida é um pedido de término de conexão vinda
     do Cliente (DONE).
 */
-bool checkRequestForTermination(char message[])
+bool checkRequestForTermination(char* message)
 {
     char aux[strlen(DONE_MESSAGE)+1];
     aux[strlen(DONE_MESSAGE)] = '\0';
+
     for (int i = 0; i < strlen(DONE_MESSAGE); i++) {
         aux[i] = message[i];
     }
@@ -92,9 +93,9 @@ void rft(States *state, int socket, struct sockaddr *client, socklen_t size)
     *state = HELLO;
 
     if (VERBOSE) {
-        cout << "\n*******DONE CLIENT AND SERVER******\n"   << endl;
-        cout << "Done Client and Server Successful!\n"      << endl;
-        cout << "***********************************\n\n"   << endl;
+        cout << "\n*******DONE CLIENT AND SERVER******"   << endl;
+        cout << "Done Client and Server Successful!"      << endl;
+        cout << "***********************************\n"   << endl;
     }
 }
 
@@ -121,9 +122,9 @@ void hello(States *state, int socket, struct sockaddr *client, socklen_t size)
                 *state = RRSA;
 
                 if (VERBOSE) {
-                    cout << "\n******HELLO CLIENT AND SERVER******\n"   << endl;
-                    cout << "Hello Client and Server Successful!\n"     << endl;
-                    cout << "***********************************\n\n"   << endl;
+                    cout << "******HELLO CLIENT AND SERVER******"     << endl;
+                    cout << "Hello Client and Server Successful!"     << endl;
+                    cout << "***********************************\n"   << endl;
                 }
 
             /* Senão, continua no estado HELLO. */
@@ -131,9 +132,9 @@ void hello(States *state, int socket, struct sockaddr *client, socklen_t size)
                 *state = HELLO;
 
                 if (VERBOSE) {
-                    cout << "\n******HELLO CLIENT AND SERVER******\n" << endl;
-                    cout << "Hello Client and Server failed!\n" << endl;
-                    cout << "***********************************\n\n" << endl;
+                    cout << "\n******HELLO CLIENT AND SERVER******"   << endl;
+                    cout << "Hello Client and Server failed!"         << endl;
+                    cout << "***********************************\n"   << endl;
                 }
             }
         }
@@ -155,20 +156,20 @@ void done(States *state, int socket, struct sockaddr *client, socklen_t size)
 */
 void rrsa(States *state, int socket, struct sockaddr *client, socklen_t size)
 {
-    RSAKeyExchange* rsaReceived = (RSAKeyExchange*)malloc(sizeof(RSAKeyExchange));
+    RSAKeyExchange* rsaReceived = new RSAKeyExchange();
     recvfrom(socket, rsaReceived, sizeof(RSAKeyExchange), 0, client, &size);
 
     /* Realiza a geração das chaves pública e privada (RSA). */
-    keyManager->setRSAKeyPair(iotAuth.generateRSAKeyPair());
+    keyManager.setRSAKeyPair(iotAuth.generateRSAKeyPair());
 
     /* Gera um IV para o servidor e o armazena no KeyManager. */
-    keyManager->setMyIV(iotAuth.generateIV());
+    keyManager.setMyIV(iotAuth.generateIV());
 
     /* Gera uma Função Desafio-Resposta para o servidor e o armazena no KeyManager. */
-    keyManager->setMyFDR(iotAuth.generateFDR());
+    keyManager.setMyFDR(iotAuth.generateFDR());
 
     /* Recebe chave pública do cliente e o IV */
-    keyManager->setPartnerPublicKey(rsaReceived->getPublicKey());
+    keyManager.setPartnerPublicKey(rsaReceived->getPublicKey());
 
     partnerFDR = rsaReceived->getFDR();
     partnerIV = rsaReceived->getIV();
@@ -176,22 +177,24 @@ void rrsa(States *state, int socket, struct sockaddr *client, socklen_t size)
     *state = SRSA;
 
     if (VERBOSE) {
-        cout << "******RECEIVED CLIENT RSA KEY******\n" << endl;
+        cout << "******RECEIVED CLIENT RSA KEY******" << endl;
         cout << "Received: "                << rsaReceived->toString()              << endl;
-        cout << "Generated RSA Key: {("     << keyManager->getMyPublicKey().d       << ", "
-                                            << keyManager->getMyPublicKey().n       << "), ";
-        cout << "("                         << keyManager->getMyPrivateKey().d      << ", "
-                                            << keyManager->getMyPrivateKey().n      << ")}" << endl;
-        cout << "My IV: "                   << keyManager->getMyIV()                << endl;
-        cout << "My FDR: "                  << keyManager->getMyFDR()->toString()
+        cout << "Generated RSA Key: {("     << keyManager.getMyPublicKey()->d       << ", "
+                                            << keyManager.getMyPublicKey()->n       << "), ";
+        cout << "("                         << keyManager.getMyPrivateKey()->d      << ", "
+                                            << keyManager.getMyPrivateKey()->n      << ")}" << endl;
+        cout << "My IV: "                   << keyManager.getMyIV()                << endl;
+        cout << "My FDR: "                  << keyManager.getMyFDR()->toString()
                                             << endl                                 << endl;
-        cout << "Client RSA Public Key: ("  << keyManager->getPartnerPublicKey().d  << ", "
-                                            << keyManager->getPartnerPublicKey().n  << ")" << endl;
+        cout << "Client RSA Public Key: ("  << keyManager.getPartnerPublicKey()->d  << ", "
+                                            << keyManager.getPartnerPublicKey()->n  << ")" << endl;
         cout << "Client IV: "               << partnerIV                            << endl;
         cout << "Client FDR: "              << partnerFDR.toString() << endl;
         cout << "Client FDR Answer: "       << calculateFDRValue(partnerIV, &partnerFDR) << endl;
-        cout << "***********************************\n\n" << endl;
+        cout << "***********************************\n" << endl;
     }
+
+    delete rsaReceived;
 }
 
 /*  Send RSA
@@ -203,25 +206,25 @@ void srsa(States *state, int socket, struct sockaddr *client, socklen_t size)
     int answerFdr = calculateFDRValue(partnerIV, &partnerFDR);
 
     /* Obtém a chave púbica do Servidor. */
-    RSAKey publicKey = keyManager->getMyPublicKey();
+    RSAKey* publicKey = keyManager.getMyPublicKey();
 
-    int iv = keyManager->getMyIV();
-    FDR fdr = *keyManager->getMyFDR();
+    int iv = keyManager.getMyIV();
+    FDR fdr = *keyManager.getMyFDR();
 
     /* Armazena todos os dados do pacote em um objeto RSAKeyExchange. */
     RSAKeyExchange rsaSent;
-    rsaSent.setPublicKey(publicKey);
+    rsaSent.setPublicKey(*publicKey);
     rsaSent.setAnswerFDR(answerFdr);
     rsaSent.setIV(iv);
     rsaSent.setFDR(fdr);
 
     if (VERBOSE) {
-        cout << "*******SENT SERVER RSA KEY*********\n" << endl;
-        cout << "Server RSA Public Key: (" << keyManager->getMyPublicKey().d
-                  << ", " << keyManager->getMyPublicKey().n << ")" << endl;
+        cout << "*******SENT SERVER RSA KEY*********" << endl;
+        cout << "Server RSA Public Key: (" << keyManager.getMyPublicKey()->d
+                  << ", " << keyManager.getMyPublicKey()->n << ")" << endl;
         cout << "Answer FDR (Client): " << answerFdr << endl;
-        cout << "My IV: " << keyManager->getMyIV() << endl;
-        cout << "My FDR: " << keyManager->getMyFDR()->toString() << endl;
+        cout << "My IV: " << keyManager.getMyIV() << endl;
+        cout << "My FDR: " << keyManager.getMyFDR()->toString() << endl;
         cout << "Sent: " << rsaSent.toString() << endl;
         cout << "***********************************\n" << endl;
     }
@@ -240,7 +243,7 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
     recvfrom(socket, encryptedDHExchange, sizeof(DHKeyExchange)*sizeof(int), 0, client, &size);
 
     /* Decifra a mensagem com a chave privada do Servidor.*/
-    byte *decryptedMessage = iotAuth.decryptRSA(encryptedDHExchange, keyManager->getMyPrivateKey(), sizeof(DHKeyExchange));
+    byte* decryptedMessage = iotAuth.decryptRSA(encryptedDHExchange, keyManager.getMyPrivateKey(), sizeof(DHKeyExchange));
 
     /* Converte o array de bytes decifrado em uma classe DHKeyExchange. */
     DHKeyExchange encryptedDHReceived;
@@ -250,7 +253,7 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
     int *encryptedHash = encryptedDHReceived.getEncryptedHash();
 
     /* Decifra o HASH com a chave pública do Cliente. */
-    byte *decryptedHash = iotAuth.decryptRSA(encryptedHash, keyManager->getPartnerPublicKey(), 128);
+    byte* decryptedHash = iotAuth.decryptRSA(encryptedHash, keyManager.getPartnerPublicKey(), 128);
     char aux;
     string decryptedHashString = "";
     for (int i = 0; i < 128; i++) {
@@ -268,15 +271,15 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 
         /* Armazena os valores Diffie-Hellman no KeyManager. */
         sleep(1);
-        keyManager->setExponent(iotAuth.randomNumber(3)+2);
-        keyManager->setBase(dhPackage.getBase());
-        keyManager->setModulus(dhPackage.getModulus());
-        keyManager->setSessionKey(keyManager->getDiffieHellmanKey(dhPackage.getResult()));
+        keyManager.setExponent(iotAuth.randomNumber(3)+2);
+        keyManager.setBase(dhPackage.getBase());
+        keyManager.setModulus(dhPackage.getModulus());
+        keyManager.setSessionKey(keyManager.getDiffieHellmanKey(dhPackage.getResult()));
         int clientIV = dhPackage.getIV();
         int answeredFdr = dhPackage.getAnswerFDR();
 
         if (VERBOSE) {
-            cout << "\n*******CLIENT DH KEY RECEIVED******\n" << endl;
+            cout << "\n*******CLIENT DH KEY RECEIVED******" << endl;
 
             cout << "Hash is valid!" << endl << endl;
 
@@ -296,11 +299,11 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 
             cout << "Client Decrypted HASH: "   << decryptedHashString          << endl << endl;
             cout << "Diffie-Hellman Key: "      << dhPackage.getResult()        << endl;
-            cout << "Exponent: "                << keyManager->getExponent()    << endl;
+            cout << "Exponent: "                << keyManager.getExponent()     << endl;
             cout << "Base: "                    << dhPackage.getBase()          << endl;
             cout << "Modulus: "                 << dhPackage.getModulus()       << endl;
             cout << "Client IV: "               << clientIV                     << endl;
-            cout << "Session Key: "             << keyManager->getSessionKey()  << endl;
+            cout << "Session Key: "             << keyManager.getSessionKey()   << endl;
             cout << "Answered FDR: "            << answeredFdr                  << endl;
         }
 
@@ -330,6 +333,10 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
         }
         *state = DONE;
     }
+
+    delete[] encryptedDHExchange;
+    delete[] decryptedMessage;
+    delete[] decryptedHash;
 }
 
 /*  Send Diffie-Hellman
@@ -339,12 +346,12 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 {
     /******************** Criação do Pacote Diffie-Hellman ********************/
     DiffieHellmanPackage diffieHellmanPackage;
-    diffieHellmanPackage.setResult(keyManager->getDiffieHellmanKey());
-    diffieHellmanPackage.setBase(keyManager->getBase());
-    diffieHellmanPackage.setModulus(keyManager->getModulus());
+    diffieHellmanPackage.setResult(keyManager.getDiffieHellmanKey());
+    diffieHellmanPackage.setBase(keyManager.getBase());
+    diffieHellmanPackage.setModulus(keyManager.getModulus());
 
-    diffieHellmanPackage.setIV(keyManager->getMyIV());
-    diffieHellmanPackage.setAnswerFDR(calculateFDRValue(keyManager->getMyIV(), keyManager->getMyFDR()));
+    diffieHellmanPackage.setIV(keyManager.getMyIV());
+    diffieHellmanPackage.setAnswerFDR(calculateFDRValue(keyManager.getMyIV(), keyManager.getMyFDR()));
 
     /***************** Serialização do Pacote Diffie-Hellman ******************/
     byte* dhPackageBytes = new byte[sizeof(DiffieHellmanPackage)];
@@ -355,7 +362,7 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
     string hash = iotAuth.hash(diffieHellmanPackage.toString());
 
     /* Encripta o hash utilizando a chave privada do Servidor. */
-    int* encryptedHash = iotAuth.encryptRSA(hash, keyManager->getMyPrivateKey(), hash.length());
+    int* encryptedHash = iotAuth.encryptRSA(&hash, keyManager.getMyPrivateKey(), hash.length());
 
     /********************** Preparação do Pacote Final ************************/
 
@@ -370,14 +377,14 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 
     /******************** Cifragem e Envio do Pacote Final ********************/
 
-    int* encryptedMessage = iotAuth.encryptRSA(dhSentBytes, keyManager->getPartnerPublicKey(), sizeof(DHKeyExchange));
+    int* encryptedMessage = iotAuth.encryptRSA(dhSentBytes, keyManager.getPartnerPublicKey(), sizeof(DHKeyExchange));
     sendto(socket, (int*)encryptedMessage, sizeof(DHKeyExchange)*sizeof(int), 0, client, size);
     *state = DT;
 
     /******************************** VERBOSE *********************************/
 
     if (VERBOSE) {
-        cout << "*********SEND SERVER DH KEY********\n\n" << endl;
+        cout << "*********SEND SERVER DH KEY********" << endl;
 
         cout << "Server Hash: "     << hash                                     << endl << endl;
         cout << "Server Package: "  << diffieHellmanPackage.toString()          << endl;
@@ -395,8 +402,14 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
             }
             cout << encryptedMessage[127] << endl << endl;
         }
-        cout << "***********************************\n\n" << endl;
+        cout << "***********************************\n" << endl;
     }
+
+    delete[] dhPackageBytes;
+    delete[] encryptedHash;
+    delete[] dhSent;
+    delete[] dhSentBytes;
+    delete[] encryptedMessage;
 }
 
 /*  Data Transfer
@@ -432,17 +445,17 @@ void dt(States *state, int socket, struct sockaddr *client, socklen_t size)
         //                   0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7, 0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4 };
         uint8_t key[32];
         for (int i = 0; i < 32; i++) {
-            key[i] = keyManager->getSessionKey();
+            key[i] = keyManager.getSessionKey();
         }
 
         // uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
         uint8_t iv[16];
         for (int i = 0; i < 16; i++) {
-            iv[i] = keyManager->getSessionKey();
+            iv[i] = keyManager.getSessionKey();
         }
 
         /* Converte a mensagem recebida (HEXA) para o array de char ciphertextChar. */
-        utils.HexStringToCharArray(encryptedMessage, encryptedMessage.length(), ciphertextChar);
+        utils.HexStringToCharArray(&encryptedMessage, encryptedMessage.length(), ciphertextChar);
 
         /* Converte ciphertextChar em um array de uint8_t (ciphertext). */
         utils.CharToUint8_t(ciphertextChar, ciphertext, encryptedMessage.length());
@@ -452,6 +465,7 @@ void dt(States *state, int socket, struct sockaddr *client, socklen_t size)
         cout << "Decrypted: " << decrypted << endl;
 
         *state = DT;
+        // delete[] decrypted;
     }
 }
 
@@ -539,7 +553,7 @@ void stateMachine(int socket, struct sockaddr *client, socklen_t size)
 }
 
 int main(int argc, char *argv[]){
-    keyManager = new KeyManager();
+    // keyManager = new KeyManager();
 
     struct sockaddr_in cliente, servidor;
     int meuSocket,enviei=0;
