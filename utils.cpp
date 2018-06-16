@@ -13,13 +13,15 @@ void Utils::CharToUint8_t(char* charArray, uint8_t* byteArray, int size)
 /*  Uint8_t to Hex String
     Converte um array de uint8_t em uma string codificada em hexadecimal.
 */
-string Utils::Uint8_tToHexString(uint8_t i[], int quant){
+string Utils::Uint8_tToHexString(uint8_t* i, int quant){
   string saida = "";
+
   for(int j = 0; j < quant; j++){
     char buffer [3];
     sprintf(buffer,"%02X",i[j]);
     saida += buffer;
   }
+
   return saida;
 }
 

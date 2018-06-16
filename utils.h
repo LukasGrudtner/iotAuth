@@ -53,7 +53,7 @@ class Utils
         /*  Uint8_t to Hex String
         Converte um array de uint8_t em uma string codificada em hexadecimal.
         */
-        string Uint8_tToHexString(uint8_t i[], int quant);
+        string Uint8_tToHexString(uint8_t* i, int quant);
 
         /*  Hex String to Char Array
             Converte uma string codificada em hexadecimal para um array de chars.

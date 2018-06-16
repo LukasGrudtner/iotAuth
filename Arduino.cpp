@@ -89,7 +89,7 @@ void Arduino::stateMachine(int socket, struct sockaddr *server, socklen_t size)
 */
 void Arduino::wdc(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
-    char message[64];
+    char message[1];
     recvfrom(socket, message, sizeof(message), 0, server, &size);
 
     if (message[0] == DONE_ACK_CHAR) {
@@ -128,7 +128,7 @@ void Arduino::hello(States *state, int socket, struct sockaddr *server, socklen_
 
     sendto(socket, message, strlen(message), 0, server, size);
 
-    char received[64];
+    char received[1];
     recvfrom(socket, received, sizeof(received), 0, server, &size);
 
     /* Verifica se a mensagem recebida é um HELLO. */
@@ -169,24 +169,24 @@ void Arduino::srsa(States *state, int socket, struct sockaddr *server, socklen_t
     keyManager.setMyFDR(iotAuth.generateFDR());
 
     int answerFdr = 0;
-    RSAKey publicKey = keyManager.getMyPublicKey();
+    RSAKey* publicKey = keyManager.getMyPublicKey();
     int iv = keyManager.getMyIV();
 
     /* Derreferenciando um ponteiro: obtém o valor armazenado na posição indicada pelo ponteiro, e não o endereço na memória. */
     FDR fdr = *keyManager.getMyFDR();
 
     RSAKeyExchange rsaSent;
-    rsaSent.setPublicKey(publicKey);
+    rsaSent.setPublicKey(*publicKey);
     rsaSent.setAnswerFDR(answerFdr);
     rsaSent.setIV(iv);
     rsaSent.setFDR(fdr);
 
     if (VERBOSE) {
         cout << "************SEND RSA CLIENT***********" << endl;
-        cout << "Generated RSA Key: {(" << keyManager.getMyPublicKey().d
-             << ", " << keyManager.getMyPublicKey().n << "), ("
-             << keyManager.getMyPrivateKey().d << ", "
-             << keyManager.getMyPrivateKey().n << ")}" << endl;
+        cout << "Generated RSA Key: {(" << keyManager.getMyPublicKey()->d
+             << ", " << keyManager.getMyPublicKey()->n << "), ("
+             << keyManager.getMyPrivateKey()->d << ", "
+             << keyManager.getMyPrivateKey()->n << ")}" << endl;
         cout << "My IV: " << keyManager.getMyIV() << endl;
         cout << "My FDR: " << keyManager.getMyFDR()->toString() << endl;
         cout << "Sent: " << rsaSent.toString() << endl;
@@ -203,7 +203,7 @@ void Arduino::srsa(States *state, int socket, struct sockaddr *server, socklen_t
 */
 void Arduino::rrsa(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
-    RSAKeyExchange* rsaReceived = (RSAKeyExchange*)malloc(sizeof(RSAKeyExchange));
+    RSAKeyExchange* rsaReceived = new RSAKeyExchange();
     recvfrom(socket, rsaReceived, sizeof(RSAKeyExchange), 0, server, &size);
 
     /*  Armazena a chave pública do servidor obtida, passando como parâmetro
@@ -243,6 +243,8 @@ void Arduino::rrsa(States *state, int socket, struct sockaddr *server, socklen_t
         }
         *state = DONE;
     }
+
+    delete rsaReceived;
 }
 
 /*  Send Diffie-Hellman
@@ -277,13 +279,13 @@ void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t 
     string hash = iotAuth.hash(diffieHellmanPackage.toString());
 
     /* Encripta o hash utilizando a chave privada do cliente */
-    int* encryptedHash = iotAuth.encryptRSA(hash, keyManager.getMyPrivateKey(), hash.length());
+    int* encryptedHash = iotAuth.encryptRSA(&hash, keyManager.getMyPrivateKey(), hash.length());
 
     /**************************************************************************/
 
     /* Prepara o pacote completo que será enviado ao servidor. */
     /* Transforma a struct 'diffieHellmanPackage' em um array de bytes. */
-    byte* dhPackageBytes = (byte*)malloc(sizeof(DiffieHellmanPackage));
+    byte* dhPackageBytes = new byte[sizeof(DiffieHellmanPackage)];
     utils.ObjectToBytes(diffieHellmanPackage, dhPackageBytes, sizeof(DiffieHellmanPackage));
 
     DHKeyExchange* dhSent = new DHKeyExchange();
@@ -306,6 +308,12 @@ void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t 
 
     sendto(socket,(int*)encryptedMessage, sizeof(DHKeyExchange)*sizeof(int), 0, server, size);
     *state = RDH;
+
+    delete[] dhPackageBytes;
+    delete[] encryptedHash;
+    delete[] dhSent;
+    delete[] dhSentBytes;
+    delete[] encryptedMessage;
 }
 
 /*  Receive Diffie-Hellman
@@ -334,8 +342,6 @@ void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t 
        aux = decryptedHash[i];
        decryptedHashString += aux;
    }
-
-   cout << "Decrypted Hash: " << decryptedHashString << endl;
 
    /* Recupera o pacote com os dados Diffie-Hellman do Servidor. */
    byte* dhPackageBytes = encryptedDHReceived.getDiffieHellmanPackage();
@@ -390,6 +396,10 @@ void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t 
        }
        *state = DONE;
    }
+
+    delete[] encryptedDHExchange;
+    delete[] decryptedMessage;
+    delete[] decryptedHash;
 }
 
 /*  Data Transfer
@@ -416,6 +426,8 @@ void Arduino::dt(States *state, int socket, struct sockaddr *server, socklen_t s
         char encryptedMessageChar[encryptedMessage.length()];
         memset(encryptedMessageChar, '\0', sizeof(encryptedMessageChar));
         strncpy(encryptedMessageChar, encryptedMessage.c_str(), sizeof(encryptedMessageChar));
+
+        // delete[] encryptedMessage;
 
         /* Envia a mensagem cifrada ao Servidor. */
         sendto(socket, encryptedMessageChar, strlen(encryptedMessageChar), 0, server, size);
@@ -448,8 +460,10 @@ bool Arduino::checkAnsweredFDR(int answeredFdr)
 /*  Encrypt Message
     Encripta a mensagem utilizando a chave de sessão.
 */
-string Arduino::encryptMessage(char message[], int size) {
+string Arduino::encryptMessage(char* message, int size) 
+{
 
+    printf("1\n");
     /* Inicialização do vetor plaintext. */
     uint8_t plaintext[size];
     memset(plaintext, '\0', size);
@@ -468,11 +482,25 @@ string Arduino::encryptMessage(char message[], int size) {
         iv[i] = keyManager.getSessionKey();
     }
 
+    printf("2\n");
+
     /* Converte o array de char (message) para uint8_t. */
     utils.CharToUint8_t(message, plaintext, size);
+
+    printf("3\n");
 
     /* Encripta a mensagem utilizando a chave e o iv declarados anteriormente. */
     uint8_t *encrypted = iotAuth.encryptAES(plaintext, key, iv, size);
 
-    return (utils.Uint8_tToHexString(encrypted, size));
+    printf("3.5\n");
+
+    string result = utils.Uint8_tToHexString(encrypted, size);
+
+    printf("4\n");
+
+    // delete[] encrypted;
+
+    printf("5\n");
+
+    return result;
 }

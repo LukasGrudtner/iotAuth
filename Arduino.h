@@ -79,7 +79,7 @@ class Arduino
         /*  Encrypt Message
             Encripta a mensagem utilizando a chave de sessão.
         */
-        string encryptMessage(char message[], int size);
+        string encryptMessage(char* message, int size);
 
     private:
 
