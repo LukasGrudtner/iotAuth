@@ -234,29 +234,21 @@ void srsa(States *state, int socket, struct sockaddr *client, socklen_t size)
     *state = RDH;
 }
 
-DHKeyExchange decryptDHKeyExchange(int *encryptedMessage)
+void decryptDHKeyExchange(int *encryptedMessage, DHKeyExchange *dhKeyExchange)
 {
     byte* decryptedMessage = iotAuth.decryptRSA(encryptedMessage, keyManager.getMyPrivateKey(), sizeof(DHKeyExchange));
     
-    DHKeyExchange dhKeyExchange;
-    utils.BytesToObject(decryptedMessage, dhKeyExchange, sizeof(DHKeyExchange));
+    utils.BytesToObject(decryptedMessage, *dhKeyExchange, sizeof(DHKeyExchange));
 
     delete[] decryptedMessage;
-
-    return dhKeyExchange;
 }
 
-DiffieHellmanPackage getDiffieHellmanPackage(DHKeyExchange *dhKeyExchange)
+void getDiffieHellmanPackage(DHKeyExchange *dhKeyExchange, DiffieHellmanPackage *diffieHellmanPackage)
 {
     /******************** Recupera o pacote Diffie-Hellman ********************/
     byte *dhPackageBytes = dhKeyExchange->getDiffieHellmanPackage();
 
-    DiffieHellmanPackage dhPackage;
-    utils.BytesToObject(dhPackageBytes, dhPackage, sizeof(DiffieHellmanPackage));
-
-    // delete[] dhPackageBytes;
-
-    return dhPackage;
+    utils.BytesToObject(dhPackageBytes, *diffieHellmanPackage, sizeof(DiffieHellmanPackage));
 }
 
 string decryptHash(DHKeyExchange *dhKeyExchange)
@@ -272,7 +264,6 @@ string decryptHash(DHKeyExchange *dhKeyExchange)
     }
 
     delete[] decryptedHash;
-    cout << "DEcrypted hash: " << decryptedHashString << endl;
 
     return decryptedHashString;
 }
@@ -283,12 +274,16 @@ string decryptHash(DHKeyExchange *dhKeyExchange)
 int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 {
     /******************** Recebe os dados cifrados ********************/
-    int* encryptedMessage = new int[sizeof(DHKeyExchange)];
+    int encryptedMessage[sizeof(DHKeyExchange)];
     recvfrom(socket, encryptedMessage, sizeof(DHKeyExchange)*sizeof(int), 0, client, &size);
 
     /******************** Realiza a decifragem ********************/
-    DHKeyExchange dhKeyExchange = decryptDHKeyExchange(encryptedMessage);
-    DiffieHellmanPackage diffieHellmanPackage = getDiffieHellmanPackage(&dhKeyExchange);
+    DHKeyExchange dhKeyExchange;
+    decryptDHKeyExchange(encryptedMessage, &dhKeyExchange);
+
+    DiffieHellmanPackage diffieHellmanPackage;
+    getDiffieHellmanPackage(&dhKeyExchange, &diffieHellmanPackage);
+
     string hash = decryptHash(&dhKeyExchange);
 
     /* Se o hash for válido, continua com o recebimento. */
@@ -353,10 +348,6 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
         }
         *state = DONE;
     }
-
-    // delete dhKeyExchange;
-    // delete diffieHellmanPackage;
-    // delete[] hash;
 }
 
 /*  Send Diffie-Hellman
