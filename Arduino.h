@@ -96,6 +96,23 @@ class Arduino
         /*  Calculate FDR Value
             Calcula a resposta de uma dada FDR. */
         int calculateFDRValue(int iv, FDR* fdr);
+
+        /*  Decrypt DH Key Exchange
+            Decifra o pacote de troca Diffie-Hellman utilizando a chave privada do Cliente.
+            Recebe por parâmetro a mensagem cifrada e retorna por parâmetro o pacote decifrado.
+        */
+        void decryptDHKeyExchange(int *encryptedMessage, DHKeyExchange *dhKeyExchange);
+
+        /*  Get Diffie-Hellman Package
+            Obtém o pacote Diffie-Hellman em bytes, o transforma de volta em objeto, e retorna por parâmetro.
+        */
+        void getDiffieHellmanPackage(DHKeyExchange *dhKeyExchange, DiffieHellmanPackage *diffieHellmanPackage);
+
+        /*  Decrypt Hash
+            Decifra o hash obtido do pacote utilizando a chave pública do Servidor.
+            Retorna o hash em uma string.
+        */
+        string decryptHash(DHKeyExchange *dhKeyExchange);
 };
 
 #endif

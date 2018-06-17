@@ -234,6 +234,10 @@ void srsa(States *state, int socket, struct sockaddr *client, socklen_t size)
     *state = RDH;
 }
 
+/*  Decrypt DH Key Exchange
+    Decifra o pacote de troca Diffie-Hellman utilizando a chave privada do Servidor.
+    Recebe por parâmetro a mensagem cifrada e retorna por parâmetro o pacote decifrado.
+*/
 void decryptDHKeyExchange(int *encryptedMessage, DHKeyExchange *dhKeyExchange)
 {
     byte* decryptedMessage = iotAuth.decryptRSA(encryptedMessage, keyManager.getMyPrivateKey(), sizeof(DHKeyExchange));
@@ -243,6 +247,9 @@ void decryptDHKeyExchange(int *encryptedMessage, DHKeyExchange *dhKeyExchange)
     delete[] decryptedMessage;
 }
 
+/*  Get Diffie-Hellman Package
+    Obtém o pacote Diffie-Hellman em bytes, o transforma de volta em objeto, e retorna por parâmetro.
+*/
 void getDiffieHellmanPackage(DHKeyExchange *dhKeyExchange, DiffieHellmanPackage *diffieHellmanPackage)
 {
     /******************** Recupera o pacote Diffie-Hellman ********************/
@@ -251,6 +258,10 @@ void getDiffieHellmanPackage(DHKeyExchange *dhKeyExchange, DiffieHellmanPackage 
     utils.BytesToObject(dhPackageBytes, *diffieHellmanPackage, sizeof(DiffieHellmanPackage));
 }
 
+/*  Decrypt Hash
+    Decifra o hash obtido do pacote utilizando a chave pública do Cliente.
+    Retorna o hash em uma string.
+*/
 string decryptHash(DHKeyExchange *dhKeyExchange)
 {
     int *encryptedHash = dhKeyExchange->getEncryptedHash();
