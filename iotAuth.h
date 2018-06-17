@@ -29,13 +29,13 @@ class IotAuth
 
         int randomNumber(int upperBound);
 
-        string hash(string message);
-        bool isHashValid(string message, string hash);
+        string hash(string *message);
+        bool isHashValid(string *message, string *hash);
 
         // string encryptRSA(string plain, RSAKey rsaKey, int size);
-        int* encryptRSA(string* plain, RSAKey* rsaKey, int size);
-        int* encryptRSA(byte plain[], RSAKey* rsaKey, int size);
-        byte* decryptRSA(int cipher[], RSAKey* rsaKey, int size);
+        int* encryptRSA(string *plain, RSAKey *rsaKey, int size);
+        int* encryptRSA(byte *plain, RSAKey *rsaKey, int size);
+        byte* decryptRSA(int *cipher, RSAKey *rsaKey, int size);
 
     private:
 

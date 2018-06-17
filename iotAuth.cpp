@@ -63,9 +63,9 @@ RSAKeyPair IotAuth::generateRSAKeyPair()
 }
 
 /*  Realiza o hash do parâmetro message */
-string IotAuth::hash(string message)
+string IotAuth::hash(string *message)
 {
-    return sha512(message);
+    return sha512(*message);
 }
 
 /* Realiza a cifragem RSA utilizando uma chave RSA fornecida por parâmetro. */
@@ -90,7 +90,7 @@ int* IotAuth::encryptRSA(byte plain[], RSAKey* rsaKey, int size)
 
 /* Realiza a decifragem RSA utilizando uma chave RSA fornecida por parâmetro */
 /* RSAKey é uma struct definida em "settings.h" */
-byte* IotAuth::decryptRSA(int cipher[], RSAKey* rsaKey, int size)
+byte* IotAuth::decryptRSA(int *cipher, RSAKey *rsaKey, int size)
 {
     byte* plain = new byte[size];
     memset(plain, 0, sizeof(plain));
@@ -125,8 +125,7 @@ FDR* IotAuth::generateFDR()
 }
 
 /* Verifica se o HASH dado é idêntico ao HASH da mensagem. */
-bool IotAuth::isHashValid(string message, string hash) {
+bool IotAuth::isHashValid(string *message, string *hash) {
     string hash2 = this->hash(message);
-
-    return hash == hash2;
+    return *hash == hash2;
 }

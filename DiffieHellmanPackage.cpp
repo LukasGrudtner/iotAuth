@@ -1,4 +1,5 @@
 #include "DiffieHellmanPackage.h"
+#include <iostream>
 
 int DiffieHellmanPackage::getResult()
 {
@@ -52,10 +53,10 @@ void DiffieHellmanPackage::setAnswerFDR(int aFdr)
 
 std::string DiffieHellmanPackage::toString()
 {
-    std::string result =    std::to_string(getResult())     + " | " +
-                            std::to_string(getBase())       + " | " +
-                            std::to_string(getModulus())    + " | " +
-                            std::to_string(getIV())         + " | " +
+    std::string result =    std::to_string(getResult())     + ":" +
+                            std::to_string(getBase())       + ":" +
+                            std::to_string(getModulus())    + ":" + 
+                            std::to_string(getIV())         + ":" + 
                             std::to_string(getAnswerFDR());
 
     return result;

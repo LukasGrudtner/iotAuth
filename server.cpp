@@ -234,26 +234,36 @@ void srsa(States *state, int socket, struct sockaddr *client, socklen_t size)
     *state = RDH;
 }
 
-/*  Receive Diffie-Hellman
-    Realiza o recebimento da chave Diffie-Hellman vinda do Cliente.
-*/
-int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
+DHKeyExchange decryptDHKeyExchange(int *encryptedMessage)
 {
-    int* encryptedDHExchange = new int[sizeof(DHKeyExchange)];
-    recvfrom(socket, encryptedDHExchange, sizeof(DHKeyExchange)*sizeof(int), 0, client, &size);
+    byte* decryptedMessage = iotAuth.decryptRSA(encryptedMessage, keyManager.getMyPrivateKey(), sizeof(DHKeyExchange));
+    
+    DHKeyExchange dhKeyExchange;
+    utils.BytesToObject(decryptedMessage, dhKeyExchange, sizeof(DHKeyExchange));
 
-    /* Decifra a mensagem com a chave privada do Servidor.*/
-    byte* decryptedMessage = iotAuth.decryptRSA(encryptedDHExchange, keyManager.getMyPrivateKey(), sizeof(DHKeyExchange));
+    delete[] decryptedMessage;
 
-    /* Converte o array de bytes decifrado em uma classe DHKeyExchange. */
-    DHKeyExchange encryptedDHReceived;
-    utils.BytesToObject(decryptedMessage, encryptedDHReceived, sizeof(DHKeyExchange));
+    return dhKeyExchange;
+}
 
-    /* Extrai o HASH encriptado da mensagem. */
-    int *encryptedHash = encryptedDHReceived.getEncryptedHash();
+DiffieHellmanPackage getDiffieHellmanPackage(DHKeyExchange *dhKeyExchange)
+{
+    /******************** Recupera o pacote Diffie-Hellman ********************/
+    byte *dhPackageBytes = dhKeyExchange->getDiffieHellmanPackage();
 
-    /* Decifra o HASH com a chave pública do Cliente. */
-    byte* decryptedHash = iotAuth.decryptRSA(encryptedHash, keyManager.getPartnerPublicKey(), 128);
+    DiffieHellmanPackage dhPackage;
+    utils.BytesToObject(dhPackageBytes, dhPackage, sizeof(DiffieHellmanPackage));
+
+    // delete[] dhPackageBytes;
+
+    return dhPackage;
+}
+
+string decryptHash(DHKeyExchange *dhKeyExchange)
+{
+    int *encryptedHash = dhKeyExchange->getEncryptedHash();
+    byte *decryptedHash = iotAuth.decryptRSA(encryptedHash, keyManager.getPartnerPublicKey(), 128);
+
     char aux;
     string decryptedHashString = "";
     for (int i = 0; i < 128; i++) {
@@ -261,22 +271,38 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
         decryptedHashString += aux;
     }
 
-    /* Recupera o pacote com os dados Diffie-Hellman do Client. */
-    byte* dhPackageBytes = encryptedDHReceived.getDiffieHellmanPackage();
-    DiffieHellmanPackage dhPackage;
-    utils.BytesToObject(dhPackageBytes, dhPackage, sizeof(DiffieHellmanPackage));
+    delete[] decryptedHash;
+    cout << "DEcrypted hash: " << decryptedHashString << endl;
+
+    return decryptedHashString;
+}
+
+/*  Receive Diffie-Hellman
+    Realiza o recebimento da chave Diffie-Hellman vinda do Cliente.
+*/
+int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
+{
+    /******************** Recebe os dados cifrados ********************/
+    int* encryptedMessage = new int[sizeof(DHKeyExchange)];
+    recvfrom(socket, encryptedMessage, sizeof(DHKeyExchange)*sizeof(int), 0, client, &size);
+
+    /******************** Realiza a decifragem ********************/
+    DHKeyExchange dhKeyExchange = decryptDHKeyExchange(encryptedMessage);
+    DiffieHellmanPackage diffieHellmanPackage = getDiffieHellmanPackage(&dhKeyExchange);
+    string hash = decryptHash(&dhKeyExchange);
 
     /* Se o hash for válido, continua com o recebimento. */
-    if (iotAuth.isHashValid(dhPackage.toString(), decryptedHashString)) {
+    string dhString = diffieHellmanPackage.toString();
+    if (iotAuth.isHashValid(&dhString, &hash)) {
 
         /* Armazena os valores Diffie-Hellman no KeyManager. */
         sleep(1);
         keyManager.setExponent(iotAuth.randomNumber(3)+2);
-        keyManager.setBase(dhPackage.getBase());
-        keyManager.setModulus(dhPackage.getModulus());
-        keyManager.setSessionKey(keyManager.getDiffieHellmanKey(dhPackage.getResult()));
-        int clientIV = dhPackage.getIV();
-        int answeredFdr = dhPackage.getAnswerFDR();
+        keyManager.setBase(diffieHellmanPackage.getBase());
+        keyManager.setModulus(diffieHellmanPackage.getModulus());
+        keyManager.setSessionKey(keyManager.getDiffieHellmanKey(diffieHellmanPackage.getResult()));
+        int clientIV = diffieHellmanPackage.getIV();
+        int answeredFdr = diffieHellmanPackage.getAnswerFDR();
 
         if (VERBOSE) {
             cout << "\n*******CLIENT DH KEY RECEIVED******" << endl;
@@ -286,22 +312,16 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
             if (VERBOSE_2) {
                 cout << "Client Encrypted Data" << endl;
                 for (int i = 0; i < sizeof(DHKeyExchange)-1; i++) {
-                    cout << encryptedDHExchange[i] << ":";
+                    cout << encryptedMessage[i] << ":";
                 }
-                cout << encryptedDHExchange[sizeof(DHKeyExchange)-1] << endl << endl;
-
-                cout << "Client Encrypted Hash" << endl;
-                for (int i = 0; i < 127; i++) {
-                    cout << encryptedHash[i] << ":";
-                }
-                cout << encryptedHash[127] << endl << endl;
+                cout << encryptedMessage[sizeof(DHKeyExchange)-1] << endl << endl;
             }
 
-            cout << "Client Decrypted HASH: "   << decryptedHashString          << endl << endl;
-            cout << "Diffie-Hellman Key: "      << dhPackage.getResult()        << endl;
+            cout << "Client Decrypted HASH: "   << hash          << endl << endl;
+            cout << "Diffie-Hellman Key: "      << diffieHellmanPackage.getResult()        << endl;
             cout << "Exponent: "                << keyManager.getExponent()     << endl;
-            cout << "Base: "                    << dhPackage.getBase()          << endl;
-            cout << "Modulus: "                 << dhPackage.getModulus()       << endl;
+            cout << "Base: "                    << diffieHellmanPackage.getBase()          << endl;
+            cout << "Modulus: "                 << diffieHellmanPackage.getModulus()       << endl;
             cout << "Client IV: "               << clientIV                     << endl;
             cout << "Session Key: "             << keyManager.getSessionKey()   << endl;
             cout << "Answered FDR: "            << answeredFdr                  << endl;
@@ -334,9 +354,9 @@ int rdh(States *state, int socket, struct sockaddr *client, socklen_t size)
         *state = DONE;
     }
 
-    delete[] encryptedDHExchange;
-    delete[] decryptedMessage;
-    delete[] decryptedHash;
+    // delete dhKeyExchange;
+    // delete diffieHellmanPackage;
+    // delete[] hash;
 }
 
 /*  Send Diffie-Hellman
@@ -359,7 +379,8 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 
     /***************************** Geração do HASH ****************************/
     /* Extrai o hash. */
-    string hash = iotAuth.hash(diffieHellmanPackage.toString());
+    string dhString = diffieHellmanPackage.toString();
+    string hash = iotAuth.hash(&dhString);
 
     /* Encripta o hash utilizando a chave privada do Servidor. */
     int* encryptedHash = iotAuth.encryptRSA(&hash, keyManager.getMyPrivateKey(), hash.length());

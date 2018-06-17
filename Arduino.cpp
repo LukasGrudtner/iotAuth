@@ -276,7 +276,8 @@ void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t 
 
     /**************************************************************************/
     /* Extrai o hash */
-    string hash = iotAuth.hash(diffieHellmanPackage.toString());
+    string dhString = diffieHellmanPackage.toString();
+    string hash = iotAuth.hash(&dhString);
 
     /* Encripta o hash utilizando a chave privada do cliente */
     int* encryptedHash = iotAuth.encryptRSA(&hash, keyManager.getMyPrivateKey(), hash.length());
@@ -349,7 +350,8 @@ void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t 
    utils.BytesToObject(dhPackageBytes, dhPackage, sizeof(DiffieHellmanPackage));
 
    /* Se o hash for válido, continua com o recebimento. */
-   if (iotAuth.isHashValid(dhPackage.toString(), decryptedHashString)) {
+   string dhString = dhPackage.toString();
+   if (iotAuth.isHashValid(&dhString, &decryptedHashString)) {
 
        /* Armazena os valores Diffie-Hellman no KeyManager. */
        keyManager.setBase(dhPackage.getBase());
@@ -462,8 +464,6 @@ bool Arduino::checkAnsweredFDR(int answeredFdr)
 */
 string Arduino::encryptMessage(char* message, int size) 
 {
-
-    printf("1\n");
     /* Inicialização do vetor plaintext. */
     uint8_t plaintext[size];
     memset(plaintext, '\0', size);
@@ -482,25 +482,15 @@ string Arduino::encryptMessage(char* message, int size)
         iv[i] = keyManager.getSessionKey();
     }
 
-    printf("2\n");
-
     /* Converte o array de char (message) para uint8_t. */
     utils.CharToUint8_t(message, plaintext, size);
-
-    printf("3\n");
 
     /* Encripta a mensagem utilizando a chave e o iv declarados anteriormente. */
     uint8_t *encrypted = iotAuth.encryptAES(plaintext, key, iv, size);
 
-    printf("3.5\n");
-
     string result = utils.Uint8_tToHexString(encrypted, size);
 
-    printf("4\n");
-
     // delete[] encrypted;
-
-    printf("5\n");
 
     return result;
 }
