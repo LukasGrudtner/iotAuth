@@ -297,17 +297,20 @@ void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t 
 
        dhStorage->setSessionKey(dhStorage->calculateSessionKey(diffieHellmanPackage.getResult()));
 
+       if (VERBOSE) {rdh_verbose1(dhStorage, &diffieHellmanPackage, &hash);}
+
         if (checkAnsweredFDR(diffieHellmanPackage.getAnswerFDR())) {
             *state = DT;
+            if (VERBOSE) {rdh_verbose2();}
         } else {
             *state = DONE;
+            if (VERBOSE) {rdh_verbose3();}
         }
 
-       if (VERBOSE) {rdh_verbose1(&diffieHellmanPackage, dhStorage);}
 
    /* Se não, altera o estado para DONE e realiza o término da conexão. */
    } else {
-       if (VERBOSE) {rdh_verbose2();}
+       if (VERBOSE) {rdh_verbose4();}
        *state = DONE;
    }
 }

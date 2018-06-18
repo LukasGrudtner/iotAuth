@@ -168,7 +168,7 @@ void rrsa(States *state, int socket, struct sockaddr *client, socklen_t size)
 
     *state = SRSA;
 
-    if (VERBOSE) {rrsa_verbose(rsaStorage);}
+    if (VERBOSE) {rrsa_verbose(rsaReceived, rsaStorage);}
 
     delete rsaReceived;
 }
@@ -520,7 +520,6 @@ void stateMachine(int socket, struct sockaddr *client, socklen_t size)
 }
 
 int main(int argc, char *argv[]){
-    // keyManager = new KeyManager();
 
     struct sockaddr_in cliente, servidor;
     int meuSocket,enviei=0;
@@ -537,7 +536,6 @@ int main(int argc, char *argv[]){
 
     bind(meuSocket,(struct sockaddr*)&servidor,sizeof(struct sockaddr_in));
 
-    printf("*** Servidor de Mensagens ***\n");
     tam_cliente=sizeof(struct sockaddr_in);
 
     while(1){

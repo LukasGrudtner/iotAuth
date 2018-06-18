@@ -18,8 +18,10 @@ void rrsa_verbose1(RSAKeyExchange *rsaKeyExchange, RSAStorage *rsaStorage);
 void rrsa_verbose2();
 void rrsa_verbose3();
 void sdh_verbose(DiffieHellmanPackage *dhPackage);
-void rdh_verbose1(DiffieHellmanPackage *dhPackage, DHStorage *dhStorage);
+void rdh_verbose1(DHStorage *dhStorage, DiffieHellmanPackage *dhPackage, string *hash);
 void rdh_verbose2();
+void rdh_verbose3();
+void rdh_verbose4();
 void dt_verbose1();
 void dt_verbose2(string *sent);
 

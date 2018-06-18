@@ -21,44 +21,40 @@ void hello_failed_verbose()
         cout << "***********************************\n"   << endl;
 }
 
-void rrsa_verbose(RSAStorage *rsaStorage)
+void rrsa_verbose(RSAKeyExchange *rsaKeyExchange, RSAStorage *rsaStorage)
 {
-        cout << "******RECEIVED CLIENT RSA KEY******" << endl;
-        cout << "Generated RSA Key: {("     << rsaStorage->getMyPublicKey()->d       << ", "
-                                            << rsaStorage->getMyPublicKey()->n       << "), ";
-        cout << "("                         << rsaStorage->getMyPrivateKey()->d      << ", "
-                                            << rsaStorage->getMyPrivateKey()->n      << ")}" << endl;
-        cout << "My IV: "                   << rsaStorage->getMyIV()                << endl;
-        cout << "My FDR: "                  << rsaStorage->getMyFDR()->toString()       << endl << endl;
-        cout << "Client RSA Public Key: ("  << rsaStorage->getPartnerPublicKey()->d  << ", "
-                                            << rsaStorage->getPartnerPublicKey()->n  << ")" << endl;
+        cout << "******RSA | RECEIVE FROM CLIENT******" << endl;
+        cout << "Generated RSA Key: {(" << rsaStorage->getMyPublicKey()->d      << ", "
+                                        << rsaStorage->getMyPublicKey()->n      << "), ";
+        cout << "("                     << rsaStorage->getMyPrivateKey()->d     << ", "
+                                        << rsaStorage->getMyPrivateKey()->n     << ")}" << endl;
+        cout << "My IV: "               << rsaStorage->getMyIV()                << endl;
+        cout << "My FDR: "              << rsaStorage->getMyFDR()->toString()   << endl;
+        cout << "Received: "            << rsaKeyExchange->toString()           << endl;    
         cout << "***********************************\n" << endl;
 }
 
 void srsa_verbose(RSAKeyExchange *rsaKeyExchange)
 {
-        cout << "*******SENT SERVER RSA KEY*********" << endl;
+        cout << "*******RSA | SEND TO CLIENT*********" << endl;
         cout << "Server RSA Public Key: ("      << rsaKeyExchange->getPublicKey().d
                                         << ", " << rsaKeyExchange->getPublicKey().n << ")" << endl;
-        cout << "Answer FDR (Client): "         << rsaKeyExchange->getAnswerFDR() << endl;
-        cout << "My IV: "                       << rsaKeyExchange->getIV() << endl;
-        cout << "My FDR: "                      << rsaKeyExchange->getFDR().toString() << endl;
+        cout << "Answer Client's FDR: "         << rsaKeyExchange->getAnswerFDR() << endl;
         cout << "Sent: "                        << rsaKeyExchange->toString() << endl;
         cout << "***********************************\n" << endl;
 }
 
 void rdh_verbose1(DHStorage *dhStorage, DiffieHellmanPackage *dhPackage, string *hash)
 {
-        cout << "\n*******CLIENT DH KEY RECEIVED******" << endl;
-        cout << "Hash is valid!" << endl << endl;  
-
-        cout << "Client Decrypted HASH: "   << *hash                    << endl << endl;
-        cout << "Diffie-Hellman Key: "      << dhPackage->getResult()           << endl;
-        cout << "Base: "                    << dhPackage->getBase()             << endl;
-        cout << "Modulus: "                 << dhPackage->getModulus()          << endl;
-        cout << "Client IV: "               << dhStorage->getPartnerIV()        << endl;
-        cout << "Session Key: "             << dhStorage->getSessionKey()       << endl;
-        cout << "Answer FDR: "              << dhStorage->getAnswerFDR()        << endl;
+        cout << "\n*******DH | RECEIVE FROM CLIENT******" << endl;
+        cout << "THE HASH IS VALID!"            << endl                     << endl;
+        cout << "Client Decrypted HASH: "       << *hash                    << endl << endl;
+        cout << "Result: "                      << dhPackage->getResult()           << endl;
+        cout << "Base: "                        << dhPackage->getBase()             << endl;
+        cout << "Modulus: "                     << dhPackage->getModulus()          << endl;
+        cout << "Client IV: "                   << dhStorage->getPartnerIV()        << endl;
+        cout << "Session Key: "                 << dhStorage->getSessionKey()       << endl;
+        cout << "Received Answer: "             << dhStorage->getAnswerFDR()        << endl;
 }
 
 void rdh_verbose2()
@@ -76,12 +72,15 @@ void rdh_verbose3()
 
 void rdh_verbose4()
 {
-        cout << "Hash is invalid!" << endl << endl;
+        cout << "THE HASH IS INVALID!" << endl << endl;
 }
 
 void sdh_verbose(DiffieHellmanPackage *dhPackage)
 {
-        cout << "*********SEND SERVER DH KEY********" << endl;
-        cout << "Server Package: "  << dhPackage->toString()    << endl;
+        cout << "*********DH | SEND TO CLIENT********"                   << endl;
+        cout << "Result: "              << dhPackage->getResult()       << endl;
+        cout << "My IV: "               << dhPackage->getIV()           << endl;
+        cout << "Answer Client's FDR: " << dhPackage->getAnswerFDR()    << endl;
+        cout << "Server Package: "      << dhPackage->toString()        << endl;
         cout << "***********************************\n" << endl;
 }
