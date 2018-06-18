@@ -1,16 +1,5 @@
 #include "fdr.h"
-
-FDR::FDR(){}
-
-/*  FDR()
-    Inicializa o objeto FDR (Função Desafio-Rsposta) com os atributos
-    'operador' e 'operando'.
-*/
-FDR::FDR(char op, int operand)
-{
-    _operator = op;
-    _operand = operand;
-}
+#include <iostream>
 
 /*  getOperator()
     Retorna o atributo 'operador' do objeto.

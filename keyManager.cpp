@@ -105,13 +105,13 @@ int KeyManager::getMyIV()
 */
 FDR* KeyManager::getMyFDR()
 {
-    return myFdr;
+    return &myFdr;
 }
 
 /*  setFDR()
     Armazena o valor do atributo 'FDR' no objeto.
 */
-void KeyManager::setMyFDR(FDR* _fdr)
+void KeyManager::setMyFDR(FDR _fdr)
 {
     myFdr = _fdr;
 }

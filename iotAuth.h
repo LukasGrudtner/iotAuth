@@ -25,7 +25,7 @@ class IotAuth
 
         RSAKeyPair generateRSAKeyPair();
         int generateIV();
-        FDR* generateFDR();
+        FDR generateFDR();
 
         int randomNumber(int upperBound);
 

@@ -297,6 +297,7 @@ void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t 
     byte* dhSentBytes = new byte[sizeof(DHKeyExchange)];
     utils.ObjectToBytes(*dhSent, dhSentBytes, sizeof(DHKeyExchange));
 
+
     int* encryptedMessage = iotAuth.encryptRSA(dhSentBytes, keyManager.getPartnerPublicKey(), sizeof(DHKeyExchange));
 
     if (VERBOSE) {
@@ -334,6 +335,9 @@ void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t 
     getDiffieHellmanPackage(&dhKeyExchange, &diffieHellmanPackage);
 
     string hash = decryptHash(&dhKeyExchange);
+
+    cout << "TESTE: " << diffieHellmanPackage.toString() << endl;
+    cout << "TESTE: " << hash << endl;
 
     /******************** Validação do Hash ********************/
    /* Se o hash for válido, continua com o recebimento. */
@@ -412,6 +416,9 @@ void Arduino::getDiffieHellmanPackage(DHKeyExchange *dhKeyExchange, DiffieHellma
 string Arduino::decryptHash(DHKeyExchange *dhKeyExchange)
 {
     int *encryptedHash = dhKeyExchange->getEncryptedHash();
+    for (int i = 0; i < 128; i++) {
+        cout << i << ". " << encryptedHash[i] << endl;
+    }
     byte *decryptedHash = iotAuth.decryptRSA(encryptedHash, keyManager.getPartnerPublicKey(), 128);
 
     char aux;
@@ -432,6 +439,7 @@ string Arduino::decryptHash(DHKeyExchange *dhKeyExchange)
 void Arduino::dt(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
     char envia[666];
+    memset(envia, '\0', sizeof(envia));
     cout << "Envio de dados criptografados com AES." << endl << endl;
 
     printf("########## Escreva uma mensagem para o servidor ##########\n");
@@ -444,6 +452,7 @@ void Arduino::dt(States *state, int socket, struct sockaddr *server, socklen_t s
 
         /* Encripta a mensagem digitada pelo usuário. */
         string encryptedMessage = encryptMessage(envia, sizeof(envia));
+        cout << "SIZE ENCRYPTED MESSAGE: " << encryptedMessage.length() << endl;
         cout << "Sent" << endl << encryptedMessage << endl << endl;
 
         /* Converte a string em um array de char. */
@@ -511,6 +520,8 @@ string Arduino::encryptMessage(char* message, int size)
     uint8_t *encrypted = iotAuth.encryptAES(plaintext, key, iv, size);
 
     string result = utils.Uint8_tToHexString(encrypted, size);
+
+    cout << result << endl;
 
     // delete[] encrypted;
 

@@ -36,7 +36,7 @@ class KeyManager
         void setExponent(int exponent);
         void setMyIV(int _myIV);
 
-        void setMyFDR(FDR* _fdr);
+        void setMyFDR(FDR _fdr);
 
     private:
         int exponent = 0; // a
@@ -49,7 +49,7 @@ class KeyManager
         RSAKey partnerPublicKey;
 
         int myIV = 0;
-        FDR* myFdr;
+        FDR myFdr;
 };
 
 #endif

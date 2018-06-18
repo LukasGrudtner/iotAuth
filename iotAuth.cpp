@@ -102,6 +102,7 @@ byte* IotAuth::decryptRSA(int *cipher, RSAKey *rsaKey, int size)
 /*  Gera um número aleatório menor que um dado limite superior. */
 int IotAuth::randomNumber(int upperBound)
 {
+    sleep(1);
     srand(time(NULL));
     return rand() % upperBound;
 }
@@ -114,12 +115,11 @@ int IotAuth::generateIV()
 }
 
 /* Gera um FDR aleatório. */
-FDR* IotAuth::generateFDR()
+FDR IotAuth::generateFDR()
 {
-    sleep(1);
-    char _operator = '+';
-    int _operand = randomNumber(100);
-    FDR* fdr = new FDR(_operator, _operand);
+    FDR fdr;
+    fdr.setOperator('+');
+    fdr.setOperand(randomNumber(100));
 
     return fdr;
 }
