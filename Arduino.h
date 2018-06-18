@@ -12,6 +12,8 @@
 #include "RSAKeyExchange.h"
 #include "DHKeyExchange.h"
 #include "DiffieHellmanPackage.h"
+#include "RSAStorage.h"
+#include "DHStorage.h"
 
 using namespace std;
 
@@ -81,12 +83,19 @@ class Arduino
         */
         string encryptMessage(char* message, int size);
 
+        /*  Setup RSA
+            Inicializa os valores pertinentes a troca de chaves RSA: IV, FDR e as próprias chaves RSA.
+        */
+        void setupRSA();
+
     private:
 
         IotAuth iotAuth;
         KeyManager keyManager;
-
         Utils utils;
+        
+        RSAStorage *rsaStorage;
+        DHStorage *dhStorage;
 
         /*  Check Answered FDR
             Verifica a validade da resposta da FDR gerada pelo Servidor.

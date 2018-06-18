@@ -10,7 +10,6 @@
 #include <netinet/in.h>
 #include <sstream>
 #include <vector>
-#include "keyManager.h"
 #include "settings.h"
 #include "iotAuth.h"
 #include "RSAKeyExchange.h"
@@ -24,10 +23,8 @@ using namespace std;
 
 RSAStorage *rsaStorage;
 DHStorage *diffieHellmanStorage;
-FDR partnerFDR;
 IotAuth iotAuth;
 Utils utils;
-int partnerIV = 0;
 
 /*  Calculate FDR Value
     Calcula a resposta de uma dada FDR. */
@@ -45,7 +42,6 @@ int calculateFDRValue(int iv, FDR* fdr)
 */
 bool checkAnsweredFDR(int answeredFdr)
 {
-    cout << "IV: " << diffieHellmanStorage->getMyIV() << " | FDR: " << diffieHellmanStorage->getMyFDR()->toString() << endl;
     int answer = calculateFDRValue(diffieHellmanStorage->getMyIV(), diffieHellmanStorage->getMyFDR());
     return answer == answeredFdr;
 }
@@ -144,6 +140,9 @@ void done(States *state, int socket, struct sockaddr *client, socklen_t size)
     *state = WDC;
 }
 
+/*  Setup RSA
+    Inicializa os valores pertinentes a troca de chaves RSA: IV, FDR e as próprias chaves RSA.
+*/
 void setupRSA(RSAKeyExchange *rsaKeyExchange)
 {
     rsaStorage = new RSAStorage();
@@ -203,7 +202,6 @@ void srsa(States *state, int socket, struct sockaddr *client, socklen_t size)
 void decryptDHKeyExchange(int *encryptedMessage, DHKeyExchange *dhKeyExchange)
 {
     byte* decryptedMessage = iotAuth.decryptRSA(encryptedMessage, rsaStorage->getMyPrivateKey(), sizeof(DHKeyExchange));
-    
     utils.BytesToObject(decryptedMessage, *dhKeyExchange, sizeof(DHKeyExchange));
 
     delete[] decryptedMessage;
@@ -216,7 +214,6 @@ void getDiffieHellmanPackage(DHKeyExchange *dhKeyExchange, DiffieHellmanPackage 
 {
     /******************** Recupera o pacote Diffie-Hellman ********************/
     byte *dhPackageBytes = dhKeyExchange->getDiffieHellmanPackage();
-
     utils.BytesToObject(dhPackageBytes, *diffieHellmanPackage, sizeof(DiffieHellmanPackage));
 }
 
@@ -241,12 +238,15 @@ string decryptHash(DHKeyExchange *dhKeyExchange)
     return decryptedHashString;
 }
 
+/*  Setup Diffie-Hellman
+    Inicializa os valores pertinentes a troca de chaves Diffie-Hellman:
+    expoente, base, módulo, resultado e a chave de sessão.
+*/
 void setupDiffieHellman(DiffieHellmanPackage *diffieHellmanPackage)
 {
     diffieHellmanStorage = new DHStorage();
     diffieHellmanStorage->setMyIV(rsaStorage->getMyIV());
     diffieHellmanStorage->setMyFDR(*rsaStorage->getMyFDR());
-        cout << "IV: " << diffieHellmanStorage->getMyIV() << " | FDR: " << diffieHellmanStorage->getMyFDR()->toString() << endl;
 
     diffieHellmanStorage->setExponent(iotAuth.randomNumber(3)+2);
     diffieHellmanStorage->setBase(diffieHellmanPackage->getBase());
@@ -389,8 +389,6 @@ void dt(States *state, int socket, struct sockaddr *client, socklen_t size)
     memset(message, '\0', sizeof(message));
     recvfrom(socket, message, sizeof(message)-1, 0, client, &size);
 
-    cout << "TESTE: " << message << endl;
-
     /******************* Verifica Pedido de Fim de Conexão ********************/
 
     if (checkRequestForTermination(message)) {
@@ -399,7 +397,6 @@ void dt(States *state, int socket, struct sockaddr *client, socklen_t size)
 
         /* Converte o array de chars (buffer) em uma string. */
         string encryptedMessage (message);
-        cout << "SIZE ENCRYPTED MESSAGE: " << encryptedMessage.length() << endl;
 
         /* Inicialização dos vetores ciphertext. */
         char ciphertextChar[encryptedMessage.length()];
