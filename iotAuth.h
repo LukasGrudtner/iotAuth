@@ -39,7 +39,6 @@ class IotAuth
 
     private:
 
-        Utils utils;
         AES aes;
         RSA rsa;
 };

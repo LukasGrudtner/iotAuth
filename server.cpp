@@ -27,7 +27,6 @@ using namespace std;
 RSAStorage *rsaStorage;
 DHStorage *diffieHellmanStorage;
 IotAuth iotAuth;
-Utils utils;
 
 /*  Calculate FDR Value
     Calcula a resposta de uma dada FDR. */
@@ -203,7 +202,7 @@ void srsa(States *state, int socket, struct sockaddr *client, socklen_t size)
 void decryptDHKeyExchange(int *encryptedMessage, DHKeyExchange *dhKeyExchange)
 {
     byte* decryptedMessage = iotAuth.decryptRSA(encryptedMessage, rsaStorage->getMyPrivateKey(), sizeof(DHKeyExchange));
-    utils.BytesToObject(decryptedMessage, *dhKeyExchange, sizeof(DHKeyExchange));
+    BytesToObject(decryptedMessage, *dhKeyExchange, sizeof(DHKeyExchange));
 
     delete[] decryptedMessage;
 }
@@ -215,7 +214,7 @@ void getDiffieHellmanPackage(DHKeyExchange *dhKeyExchange, DiffieHellmanPackage 
 {
     /******************** Recupera o pacote Diffie-Hellman ********************/
     byte *dhPackageBytes = dhKeyExchange->getDiffieHellmanPackage();
-    utils.BytesToObject(dhPackageBytes, *diffieHellmanPackage, sizeof(DiffieHellmanPackage));
+    BytesToObject(dhPackageBytes, *diffieHellmanPackage, sizeof(DiffieHellmanPackage));
 }
 
 /*  Decrypt Hash
@@ -347,7 +346,7 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 
     /***************** Serialização do Pacote Diffie-Hellman ******************/
     byte *dhPackageBytes = new byte[sizeof(DiffieHellmanPackage)];
-    utils.ObjectToBytes(dhPackage, dhPackageBytes, sizeof(DiffieHellmanPackage));
+    ObjectToBytes(dhPackage, dhPackageBytes, sizeof(DiffieHellmanPackage));
 
     /***************************** Geração do HASH ****************************/
     /* Encripta o hash utilizando a chave privada do Servidor. */
@@ -360,7 +359,7 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
 
     /********************** Serialização do Pacote Final **********************/
     byte *dhSentBytes = new byte[sizeof(DHKeyExchange)];
-    utils.ObjectToBytes(dhSent, dhSentBytes, sizeof(DHKeyExchange));
+    ObjectToBytes(dhSent, dhSentBytes, sizeof(DHKeyExchange));
 
     /******************** Cifragem e Envio do Pacote Final ********************/
     int* encryptedMessage = iotAuth.encryptRSA(dhSentBytes, rsaStorage->getPartnerPublicKey(), sizeof(DHKeyExchange));
@@ -422,10 +421,10 @@ void dt(States *state, int socket, struct sockaddr *client, socklen_t size)
         }
 
         /* Converte a mensagem recebida (HEXA) para o array de char ciphertextChar. */
-        utils.HexStringToCharArray(&encryptedMessage, encryptedMessage.length(), ciphertextChar);
+        HexStringToCharArray(&encryptedMessage, encryptedMessage.length(), ciphertextChar);
 
         /* Converte ciphertextChar em um array de uint8_t (ciphertext). */
-        utils.CharToUint8_t(ciphertextChar, ciphertext, encryptedMessage.length());
+        CharToUint8_t(ciphertextChar, ciphertext, encryptedMessage.length());
 
         /* Decifra a mensagem em um vetor de uint8_t. */
         uint8_t *decrypted = iotAuth.decryptAES(ciphertext, key, iv, encryptedMessage.length());

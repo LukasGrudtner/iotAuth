@@ -3,7 +3,7 @@
 /*  Char to Uint_8t
     Converte um array de chars para um array de uint8_t.
 */
-void Utils::CharToUint8_t(char* charArray, uint8_t* byteArray, int size)
+void CharToUint8_t(char* charArray, uint8_t* byteArray, int size)
 {
     for (int i = 0; i < size; i++) {
         byteArray[i] = uint8_t(charArray[i]);
@@ -13,7 +13,7 @@ void Utils::CharToUint8_t(char* charArray, uint8_t* byteArray, int size)
 /*  Uint8_t to Hex String
     Converte um array de uint8_t em uma string codificada em hexadecimal.
 */
-string Utils::Uint8_tToHexString(uint8_t* i, int quant){
+string Uint8_tToHexString(uint8_t* i, int quant){
   string saida = "";
 
   for(int j = 0; j < quant; j++){
@@ -28,7 +28,7 @@ string Utils::Uint8_tToHexString(uint8_t* i, int quant){
 /*  Hex String to Char Array
     Converte uma string codificada em hexadecimal para um array de chars.
 */
-void Utils::HexStringToCharArray(string* hexString, int sizeHexString, char* charArray)
+void HexStringToCharArray(string* hexString, int sizeHexString, char* charArray)
 {
     char hexStringChar[sizeHexString];
     strncpy(hexStringChar, hexString->c_str(), sizeHexString);
@@ -42,7 +42,7 @@ void Utils::HexStringToCharArray(string* hexString, int sizeHexString, char* cha
 /*  Byte Array to Hex String
     Converte um array de bytes em uma string codificada em hexadecimal.
 */
-int Utils::ByteArrayToHexString(uint8_t *byte_array, int byte_array_len, char *hexstr, int hexstr_len)
+int ByteArrayToHexString(uint8_t *byte_array, int byte_array_len, char *hexstr, int hexstr_len)
 {
     int off = 0;
     int i;
@@ -60,7 +60,7 @@ int Utils::ByteArrayToHexString(uint8_t *byte_array, int byte_array_len, char *h
 /*  Hex String to Byte Array
     Converte uma string codificada em hexadecimal para um array de bytes.
 */
-void Utils::HexStringToByteArray(char *hexstr, int hexstr_len, uint8_t *byte_array, int byte_array_len)
+void HexStringToByteArray(char *hexstr, int hexstr_len, uint8_t *byte_array, int byte_array_len)
 {
     string received_hexa (hexstr);
     vector<unsigned char> bytes_vector = hex_to_bytes(received_hexa);
@@ -70,7 +70,7 @@ void Utils::HexStringToByteArray(char *hexstr, int hexstr_len, uint8_t *byte_arr
 /*  Char to Byte
     Converte um array de chars para um array de bytes.
 */
-void Utils::CharToByte(unsigned char* chars, byte* bytes, unsigned int count)
+void CharToByte(unsigned char* chars, byte* bytes, unsigned int count)
 {
     for(unsigned int i = 0; i < count; i++)
         bytes[i] = (byte)chars[i];
@@ -79,7 +79,7 @@ void Utils::CharToByte(unsigned char* chars, byte* bytes, unsigned int count)
 /*  Byte to Char
     Converte um array de bytes para um array de char.
 */
-void Utils::ByteToChar(byte* bytes, char* chars, unsigned int count)
+void ByteToChar(byte* bytes, char* chars, unsigned int count)
 {
     for(unsigned int i = 0; i < count; i++)
          chars[i] = (char)bytes[i];
@@ -88,7 +88,7 @@ void Utils::ByteToChar(byte* bytes, char* chars, unsigned int count)
 /*  Função auxiliar utilizada na função 'Hex String to Byte Array'.
     Recebe uma string codificada em hexadecimal e retorna um vetor de chars.
 */
-std::vector<unsigned char> Utils::hex_to_bytes(std::string const& hex)
+std::vector<unsigned char> hex_to_bytes(std::string const& hex)
 {
     std::vector<unsigned char> bytes;
     bytes.reserve(hex.size() / 2);

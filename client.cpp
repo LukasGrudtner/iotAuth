@@ -16,7 +16,6 @@
 
 using namespace std;
 
-Utils utils;
 Arduino arduino;
 
 int main(int argc, char *argv[]){

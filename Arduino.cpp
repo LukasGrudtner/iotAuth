@@ -243,7 +243,7 @@ void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t 
 
     /***************** Serialização do Pacote Diffie-Hellman ******************/
     byte* dhPackageBytes = new byte[sizeof(DiffieHellmanPackage)];
-    utils.ObjectToBytes(diffieHellmanPackage, dhPackageBytes, sizeof(DiffieHellmanPackage));
+    ObjectToBytes(diffieHellmanPackage, dhPackageBytes, sizeof(DiffieHellmanPackage));
 
     /***************************** Geração do HASH ****************************/
     /* Encripta o hash utilizando a chave privada do Servidor. */
@@ -256,7 +256,7 @@ void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t 
 
     /********************** Serialização do Pacote Final **********************/
     byte* dhSentBytes = new byte[sizeof(DHKeyExchange)];
-    utils.ObjectToBytes(dhSent, dhSentBytes, sizeof(DHKeyExchange));
+    ObjectToBytes(dhSent, dhSentBytes, sizeof(DHKeyExchange));
 
     /******************** Cifragem e Envio do Pacote Final ********************/
     int* encryptedMessage = iotAuth.encryptRSA(dhSentBytes, rsaStorage->getPartnerPublicKey(), sizeof(DHKeyExchange));
@@ -323,7 +323,7 @@ void Arduino::decryptDHKeyExchange(int *encryptedMessage, DHKeyExchange *dhKeyEx
 {
     byte* decryptedMessage = iotAuth.decryptRSA(encryptedMessage, rsaStorage->getMyPrivateKey(), sizeof(DHKeyExchange));
     
-    utils.BytesToObject(decryptedMessage, *dhKeyExchange, sizeof(DHKeyExchange));
+    BytesToObject(decryptedMessage, *dhKeyExchange, sizeof(DHKeyExchange));
 
     delete[] decryptedMessage;
 }
@@ -336,7 +336,7 @@ void Arduino::getDiffieHellmanPackage(DHKeyExchange *dhKeyExchange, DiffieHellma
     /******************** Recupera o pacote Diffie-Hellman ********************/
     byte *dhPackageBytes = dhKeyExchange->getDiffieHellmanPackage();
 
-    utils.BytesToObject(dhPackageBytes, *diffieHellmanPackage, sizeof(DiffieHellmanPackage));
+    BytesToObject(dhPackageBytes, *diffieHellmanPackage, sizeof(DiffieHellmanPackage));
 }
 
 /*  Decrypt Hash
@@ -442,12 +442,12 @@ string Arduino::encryptMessage(char* message, int size)
     }
 
     /* Converte o array de char (message) para uint8_t. */
-    utils.CharToUint8_t(message, plaintext, size);
+    CharToUint8_t(message, plaintext, size);
 
     /* Encripta a mensagem utilizando a chave e o iv declarados anteriormente. */
     uint8_t *encrypted = iotAuth.encryptAES(plaintext, key, iv, size);
 
-    string result = utils.Uint8_tToHexString(encrypted, size);
+    string result = Uint8_tToHexString(encrypted, size);
 
     // delete[] encrypted;
 

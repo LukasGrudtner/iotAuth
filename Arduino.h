@@ -107,7 +107,6 @@ class Arduino
     private:
 
         IotAuth iotAuth;
-        Utils utils;
         
         RSAStorage *rsaStorage;
         DHStorage *dhStorage;
