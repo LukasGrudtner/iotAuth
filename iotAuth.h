@@ -3,13 +3,13 @@
 
 #include "settings.h"
 #include "utils.h"
-#include "RSA.h"
-#include "sha512.h"
+#include "RSA/RSA.h"
+#include "SHA/sha512.h"
 #include "fdr.h"
 #include <string>
 #include <iostream>
 #include <sstream>
-#include "aes.h"
+#include "AES/AES.h"
 #include <unistd.h>
 
 using namespace std;

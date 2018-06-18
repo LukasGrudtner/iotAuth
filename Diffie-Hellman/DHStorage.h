@@ -2,7 +2,7 @@
 #define DH_STORAGE_H
 
 #include <cmath>
-#include "settings.h"
+#include "../settings.h"
 
 class DHStorage
 {

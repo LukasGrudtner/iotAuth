@@ -1,1 +1,1 @@
-g++ -std=c++17 $1 -o server server.cpp RSA.cpp aes.cpp fdr.cpp utils.cpp iotAuth.cpp sha512.cpp RSAKeyExchange.cpp DiffieHellmanPackage.cpp DHKeyExchange.cpp DHStorage.cpp RSAStorage.cpp verbose_server.cpp
+g++ -std=c++17 $1 -o server server.cpp RSA/RSA.cpp AES/AES.cpp fdr.cpp utils.cpp iotAuth.cpp SHA/sha512.cpp RSA/RSAKeyExchange.cpp Diffie-Hellman/DiffieHellmanPackage.cpp Diffie-Hellman/DHKeyExchange.cpp Diffie-Hellman/DHStorage.cpp RSA/RSAStorage.cpp verbose/verbose_server.cpp

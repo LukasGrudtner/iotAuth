@@ -12,12 +12,15 @@
 #include <vector>
 #include "settings.h"
 #include "iotAuth.h"
-#include "RSAKeyExchange.h"
-#include "DiffieHellmanPackage.h"
-#include "DHKeyExchange.h"
-#include "RSAStorage.h"
-#include "DHStorage.h"
-#include "verbose_server.h"
+
+#include "RSA/RSAStorage.h"
+#include "RSA/RSAKeyExchange.h"
+
+#include "Diffie-Hellman/DiffieHellmanPackage.h"
+#include "Diffie-Hellman/DHKeyExchange.h"
+#include "Diffie-Hellman/DHStorage.h"
+
+#include "verbose/verbose_server.h"
 
 using namespace std;
 

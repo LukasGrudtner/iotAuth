@@ -1,8 +1,8 @@
 #ifndef RSA_KEY_EXCHANGE_H
 #define RSA_KEY_EXCHANGE_H
 
-#include "settings.h"
-#include "fdr.h"
+#include "../settings.h"
+#include "../fdr.h"
 #include <stdio.h>
 #include <string>
 

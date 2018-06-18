@@ -7,7 +7,7 @@
 #include <math.h>
 #include <string.h>
 #include <iostream>
-#include "settings.h"
+#include "../settings.h"
 
 class RSA
 {

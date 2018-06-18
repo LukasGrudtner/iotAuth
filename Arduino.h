@@ -8,11 +8,13 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
-#include "RSAKeyExchange.h"
-#include "DHKeyExchange.h"
-#include "DiffieHellmanPackage.h"
-#include "RSAStorage.h"
-#include "DHStorage.h"
+
+#include "Diffie-Hellman/DHKeyExchange.h"
+#include "Diffie-Hellman/DiffieHellmanPackage.h"
+#include "Diffie-Hellman/DHStorage.h"
+
+#include "RSA/RSAStorage.h"
+#include "RSA/RSAKeyExchange.h"
 
 using namespace std;
 
@@ -21,11 +23,6 @@ using namespace std;
 class Arduino
 {
     public:
-
-        /* Resposta do FDR do servidor recebido no passo RSA Key Exchange e
-        enviado no passo DH Key Exchange. */
-        int answerFDR = 0;;
-
         void stateMachine(int socket, struct sockaddr *client, socklen_t size);
 
         /*  Waiting Done Confirmation

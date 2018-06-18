@@ -3,10 +3,10 @@
 
 #include <iostream>
 #include <string>
-#include "RSAStorage.h"
-#include "DHStorage.h"
-#include "DiffieHellmanPackage.h"
-#include "RSAKeyExchange.h"
+#include "../RSA/RSAStorage.h"
+#include "../Diffie-Hellman/DHStorage.h"
+#include "../Diffie-Hellman/DiffieHellmanPackage.h"
+#include "../RSA/RSAKeyExchange.h"
 
 using namespace std;
 

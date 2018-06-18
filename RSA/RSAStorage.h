@@ -1,7 +1,7 @@
 #ifndef RSA_STORAGE_H
 #define RSA_STORAGE_H
 
-#include "settings.h"
+#include "../settings.h"
 
 class RSAStorage
 {

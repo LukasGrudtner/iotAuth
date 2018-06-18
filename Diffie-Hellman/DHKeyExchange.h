@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "DiffieHellmanPackage.h"
-#include "settings.h"
+#include "../settings.h"
 
 class DHKeyExchange
 {
