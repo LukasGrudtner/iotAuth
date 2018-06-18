@@ -108,11 +108,7 @@ void Arduino::rft(States *state, int socket, struct sockaddr *server, socklen_t 
     sendto(socket, DONE_ACK, strlen(DONE_ACK), 0, server, size);
     *state = HELLO;
 
-    if (VERBOSE) {
-        cout << "\n*******DONE CLIENT AND SERVER******"   << endl;
-        cout << "Done Client and Server Successful!"      << endl;
-        cout << "***********************************\n"   << endl;
-    }
+    if (VERBOSE) {rft_verbose();}
 }
 
 /*  Hello
@@ -134,12 +130,9 @@ void Arduino::hello(States *state, int socket, struct sockaddr *server, socklen_
     /* Verifica se a mensagem recebida é um HELLO. */
     if (received[0] == HELLO_ACK_CHAR) {
         *state = SRSA;
-        if (VERBOSE) {
-            cout << "******HELLO CLIENT AND SERVER******"     << endl;
-            cout << "Hello Client and Server Successful!"     << endl;
-            cout << "***********************************\n"   << endl;
-        }
+        if (VERBOSE) {hello_sucessfull_verbose();}
     } else {
+        if (VERBOSE) {hello_failed_verbose();}
         *state = HELLO;
     }
 }
@@ -174,17 +167,7 @@ void Arduino::srsa(States *state, int socket, struct sockaddr *server, socklen_t
     *state = RRSA;
 
     /******************** Verbose ********************/
-    if (VERBOSE) {
-        cout << "************SEND RSA CLIENT***********" << endl;
-        cout << "Generated RSA Key: {(" << rsaStorage->getMyPublicKey()->d
-             << ", " << rsaStorage->getMyPublicKey()->n << "), ("
-             << rsaStorage->getMyPrivateKey()->d << ", "
-             << rsaStorage->getMyPrivateKey()->n << ")}" << endl;
-        cout << "My IV: " << rsaStorage->getMyIV() << endl;
-        cout << "My FDR: " << rsaStorage->getMyFDR()->toString() << endl;
-        cout << "Sent: " << rsaSent.toString() << endl;
-        cout << "**************************************\n" << endl;
-    }
+    if (VERBOSE) {srsa_verbose(rsaStorage, &rsaSent);}
 }
 
 /*  Receive RSA
@@ -199,30 +182,14 @@ void Arduino::rrsa(States *state, int socket, struct sockaddr *server, socklen_t
     rsaStorage->setPartnerIV(rsaKeyExchange->getIV());
     rsaStorage->setPartnerFDR(rsaKeyExchange->getFDR());
 
-    if (VERBOSE) {
-        cout << "*********RECEIVED RSA SERVER**********" << endl;
-        cout << "Received: " << rsaKeyExchange->toString() << endl;
-        cout << "RSA Server Public Key: (" << rsaKeyExchange->getPublicKey().d <<
-                ", " << rsaKeyExchange->getPublicKey().n << ")" << endl;
-        cout << "Answered FDR: " << rsaKeyExchange->getAnswerFDR() << endl;
-        cout << "Server IV: " << rsaStorage->getPartnerIV() << endl;
-        cout << "Server FDR: " << rsaStorage->getPartnerFDR()->getOperator() 
-                << rsaStorage->getPartnerFDR()->getOperand() << endl;
-    }
+    if (VERBOSE) {rrsa_verbose1(rsaKeyExchange, rsaStorage);}
 
     /* Verifica se a resposta do FDR é válida. */
     if (checkAnsweredFDR(rsaKeyExchange->getAnswerFDR())) {
-        if (VERBOSE) {
-            cout << "Answered FDR ACCEPTED!" << endl;
-            cout << "**************************************\n" << endl;
-        }
+        if (VERBOSE) {rrsa_verbose2();}
         *state = SDH;
     } else {
-        if (VERBOSE) {
-            cout << "Answered FDR REJECTED!" << endl;
-            cout << "ENDING CONECTION..." << endl;
-            cout << "**************************************\n" << endl;
-        }
+        if (VERBOSE) {rrsa_verbose3();}
         *state = DONE;
     }
 
@@ -298,11 +265,7 @@ void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t 
     *state = RDH;
 
     /******************************** VERBOSE *********************************/
-    if (VERBOSE) {
-        cout << "************SEND DH CLIENT************" << endl;
-        cout << "Client Package: " << diffieHellmanPackage.toString() << endl;
-        cout << "**************************************" << endl << endl;
-    }
+    if (VERBOSE) {sdh_verbose(&diffieHellmanPackage);}
 
     delete[] dhPackageBytes;
     delete[] encryptedHash;
@@ -340,33 +303,11 @@ void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t 
             *state = DONE;
         }
 
-       if (VERBOSE) {
-           cout << "\n*******SERVER DH KEY RECEIVED******" << endl;
-
-           cout << "Hash is valid!" << endl << endl;
-
-           if (VERBOSE_2) {
-               cout << "Server Encrypted Data" << endl;
-               for (int i = 0; i < sizeof(DHKeyExchange)-1; i++) {
-                   cout << encryptedMessage[i] << ":";
-               }
-               cout << encryptedMessage[sizeof(DHKeyExchange)-1] << endl << endl;
-           }
-
-           cout << "Server Decrypted HASH: "   << hash          << endl << endl;
-           cout << "Diffie-Hellman Key: "      << diffieHellmanPackage.getResult()  << endl;
-           cout << "Base: "                    << diffieHellmanPackage.getBase()    << endl;
-           cout << "Modulus: "                 << diffieHellmanPackage.getModulus() << endl;
-           cout << "Session Key: "             << dhStorage->getSessionKey()        << endl;
-           cout << "Answered FDR: "            << diffieHellmanPackage.getAnswerFDR()                       << endl;
-           cout << "***********************************\n"                          << endl;
-       }
+       if (VERBOSE) {rdh_verbose1(&diffieHellmanPackage, dhStorage);}
 
    /* Se não, altera o estado para DONE e realiza o término da conexão. */
    } else {
-       if (VERBOSE) {
-           cout << "Hash is invalid!" << endl << endl;
-       }
+       if (VERBOSE) {rdh_verbose2();}
        *state = DONE;
    }
 }
@@ -426,10 +367,9 @@ void Arduino::dt(States *state, int socket, struct sockaddr *server, socklen_t s
 
     char envia[666];
     memset(envia, '\0', sizeof(envia));
-    cout << "Envio de dados criptografados com AES." << endl << endl;
 
-    printf("########## Escreva uma mensagem para o servidor ##########\n");
-    printf("------------- Linha em branco para finalizar -------------\n");
+    if (VERBOSE) {dt_verbose1();}
+    
     /* Captura a mensagem digitada no terminal para a criptografia. */
     fgets(envia, 666, stdin);
 
@@ -438,7 +378,7 @@ void Arduino::dt(States *state, int socket, struct sockaddr *server, socklen_t s
 
         /* Encripta a mensagem digitada pelo usuário. */
         string encryptedMessage = encryptMessage(envia, sizeof(envia));
-        cout << "Sent" << endl << encryptedMessage << endl << endl;
+        if (VERBOSE) {dt_verbose2(&encryptedMessage);}
 
         /* Converte a string em um array de char. */
         char encryptedMessageChar[encryptedMessage.length()];

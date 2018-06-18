@@ -1,7 +1,5 @@
 #include "verbose_server.h"
 
-using namespace std;
-
 void rft_verbose()
 {
         cout << "\n*******DONE CLIENT AND SERVER******"   << endl;

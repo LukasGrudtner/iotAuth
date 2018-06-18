@@ -120,13 +120,11 @@ void hello(States *state, int socket, struct sockaddr *client, socklen_t size)
             /* Se a mensagem foi enviada corretamente, troca o estado para RSAX. */
             if (sended >= 0) {
                 *state = RRSA;
-
                 if (VERBOSE) {hello_sucessfull_verbose();}
 
             /* Senão, continua no estado HELLO. */
             } else {
                 *state = HELLO;
-
                 if (VERBOSE) {hello_failed_verbose();}
             }
         }

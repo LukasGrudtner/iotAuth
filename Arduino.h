@@ -16,6 +16,8 @@
 #include "RSA/RSAStorage.h"
 #include "RSA/RSAKeyExchange.h"
 
+#include "verbose/verbose_client.h"
+
 using namespace std;
 
 /* Simulação das funções executadas pelo Arduino. */
