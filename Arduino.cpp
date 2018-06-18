@@ -229,75 +229,83 @@ void Arduino::rrsa(States *state, int socket, struct sockaddr *server, socklen_t
     delete rsaKeyExchange;
 }
 
+void Arduino::setupDiffieHellman()
+{
+    dhStorage = new DHStorage();
+    dhStorage->setMyIV(rsaStorage->getMyIV());
+    dhStorage->setMyFDR(*rsaStorage->getMyFDR());
+
+    dhStorage->setExponent(iotAuth.randomNumber(3)+2);
+    dhStorage->setBase(iotAuth.randomNumber(100));
+    dhStorage->setModulus(iotAuth.randomNumber(100));
+}
+
+void Arduino::mountDHPackage(DiffieHellmanPackage *dhPackage)
+{
+    dhPackage->setResult(dhStorage->calculateResult());
+    dhPackage->setBase(dhStorage->getBase());
+    dhPackage->setModulus(dhStorage->getModulus());
+    dhPackage->setIV(dhStorage->getMyIV());
+
+    int answerFDR = calculateFDRValue(rsaStorage->getPartnerIV(), rsaStorage->getPartnerFDR());
+    dhPackage->setAnswerFDR(answerFDR);
+}
+
+/*  Get Encrypted Hash
+    Realiza a cifragem do hash obtido do pacote Diffie-Hellman com a chave privada do Servidor.
+    O retorno do hash cifrado é feito por parâmetro.
+*/
+int* Arduino::getEncryptedHash(DiffieHellmanPackage *dhPackage)
+{
+    string dhString = dhPackage->toString();
+    string hash = iotAuth.hash(&dhString);
+
+    int *encryptedHash = iotAuth.encryptRSA(&hash, rsaStorage->getMyPrivateKey(), hash.length());
+    return encryptedHash;
+}
+
 /*  Send Diffie-Hellman
     Realiza o envio da chave Diffie-Hellman para o Servidor.
 */
 void Arduino::sdh(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
-    /* Gera os valores Diffie-Hellman. */
-    sleep(1);
-    int a = iotAuth.randomNumber(3)+2;
-    sleep(1);
-    int g = iotAuth.randomNumber(100);
-    sleep(1);
-    int p = iotAuth.randomNumber(100);
-
-    /* Seta o expoente no KeyManager. */
-    keyManager.setExponent(a);
-
-    /*  Organiza o pacote com os dados Diffie-Hellman para enviar ao cliente. */
-    long int pot    = pow(g, a);
-    long int A      = pot % p;
-
+    setupDiffieHellman();
+    /***************** Montagem do Pacote Diffie-Hellman ******************/
     DiffieHellmanPackage diffieHellmanPackage;
-    diffieHellmanPackage.setResult(A);
-    diffieHellmanPackage.setBase(g);
-    diffieHellmanPackage.setModulus(p);
-    diffieHellmanPackage.setIV(keyManager.getMyIV());
+    mountDHPackage(&diffieHellmanPackage);
 
-    int answerFDR = calculateFDRValue(rsaStorage->getPartnerIV(), rsaStorage->getPartnerFDR());
-    diffieHellmanPackage.setAnswerFDR(answerFDR);
-
-    /**************************************************************************/
-    /* Extrai o hash */
-    string dhString = diffieHellmanPackage.toString();
-    string hash = iotAuth.hash(&dhString);
-
-    /* Encripta o hash utilizando a chave privada do cliente */
-    int* encryptedHash = iotAuth.encryptRSA(&hash, rsaStorage->getMyPrivateKey(), hash.length());
-
-    /**************************************************************************/
-
-    /* Prepara o pacote completo que será enviado ao servidor. */
-    /* Transforma a struct 'diffieHellmanPackage' em um array de bytes. */
+    /***************** Serialização do Pacote Diffie-Hellman ******************/
     byte* dhPackageBytes = new byte[sizeof(DiffieHellmanPackage)];
     utils.ObjectToBytes(diffieHellmanPackage, dhPackageBytes, sizeof(DiffieHellmanPackage));
 
-    DHKeyExchange* dhSent = new DHKeyExchange();
-    dhSent->setEncryptedHash(encryptedHash);
-    dhSent->setDiffieHellmanPackage(dhPackageBytes);
+    /***************************** Geração do HASH ****************************/
+    /* Encripta o hash utilizando a chave privada do Servidor. */
+    int *encryptedHash = getEncryptedHash(&diffieHellmanPackage);
 
-    /* Converte o objeto dhSent em um array de bytes. */
+    /********************** Preparação do Pacote Final ************************/
+    DHKeyExchange dhSent;
+    dhSent.setEncryptedHash(encryptedHash);
+    dhSent.setDiffieHellmanPackage(dhPackageBytes);
+
+    /********************** Serialização do Pacote Final **********************/
     byte* dhSentBytes = new byte[sizeof(DHKeyExchange)];
-    utils.ObjectToBytes(*dhSent, dhSentBytes, sizeof(DHKeyExchange));
+    utils.ObjectToBytes(dhSent, dhSentBytes, sizeof(DHKeyExchange));
 
-
+    /******************** Cifragem e Envio do Pacote Final ********************/
     int* encryptedMessage = iotAuth.encryptRSA(dhSentBytes, rsaStorage->getPartnerPublicKey(), sizeof(DHKeyExchange));
-
-    if (VERBOSE) {
-        cout << "************SEND DH CLIENT************" << endl;
-        cout << "Client Hash: " << hash << endl << endl;
-        cout << "a: " << a << endl << "g: " << g << endl << "p: " << p << endl;
-        cout << "Client Package: " << diffieHellmanPackage.toString() << endl;
-        cout << "**************************************" << endl << endl;
-    }
 
     sendto(socket,(int*)encryptedMessage, sizeof(DHKeyExchange)*sizeof(int), 0, server, size);
     *state = RDH;
 
+    /******************************** VERBOSE *********************************/
+    if (VERBOSE) {
+        cout << "************SEND DH CLIENT************" << endl;
+        cout << "Client Package: " << diffieHellmanPackage.toString() << endl;
+        cout << "**************************************" << endl << endl;
+    }
+
     delete[] dhPackageBytes;
     delete[] encryptedHash;
-    delete[] dhSent;
     delete[] dhSentBytes;
     delete[] encryptedMessage;
 }
@@ -321,18 +329,16 @@ void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t 
     string hash = decryptHash(&dhKeyExchange);
 
     /******************** Validação do Hash ********************/
-   /* Se o hash for válido, continua com o recebimento. */
    string dhString = diffieHellmanPackage.toString();
    if (iotAuth.isHashValid(&dhString, &hash)) {
 
-       /* Armazena os valores Diffie-Hellman no KeyManager. */
-       keyManager.setBase(diffieHellmanPackage.getBase());
-       keyManager.setModulus(diffieHellmanPackage.getModulus());
-       keyManager.setSessionKey(keyManager.getDiffieHellmanKey(diffieHellmanPackage.getResult()));
-       int clientIV = diffieHellmanPackage.getIV();
-       int answeredFdr = diffieHellmanPackage.getAnswerFDR();
+       dhStorage->setSessionKey(dhStorage->calculateSessionKey(diffieHellmanPackage.getResult()));
 
-       *state = DT;
+        if (checkAnsweredFDR(diffieHellmanPackage.getAnswerFDR())) {
+            *state = DT;
+        } else {
+            *state = DONE;
+        }
 
        if (VERBOSE) {
            cout << "\n*******SERVER DH KEY RECEIVED******" << endl;
@@ -351,9 +357,8 @@ void Arduino::rdh(States *state, int socket, struct sockaddr *server, socklen_t 
            cout << "Diffie-Hellman Key: "      << diffieHellmanPackage.getResult()  << endl;
            cout << "Base: "                    << diffieHellmanPackage.getBase()    << endl;
            cout << "Modulus: "                 << diffieHellmanPackage.getModulus() << endl;
-           cout << "Client IV: "               << clientIV                          << endl;
-           cout << "Session Key: "             << keyManager.getSessionKey()        << endl;
-           cout << "Answered FDR: "            << answeredFdr                       << endl;
+           cout << "Session Key: "             << dhStorage->getSessionKey()        << endl;
+           cout << "Answered FDR: "            << diffieHellmanPackage.getAnswerFDR()                       << endl;
            cout << "***********************************\n"                          << endl;
        }
 
@@ -397,9 +402,7 @@ void Arduino::getDiffieHellmanPackage(DHKeyExchange *dhKeyExchange, DiffieHellma
 string Arduino::decryptHash(DHKeyExchange *dhKeyExchange)
 {
     int *encryptedHash = dhKeyExchange->getEncryptedHash();
-    for (int i = 0; i < 128; i++) {
-        cout << i << ". " << encryptedHash[i] << endl;
-    }
+
     byte *decryptedHash = iotAuth.decryptRSA(encryptedHash, rsaStorage->getPartnerPublicKey(), 128);
 
     char aux;
@@ -419,6 +422,8 @@ string Arduino::decryptHash(DHKeyExchange *dhKeyExchange)
 */
 void Arduino::dt(States *state, int socket, struct sockaddr *server, socklen_t size)
 {
+    delete rsaStorage;
+
     char envia[666];
     memset(envia, '\0', sizeof(envia));
     cout << "Envio de dados criptografados com AES." << endl << endl;
@@ -433,7 +438,6 @@ void Arduino::dt(States *state, int socket, struct sockaddr *server, socklen_t s
 
         /* Encripta a mensagem digitada pelo usuário. */
         string encryptedMessage = encryptMessage(envia, sizeof(envia));
-        cout << "SIZE ENCRYPTED MESSAGE: " << encryptedMessage.length() << endl;
         cout << "Sent" << endl << encryptedMessage << endl << endl;
 
         /* Converte a string em um array de char. */
@@ -485,13 +489,13 @@ string Arduino::encryptMessage(char* message, int size)
     //                   0x1f, 0x35, 0x2c, 0x07, 0x3b, 0x61, 0x08, 0xd7, 0x2d, 0x98, 0x10, 0xa3, 0x09, 0x14, 0xdf, 0xf4 };
     uint8_t key[32];
     for (int i = 0; i < 32; i++) {
-        key[i] = keyManager.getSessionKey();
+        key[i] = dhStorage->getSessionKey();
     }
 
     // uint8_t iv[]  = { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f };
     uint8_t iv[16];
     for (int i = 0; i < 16; i++) {
-        iv[i] = keyManager.getSessionKey();
+        iv[i] = dhStorage->getSessionKey();
     }
 
     /* Converte o array de char (message) para uint8_t. */
@@ -501,8 +505,6 @@ string Arduino::encryptMessage(char* message, int size)
     uint8_t *encrypted = iotAuth.encryptAES(plaintext, key, iv, size);
 
     string result = utils.Uint8_tToHexString(encrypted, size);
-
-    cout << result << endl;
 
     // delete[] encrypted;
 

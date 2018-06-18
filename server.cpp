@@ -317,7 +317,7 @@ void mountDHPackage(DiffieHellmanPackage *dhPackage)
     dhPackage->setModulus(diffieHellmanStorage->getModulus());
     dhPackage->setIV(diffieHellmanStorage->getMyIV());
 
-    int answerFDR = calculateFDRValue(diffieHellmanStorage->getMyIV(), diffieHellmanStorage->getMyFDR());
+    int answerFDR = calculateFDRValue(rsaStorage->getPartnerIV(), rsaStorage->getPartnerFDR());
     dhPackage->setAnswerFDR(answerFDR);
 }
 
@@ -368,7 +368,6 @@ void sdh(States *state, int socket, struct sockaddr *client, socklen_t size)
     *state = DT;
 
     /******************************** VERBOSE *********************************/
-
     if (VERBOSE) {sdh_verbose(&dhPackage);}
 
     delete[] dhPackageBytes;

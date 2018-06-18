@@ -2,7 +2,6 @@
 #define ARDUINO_H
 
 #include "iotAuth.h"
-#include "keyManager.h"
 #include "settings.h"
 #include "utils.h"
 #include <sys/types.h>
@@ -88,10 +87,27 @@ class Arduino
         */
         void setupRSA();
 
+        /*  Setup Diffie-Hellman
+            Inicializa os valores pertinentes a troca de chaves Diffie-Hellman:
+            expoente, base, módulo, resultado e a chave de sessão.
+        */
+        void setupDiffieHellman();
+
+        /*  Mount Diffie-Hellman Package
+            Monta o pacote Diffie-Hellman com os dados, e logo após realiza sua conversão para bytes,
+            com o retorno deste array sendo por parâmetro.
+        */
+        void mountDHPackage(DiffieHellmanPackage *dhPackage);
+
+        /*  Get Encrypted Hash
+            Realiza a cifragem do hash obtido do pacote Diffie-Hellman com a chave privada do Servidor.
+            O retorno do hash cifrado é feito por parâmetro.
+        */
+        int* getEncryptedHash(DiffieHellmanPackage *dhPackage);
+
     private:
 
         IotAuth iotAuth;
-        KeyManager keyManager;
         Utils utils;
         
         RSAStorage *rsaStorage;
